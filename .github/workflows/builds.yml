@@ -1,0 +1,104 @@
+# Builds Sour Player for Windows, Linux and macOS (the Feishin fork's own builds are paused by GitHub)
+name: Sour Player builds
+
+on:
+    workflow_dispatch:
+        inputs:
+            version:
+                description: Version to build (matches the release on Urmomnumber1/feishin)
+                required: true
+
+jobs:
+    mac:
+        runs-on: macos-latest
+        env:
+            NODE_OPTIONS: --max-old-space-size=4096
+        steps:
+            - name: Checkout git repo
+              uses: actions/checkout@v6
+
+            - name: Install Node and PNPM
+              uses: pnpm/action-setup@v4
+
+            - name: Install dependencies
+              run: pnpm install
+
+            - name: Set the version
+              run: npm pkg set version=${{ inputs.version }}
+
+            - name: Build for macOS
+              run: pnpm run package:mac:pr
+
+            - name: Upload macOS build
+              uses: actions/upload-artifact@v7
+              with:
+                  name: sour-player-mac
+                  path: |
+                      dist/*.dmg
+                      dist/*-mac.zip
+                      dist/latest-mac.yml
+
+    windows:
+        runs-on: windows-latest
+        env:
+            NODE_OPTIONS: --max-old-space-size=4096
+        steps:
+            - name: Checkout git repo
+              uses: actions/checkout@v6
+
+            - name: Install Node and PNPM
+              uses: pnpm/action-setup@v4
+
+            - name: Install dependencies
+              run: pnpm install
+
+            - name: Set the version
+              run: npm pkg set version=${{ inputs.version }}
+
+            - name: Build for windows
+              run: pnpm run package:win:pr
+
+            - name: Upload windows build
+              uses: actions/upload-artifact@v7
+              with:
+                  name: sour-player-windows
+                  path: |
+                      dist/*.exe
+                      dist/*.exe.blockmap
+                      dist/latest.yml
+
+    linux:
+        runs-on: ubuntu-latest
+        env:
+            NODE_OPTIONS: --max-old-space-size=4096
+        steps:
+            - name: Checkout git repo
+              uses: actions/checkout@v6
+
+            - name: Install Node and PNPM
+              uses: pnpm/action-setup@v4
+
+            - name: Install dependencies
+              run: pnpm install
+
+            - name: Set the version
+              run: npm pkg set version=${{ inputs.version }}
+
+            - name: Build for linux
+              run: pnpm run package:linux:pr
+
+            - name: Web build (Hermes Music serves it as the iPhone app)
+              run: |
+                  pnpm run build:web && rm -f out/web/assets/*.map
+                  tar -czf dist/sour-web.tar.gz -C out/web .
+
+            - name: Upload linux build
+              uses: actions/upload-artifact@v7
+              with:
+                  name: sour-player-linux
+                  path: |
+                      dist/*.AppImage
+                      dist/*.deb
+                      dist/*.tar.xz
+                      dist/latest-linux.yml
+                      dist/sour-web.tar.gz

@@ -1,0 +1,44 @@
+# Builds Sour Player TV for iPhone (its own app, in tv-ios/) as an unsigned .ipa; SideStore signs it with
+# your own Apple ID when you install it.
+name: Sour Player TV for iPhone
+
+on:
+    workflow_dispatch:
+        inputs:
+            version:
+                description: Version (e.g. 0.1.0)
+                required: true
+            build:
+                description: Build number (higher every release)
+                required: true
+
+jobs:
+    tv-ios:
+        runs-on: macos-latest
+        steps:
+            - name: Checkout git repo
+              uses: actions/checkout@v6
+
+            - name: Make the Xcode project
+              working-directory: tv-ios
+              run: |
+                  brew install xcodegen
+                  xcodegen generate
+
+            - name: Build
+              working-directory: tv-ios
+              run: |
+                  set -o pipefail
+                  xcodebuild -project SourPlayerTV.xcodeproj -scheme SourPlayerTV -configuration Release -sdk iphoneos \
+                      -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/dd" \
+                      CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+                      MARKETING_VERSION=${{ inputs.version }} CURRENT_PROJECT_VERSION=${{ inputs.build }} build | tail -40
+                  mkdir -p "$RUNNER_TEMP/ipa/Payload"
+                  cp -R "$RUNNER_TEMP/dd/Build/Products/Release-iphoneos/SourPlayerTV.app" "$RUNNER_TEMP/ipa/Payload/"
+                  (cd "$RUNNER_TEMP/ipa" && zip -qr "$GITHUB_WORKSPACE/Sour-Player-TV-${{ inputs.version }}.ipa" Payload)
+
+            - name: Keep the .ipa
+              uses: actions/upload-artifact@v7
+              with:
+                  name: sour-player-tv-ios
+                  path: Sour-Player-TV-*.ipa

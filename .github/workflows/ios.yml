@@ -1,0 +1,103 @@
+# Builds Sour Player for iPhone on a Mac. Without Apple keys it only checks that the app compiles;
+# with them (APPLE_API_KEY_ID, APPLE_API_ISSUER_ID, APPLE_API_KEY_P8 as base64, APPLE_TEAM_ID) it signs
+# the app and uploads it to App Store Connect, where it shows up in TestFlight.
+name: Sour Player for iPhone
+
+on:
+    workflow_dispatch:
+        inputs:
+            version:
+                description: Version (e.g. 0.1.0)
+                required: true
+            build:
+                description: Build number (higher every upload)
+                required: true
+
+jobs:
+    ios:
+        runs-on: macos-latest
+        env:
+            NODE_OPTIONS: --max-old-space-size=4096
+            HAS_APPLE: ${{ secrets.APPLE_API_KEY_P8 != '' && 'yes' || 'no' }}
+        steps:
+            - name: Checkout git repo
+              uses: actions/checkout@v6
+
+            - name: Install Node and PNPM
+              uses: pnpm/action-setup@v4
+
+            - name: Install dependencies
+              run: pnpm install
+
+            - name: Build the web app
+              run: |
+                  npm pkg set version=${{ inputs.version }}
+                  SOUR_MOBILE=1 pnpm run build:web && rm -f out/web/assets/*.map
+
+            - name: Make the Xcode project
+              working-directory: mobile
+              run: |
+                  npm install --no-audit --no-fund
+                  npm install --no-audit --no-fund @capacitor/ios@7.4.3
+                  npx cap add ios
+                  node setup-ios.mjs
+                  npx cap sync ios
+                  node setup-ios.mjs --after-sync
+
+            - name: Check that it builds (no Apple account needed)
+              if: env.HAS_APPLE == 'no'
+              working-directory: mobile/ios/App
+              run: |
+                  if [ -d App.xcworkspace ]; then T="-workspace App.xcworkspace"; else T="-project App.xcodeproj"; fi
+                  set -o pipefail
+                  xcodebuild $T -scheme App -configuration Release -sdk iphonesimulator \
+                      -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO \
+                      MARKETING_VERSION=${{ inputs.version }} CURRENT_PROJECT_VERSION=${{ inputs.build }} build | tail -40
+
+            - name: Unsigned .ipa for sideloading (AltStore / SideStore sign it with your own Apple ID)
+              if: env.HAS_APPLE == 'no'
+              working-directory: mobile/ios/App
+              run: |
+                  if [ -d App.xcworkspace ]; then T="-workspace App.xcworkspace"; else T="-project App.xcodeproj"; fi
+                  set -o pipefail
+                  xcodebuild $T -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS'                       -derivedDataPath "$RUNNER_TEMP/dd" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""                       MARKETING_VERSION=${{ inputs.version }} CURRENT_PROJECT_VERSION=${{ inputs.build }} build | tail -20
+                  mkdir -p "$RUNNER_TEMP/ipa/Payload"
+                  cp -R "$RUNNER_TEMP/dd/Build/Products/Release-iphoneos/App.app" "$RUNNER_TEMP/ipa/Payload/"
+                  (cd "$RUNNER_TEMP/ipa" && zip -qr "$GITHUB_WORKSPACE/Sour-Player-${{ inputs.version }}.ipa" Payload)
+
+            - name: Keep the .ipa
+              if: env.HAS_APPLE == 'no'
+              uses: actions/upload-artifact@v7
+              with:
+                  name: sour-player-ios
+                  path: Sour-Player-*.ipa
+
+            - name: Build, sign and upload to TestFlight
+              if: env.HAS_APPLE == 'yes'
+              working-directory: mobile/ios/App
+              env:
+                  KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+                  ISSUER: ${{ secrets.APPLE_API_ISSUER_ID }}
+                  P8: ${{ secrets.APPLE_API_KEY_P8 }}
+                  TEAM: ${{ secrets.APPLE_TEAM_ID }}
+              run: |
+                  if [ -d App.xcworkspace ]; then T="-workspace App.xcworkspace"; else T="-project App.xcodeproj"; fi
+                  echo "$P8" | base64 --decode > "$RUNNER_TEMP/AuthKey.p8"
+                  AUTH="-allowProvisioningUpdates -authenticationKeyPath $RUNNER_TEMP/AuthKey.p8 -authenticationKeyID $KEY_ID -authenticationKeyIssuerID $ISSUER"
+                  set -o pipefail
+                  xcodebuild $T -scheme App -configuration Release -destination 'generic/platform=iOS' \
+                      -archivePath "$RUNNER_TEMP/App.xcarchive" $AUTH \
+                      DEVELOPMENT_TEAM=$TEAM CODE_SIGN_STYLE=Automatic PRODUCT_BUNDLE_IDENTIFIER=com.anjalo.sourplayer \
+                      MARKETING_VERSION=${{ inputs.version }} CURRENT_PROJECT_VERSION=${{ inputs.build }} archive | tail -40
+                  cat > "$RUNNER_TEMP/export.plist" <<PLIST
+                  <?xml version="1.0" encoding="UTF-8"?>
+                  <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+                  <plist version="1.0"><dict>
+                  <key>method</key><string>app-store-connect</string>
+                  <key>destination</key><string>upload</string>
+                  <key>teamID</key><string>$TEAM</string>
+                  <key>signingStyle</key><string>automatic</string>
+                  </dict></plist>
+                  PLIST
+                  xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/App.xcarchive" \
+                      -exportOptionsPlist "$RUNNER_TEMP/export.plist" -exportPath "$RUNNER_TEMP/export" $AUTH | tail -40

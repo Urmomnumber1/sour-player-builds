@@ -15,6 +15,7 @@ import {
 import { HolidayLayer } from '/@/renderer/features/sour/components/holiday-layer';
 import { KeepPlaying, UpNextHeadsUp } from '/@/renderer/features/sour/components/keep-playing';
 import { MiniPlayer } from '/@/renderer/features/sour/components/mini-player';
+import { ShopGifts } from '/@/renderer/features/sour/components/shop';
 import {
     SocialWatchers,
     useDailyColorStore,
@@ -178,6 +179,9 @@ export const SourRoot = () => (
             <DesktopOffline />
             <CrossfadeByMood />
             <OpenLinks />
+        </SourSafe>
+        <SourSafe name="shop gifts">
+            <ShopGifts />
         </SourSafe>
         <SourSafe name="customize">
             <CustomizeApply />

@@ -23,7 +23,7 @@ import { SleepTimerButton } from '/@/renderer/features/player/components/sleep-t
 import { usePlayer } from '/@/renderer/features/player/context/player-context';
 import { socialApi } from '/@/renderer/features/sour/api/social-api';
 import { avatarUrl } from '/@/renderer/features/sour/api/sour-api';
-import { stageBackground } from '/@/renderer/features/sour/components/customize';
+import { useStageBackground } from '/@/renderer/features/sour/components/customize';
 import { openProfile } from '/@/renderer/features/sour/components/people';
 import { favoritesThemeId } from '/@/renderer/features/sour/components/playlist-theme';
 import { hue, ProfileAvatar } from '/@/renderer/features/sour/components/profile-bits';
@@ -205,9 +205,10 @@ const StageView = () => {
         staleTime: 60000,
     }).data;
     const themed = themes?.find((t) => t.id === contextPlaylist && t.image);
+    const stageBg = useStageBackground();
     const backdrop = themed
         ? `${hermes}/api/playlist-themes/${encodeURIComponent(themed.id)}/image?v=${themed.image}`
-        : stageBackground(); // or your own picture (Sour Studio > Customize)
+        : stageBg; // or your own picture (Sour Studio > Customize)
     const [tilt, setTilt] = useState({ x: 0, y: 0 });
     // Cover or Video: the song's music video (from Hermes Music) in place of the cover
     const view = useVideoView((s) => s.view);

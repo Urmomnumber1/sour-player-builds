@@ -1,0 +1,67 @@
+.wallet {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    padding: 18px;
+    background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--theme-colors-primary) 25%, transparent),
+        transparent
+    );
+    background-size: 300% 300%;
+    border: 1px solid var(--theme-colors-border);
+    border-radius: 16px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 10px;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px;
+    background: color-mix(in srgb, var(--theme-colors-surface) 80%, transparent);
+    border: 1px solid var(--theme-colors-border);
+    border-radius: 14px;
+    transition:
+        transform 120ms ease,
+        border-color 120ms ease;
+}
+
+.card:hover {
+    border-color: var(--theme-colors-primary);
+    transform: translateY(-2px);
+}
+
+.sale {
+    border-color: #f4d03f;
+    box-shadow: 0 0 0 1px #f4d03f inset;
+}
+
+.preview-box {
+    display: grid;
+    place-items: center;
+    height: 84px;
+    padding-top: 14px;
+    overflow: visible;
+}
+
+.admin {
+    padding: 12px;
+    border: 1px dashed var(--theme-colors-border);
+    border-radius: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .card {
+        transition: none;
+    }
+
+    .card:hover {
+        transform: none;
+    }
+}

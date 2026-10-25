@@ -198,12 +198,18 @@ export const AlongHost = () => {
                                 key={r.id}
                                 onClick={() =>
                                     send(url, me, me.id, { kind: 'handoff', target: r.id })
-                                        .then(() =>
-                                            useSourStore.getState().set({
-                                                listenAlong: r.id,
-                                                listenAlongName: r.name,
-                                            }),
-                                        )
+                                        .then(() => {
+                                            toast.info({ message: `Handing off to ${r.name}...` });
+                                            // they stop following you within a few seconds; follow them after that
+                                            window.setTimeout(
+                                                () =>
+                                                    useSourStore.getState().set({
+                                                        listenAlong: r.id,
+                                                        listenAlongName: r.name,
+                                                    }),
+                                                6000,
+                                            );
+                                        })
                                         .catch((e: Error) => toast.error({ message: e.message }))
                                 }
                                 size="xs"

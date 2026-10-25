@@ -14,7 +14,8 @@ import {
 } from '/@/renderer/features/group-play/store/group-play.store';
 import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-video.store';
 import { EmojiPicker } from '/@/renderer/features/sour/components/emoji-picker';
-import { useSourStore } from '/@/renderer/features/sour/store/sour.store';
+import { bubbleClass } from '/@/renderer/features/sour/components/shop-looks';
+import { useSourProfiles, useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import { useCurrentServer } from '/@/renderer/store';
 import { addToQueueByData, usePlayerStoreBase } from '/@/renderer/store/player.store';
 import { useTimestampStoreBase } from '/@/renderer/store/timestamp.store';
@@ -56,6 +57,7 @@ export const GroupChat = ({ state }: { state: GroupState }) => {
     const [text, setText] = useState('');
     const end = useRef<HTMLDivElement>(null);
     const messages = state.chat ?? [];
+    const profiles = useSourProfiles().data ?? [];
     useEffect(() => {
         end.current?.scrollIntoView({ block: 'nearest' });
     }, [messages.length]);
@@ -72,11 +74,22 @@ export const GroupChat = ({ state }: { state: GroupState }) => {
                 Chat
             </Text>
             <div className={styles.chat}>
-                {messages.map((m) => (
-                    <Text key={m.id} size="sm">
-                        <b>{m.by}</b> {m.text}
-                    </Text>
-                ))}
+                {messages.map((m) => {
+                    const bubble = bubbleClass(
+                        profiles.find((p) => p.id === m.profile)?.looks?.bubble,
+                    );
+                    return (
+                        <Text key={m.id} size="sm">
+                            <b>{m.by}</b>{' '}
+                            <span
+                                className={bubble}
+                                style={bubble ? { padding: '2px 8px' } : undefined}
+                            >
+                                {m.text}
+                            </span>
+                        </Text>
+                    );
+                })}
                 {!messages.length && (
                     <Text isMuted size="xs">
                         Say hi.

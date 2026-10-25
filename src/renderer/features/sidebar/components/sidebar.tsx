@@ -24,6 +24,7 @@ import {
 import { SidebarPins } from '/@/renderer/features/sour/components/look';
 import { SidebarFriends, SidebarSour } from '/@/renderer/features/sour/components/sidebar-friends';
 import { useSimpleMode } from '/@/renderer/features/sour/store/sour.store';
+import { useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import {
     useAppStore,
     useAppStoreActions,
@@ -128,6 +129,7 @@ export const Sidebar = () => {
         [simple, sidebarItemsWithRoute],
     );
 
+    const ui = useSourStore((state) => state.look.ui ?? 'liquid');
     const isCustomWindowBar =
         windowBarStyle === Platform.WINDOWS || windowBarStyle === Platform.MACOS;
 
@@ -160,7 +162,7 @@ export const Sidebar = () => {
                     multiple
                 >
                     {!simple && <SidebarPins />}
-                    {!simple && <SidebarSour />}
+                    {!simple && ui !== 'liquid' && <SidebarSour />}
                     <Accordion.Item value="library">
                         <Accordion.Control>
                             <Text fw={500} variant="secondary">

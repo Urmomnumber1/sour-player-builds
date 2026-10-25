@@ -1,5 +1,6 @@
 import { closeAllModals } from '@mantine/modals';
 import { useQueryClient } from '@tanstack/react-query';
+import clsx from 'clsx';
 import { type CSSProperties, type ReactNode, useState } from 'react';
 import { generatePath, useNavigate } from 'react-router';
 
@@ -38,6 +39,11 @@ import {
     NowPlayingRing,
     useProfileVisit,
 } from '/@/renderer/features/sour/components/profile-extras';
+import {
+    ProfileEntrance,
+    bannerStyle as shopBanner,
+    bannerClass as shopBannerClass,
+} from '/@/renderer/features/sour/components/shop-looks';
 import { notify } from '/@/renderer/features/sour/components/social';
 import { useSourProfiles, useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import { queueGroupSongs, shuffled } from '/@/renderer/features/sour/utils/queue';
@@ -550,9 +556,17 @@ export const ProfileView = ({
                     </Button>
                 )}
                 <div className={styles.profile} style={{ background: c.theme?.card || undefined }}>
+                    <ProfileEntrance effect={preview ? undefined : profile.looks?.effect} />
                     <div
-                        className={c.bannerPan ? `${styles.banner} sour-banner-pan` : styles.banner}
-                        style={bannerStyle}
+                        className={clsx(
+                            c.bannerPan ? `${styles.banner} sour-banner-pan` : styles.banner,
+                            !banner && shopBannerClass(profile.looks?.banner),
+                        )}
+                        style={
+                            !banner && profile.looks?.banner
+                                ? { ...bannerStyle, ...shopBanner(profile.looks.banner) }
+                                : bannerStyle
+                        }
                     >
                         {c.header && <span className={styles.header}>{c.header}</span>}
                         {(c.stickers || []).map((s, i) => (

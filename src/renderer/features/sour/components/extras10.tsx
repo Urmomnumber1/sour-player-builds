@@ -157,83 +157,123 @@ export const SongDnaAction = ({ songs }: { songs: Song[] }) => {
     );
 };
 
-// ---------- humming search ----------
-export const HumButton = () => {
+// ---------- find a song: describe it, or a line of its lyrics (free; Describe it uses the Claude token) ----------
+interface Found {
+    artist: string;
+    inLibrary: boolean;
+    title: string;
+    why?: string;
+}
+export const FindSong = () => {
     const url = useHermesUrl();
     const me = useSourStore((s) => s.me);
     const name = useMyProfile().data?.name;
-    const [state, setState] = useState<'idle' | 'listening' | 'thinking'>('idle');
-    const [guess, setGuess] = useState<null | {
-        artist: string;
-        inLibrary: boolean;
-        title: string;
-    }>(null);
-    const recorded = useRef<Blob | null>(null);
-    const hum = async () => {
+    const [mode, setMode] = useState<'describe' | 'lyrics'>('lyrics');
+    const [text, setText] = useState('');
+    const [busy, setBusy] = useState(false);
+    const [found, setFound] = useState<Found[]>([]);
+    const look = async () => {
+        if (text.trim().length < 3) return;
+        setBusy(true);
+        setFound([]);
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const rec = new MediaRecorder(stream);
-            const parts: Blob[] = [];
-            rec.ondataavailable = (e) => parts.push(e.data);
-            setState('listening');
-            setGuess(null);
-            rec.start();
-            await new Promise((r) => setTimeout(r, 9000));
-            await new Promise<void>((r) => {
-                rec.onstop = () => r();
-                rec.stop();
-            });
-            stream.getTracks().forEach((t) => t.stop());
-            setState('thinking');
-            const blob = new Blob(parts, { type: rec.mimeType || 'audio/webm' });
-            recorded.current = blob;
-            const audio = await new Promise<string>((r) => {
-                const fr = new FileReader();
-                fr.onload = () => r(String(fr.result));
-                fr.readAsDataURL(blob);
-            });
-            setGuess(await post(`${url}/api/requests/hum`, { audio }));
+            if (mode === 'lyrics') {
+                const res = await fetch(
+                    `${url}/api/lyrics/search?q=${encodeURIComponent(text.trim())}`,
+                );
+                const json = await res.json();
+                if (!res.ok) throw new Error(json.error || 'nothing found');
+                setFound(json);
+                if (!json.length)
+                    toast.info({ message: 'No song with that line - try Describe it' });
+            } else {
+                setFound((await post(`${url}/api/requests/describe`, { text })).songs);
+            }
         } catch (e) {
-            toast.error({ message: (e as Error).message || "Couldn't use the microphone" });
+            toast.error({ message: (e as Error).message });
         } finally {
-            setState('idle');
+            setBusy(false);
         }
     };
     return (
         <Stack gap={6}>
-            <Button disabled={state !== 'idle'} onClick={hum} size="xs" variant="default">
-                {state === 'listening'
-                    ? 'Listening... hum or sing for 9 seconds'
-                    : state === 'thinking'
-                      ? 'Working out the song...'
-                      : 'Hum it (find a song by humming)'}
-            </Button>
-            {guess && (
-                <Group gap="xs" justify="space-between" wrap="nowrap">
-                    <Text size="sm" truncate>
-                        {guess.artist} - {guess.title}
-                        {guess.inLibrary ? ' (already in the library)' : ''}
-                    </Text>
-                    {!guess.inLibrary && (
+            <Text fw={700} size="sm">
+                Can&#39;t remember the name?
+            </Text>
+            <Group gap="xs" wrap="nowrap">
+                <Button
+                    onClick={() => setMode('lyrics')}
+                    size="compact-xs"
+                    variant={mode === 'lyrics' ? 'filled' : 'default'}
+                >
+                    A line of the lyrics
+                </Button>
+                <Button
+                    onClick={() => setMode('describe')}
+                    size="compact-xs"
+                    variant={mode === 'describe' ? 'filled' : 'default'}
+                >
+                    Describe it
+                </Button>
+            </Group>
+            <Group gap="xs" wrap="nowrap">
+                <TextInput
+                    onChange={(e) => setText(e.currentTarget.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && look()}
+                    placeholder={
+                        mode === 'lyrics'
+                            ? 'e.g. "is this the real life"'
+                            : 'e.g. the sad piano one from TikTok, a girl singing about rain'
+                    }
+                    size="xs"
+                    style={{ flex: 1 }}
+                    value={text}
+                />
+                <Button
+                    disabled={busy || text.trim().length < 3}
+                    loading={busy}
+                    onClick={look}
+                    size="xs"
+                >
+                    Find
+                </Button>
+            </Group>
+            {found.map((f) => (
+                <Group
+                    gap="xs"
+                    justify="space-between"
+                    key={`${f.artist}-${f.title}`}
+                    wrap="nowrap"
+                >
+                    <Stack gap={0} miw={0}>
+                        <Text size="sm" truncate>
+                            {f.artist} - {f.title}
+                        </Text>
+                        {(f.why || f.inLibrary) && (
+                            <Text isMuted size="xs" truncate>
+                                {f.inLibrary ? 'in the library' : ''}
+                                {f.why ? `${f.inLibrary ? ' - ' : ''}${f.why}` : ''}
+                            </Text>
+                        )}
+                    </Stack>
+                    {!f.inLibrary && (
                         <Button
                             onClick={() =>
                                 post(`${url}/api/requests`, {
                                     by: name,
                                     profile: me?.id,
-                                    query: `${guess.artist} - ${guess.title}`,
+                                    query: `${f.artist} - ${f.title}`,
                                 })
-                                    .then(() =>
-                                        toast.success({ message: `Requested ${guess.title}` }),
-                                    )
+                                    .then(() => toast.success({ message: `Requested ${f.title}` }))
                                     .catch((e: Error) => toast.error({ message: e.message }))
                             }
                             size="compact-xs"
                         >
-                            Request it
+                            Request
                         </Button>
                     )}
                 </Group>
-            )}
+            ))}
         </Stack>
     );
 };
@@ -358,6 +398,8 @@ export const CrossfadeByMood = () => {
     useEffect(() => {
         if (!on) return undefined;
         let last = '';
+        const before = usePlayerStoreBase.getState().player;
+        const saved = { duration: before.crossfadeDuration, type: before.transitionType };
         const timer = setInterval(() => {
             const player = usePlayerStoreBase.getState();
             const song = player.getCurrentSong();
@@ -370,7 +412,12 @@ export const CrossfadeByMood = () => {
             }
             if (player.player.crossfadeDuration !== seconds) player.setCrossfadeDuration(seconds);
         }, 2000);
-        return () => clearInterval(timer);
+        return () => {
+            clearInterval(timer);
+            const player = usePlayerStoreBase.getState();
+            player.setTransitionType(saved.type);
+            player.setCrossfadeDuration(saved.duration);
+        };
     }, [on]);
     return null;
 };

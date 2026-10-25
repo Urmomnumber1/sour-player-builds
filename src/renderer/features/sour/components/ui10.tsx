@@ -44,6 +44,7 @@ export const UiTen = () => {
               : p === '/library/albums'
                 ? 'albums'
                 : 'other';
+        document.documentElement.style.setProperty('--sour-scroll', '0'); // a new page starts at the top
         if (first.current) {
             first.current = false;
             return undefined;
@@ -100,7 +101,15 @@ export const UiTen = () => {
             if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'f') {
                 e.preventDefault();
                 toggleFocus();
-            } else if (e.key === 'Escape' && useSourStore.getState().focusMode) toggleFocus(false);
+            } else if (
+                e.key === 'Escape' &&
+                useSourStore.getState().focusMode &&
+                // Esc closes a window or the Stage first; only then does it leave focus mode
+                !document.querySelector('.mantine-Modal-root, [role="dialog"]') &&
+                !useStage.getState().open
+            ) {
+                toggleFocus(false);
+            }
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
@@ -108,7 +117,7 @@ export const UiTen = () => {
 
     return (
         <>
-            {c.dock && !focus && <Dock />}
+            {c.dock && !focus && ui === 'liquid' && <Dock />}
             {focus && (
                 <button
                     className={styles.leaveFocus}

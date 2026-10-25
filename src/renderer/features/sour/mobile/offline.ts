@@ -5,6 +5,8 @@ import isElectron from 'is-electron';
 import { api } from '/@/renderer/api';
 import { isIosApp, isNativeApp, sourMedia } from '/@/renderer/features/sour/mobile/android';
 import { usePhoneStore } from '/@/renderer/features/sour/mobile/phone-store';
+import { useSettingsStore } from '/@/renderer/store/settings.store';
+import { PlayerType } from '/@/shared/types/types';
 
 // Offline listening: songs of chosen playlists are saved on the phone, and the player uses the saved
 // copy instead of streaming whenever there is one. The Android / iPhone apps keep them as files; the
@@ -14,6 +16,7 @@ import { usePhoneStore } from '/@/renderer/features/sour/mobile/phone-store';
 export const isWebApp = () => !isNativeApp() && window.location.pathname.startsWith('/app/');
 // the desktop app keeps offline songs in its own browser storage too (played by the built-in player)
 const isDesktop = () => !isNativeApp() && isElectron();
+const webPlayer = () => useSettingsStore.getState().playback.type === PlayerType.WEB;
 export const offlineAvailable = () => isNativeApp() || isWebApp() || isDesktop();
 // browser storage: the web app, and the iPhone app (it runs from Hermes over http, where the app's own
 // files can't be played)
@@ -76,6 +79,7 @@ const fileUrl = (path: string) => {
 // the saved copy of a song, if there is one (used by the player for every song it plays)
 export const offlineUrl = (song?: null | QueueSong | { id: string }): string | undefined => {
     if (!song) return undefined;
+    if (isDesktop() && !webPlayer()) return undefined; // the other player can't play the saved copies
     if (inBrowserStore()) return webUrls.get(song.id);
     if (!isNativeApp()) return undefined;
     const saved = usePhoneStore.getState().offline[song.id];
@@ -105,6 +109,10 @@ const onWifi = async () => {
 // size limit)
 export const syncOffline = async () => {
     if (running || !offlineAvailable()) return;
+    if (isDesktop() && (!webPlayer() || !('caches' in window))) {
+        progress('Offline songs need the built-in player: Settings > Playback > Web');
+        return;
+    }
     running = true;
     try {
         const state = usePhoneStore.getState();

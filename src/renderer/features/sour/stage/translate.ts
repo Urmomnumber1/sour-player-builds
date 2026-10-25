@@ -48,3 +48,15 @@ export const useLineTranslations = (
         staleTime: Infinity,
     });
 };
+
+// Translate needs the Claude token on Hermes Music (the button hides without it)
+export const useCanTranslate = () => {
+    const url = useHermesUrl();
+    return !!useQuery({
+        enabled: !!url,
+        queryFn: async () =>
+            ((await (await fetch(`${url}/api/config`)).json()) as { hasToken?: boolean }).hasToken,
+        queryKey: ['hermes-has-token', url],
+        staleTime: 10 * 60000,
+    }).data;
+};

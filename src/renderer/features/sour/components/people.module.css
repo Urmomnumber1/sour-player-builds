@@ -81,6 +81,8 @@
 }
 
 .profile {
+    /* relative: the shop's profile entrance plays over the card */
+    position: relative;
     overflow: hidden;
     background: var(--theme-colors-surface, rgb(255 255 255 / 5%));
     border-radius: 12px;

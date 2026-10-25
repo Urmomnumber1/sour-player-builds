@@ -57,6 +57,10 @@ export const PartyGames = ({ state }: { state: GroupState }) => {
     const myName = useGroupPlayStore((s) =>
         s.role === 'host' ? state.host : state.members.find((m) => m.id === s.member)?.name,
     );
+    const myKey = useGroupPlayStore((s) => (s.role === 'host' ? 'host' : s.member || ''));
+    const spectating = useGroupPlayStore(
+        (s) => s.role !== 'host' && !!state.members.find((m) => m.id === s.member)?.spectate,
+    );
     const quiet = useSourStore((s) => !!s.groupQuiet);
     const [mood, setMood] = useState(state.mood?.avg ?? 50);
     const [setup, setSetup] = useState<GroupGame['kind'] | null>(null);
@@ -88,6 +92,9 @@ export const PartyGames = ({ state }: { state: GroupState }) => {
     const left = game?.ends ? Math.max(0, Math.round((game.ends - (now + offset)) / 1000)) : 0;
     const moodWord = (v: number) =>
         v < 25 ? 'Chill' : v < 50 ? 'Easy' : v < 75 ? 'Upbeat' : 'Hype';
+
+    // spectators only watch, and Sour Player TV parties run their own show
+    if (spectating || state.tv) return null;
 
     return (
         <Stack className={styles.box} gap="xs">
@@ -297,10 +304,10 @@ export const PartyGames = ({ state }: { state: GroupState }) => {
                             </Button>
                         </>
                     )}
-                    {!game.result && game.kind === 'bingo' && myName && game.cards[myName] && (
+                    {!game.result && game.kind === 'bingo' && myKey && game.cards[myKey] && (
                         <>
                             <div className={styles.bingo}>
-                                {game.cards[myName].map((artist) => (
+                                {game.cards[myKey].map((artist) => (
                                     <span
                                         className={
                                             game.heard.includes(artist.toLowerCase())

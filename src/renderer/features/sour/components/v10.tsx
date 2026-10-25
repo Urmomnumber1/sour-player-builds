@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 import styles from './v10.module.css';
 
 import { useItemImageUrl } from '/@/renderer/components/item-image/item-image';
+import { ShopDecoration } from '/@/renderer/features/sour/components/shop-looks';
 import { useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import { useFastAverageColor } from '/@/renderer/hooks';
 import { usePlayerSong } from '/@/renderer/store';
@@ -104,7 +105,8 @@ export const TenthUpdate = () => {
 
 // ---------- avatar decorations: the party hat (accounts from before 0.10) ----------
 export const AvatarDecoration = ({ kind, size }: { kind?: null | string; size: number }) => {
-    if (kind !== 'party-hat') return null;
+    const gid = `hat-${useId().replace(/:/g, '')}`;
+    if (kind !== 'party-hat') return <ShopDecoration kind={kind} size={size} />;
     const w = Math.max(12, size * 0.55);
     return (
         <svg
@@ -117,13 +119,13 @@ export const AvatarDecoration = ({ kind, size }: { kind?: null | string; size: n
         >
             <title>Party hat (here before Sour Player 0.10)</title>
             <defs>
-                <linearGradient id="hat-stripes" x1="0" x2="1" y1="0" y2="1">
+                <linearGradient id={gid} x1="0" x2="1" y1="0" y2="1">
                     <stop offset="0" stopColor="#ff5c8a" />
                     <stop offset="1" stopColor="#d58cff" />
                 </linearGradient>
             </defs>
             <g transform="rotate(18 20 26)">
-                <path d="M20 4 L34 40 Q20 45 6 40 Z" fill="url(#hat-stripes)" />
+                <path d="M20 4 L34 40 Q20 45 6 40 Z" fill={`url(#${gid})`} />
                 <path d="M13 22 L27 22" stroke="#f4d03f" strokeWidth="3" />
                 <path d="M10 31 L30 31" stroke="#9be15d" strokeWidth="3" />
                 <ellipse cx="20" cy="40.5" fill="#f4d03f" rx="15" ry="3.2" />

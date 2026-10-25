@@ -3,7 +3,6 @@
     flex-direction: column;
 }
 
-
 .heading {
     display: flex;
     gap: var(--theme-spacing-xs);

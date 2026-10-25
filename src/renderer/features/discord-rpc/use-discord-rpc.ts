@@ -216,7 +216,7 @@ export const useDiscordRpc = () => {
             // friends on the same Hermes Music can jump in: the page opens Sour Player and listens along
             const sour = useSourStore.getState().me;
             const hermes = useHermesVideoStore.getState().url;
-            if (sour && hermes && /^https?:/.test(hermes)) {
+            if (sour && hermes && /^https:/.test(hermes)) {
                 activity.buttons = [
                     {
                         label: 'Listen along',

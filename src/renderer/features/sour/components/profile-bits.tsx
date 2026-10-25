@@ -1,4 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
+import clsx from 'clsx';
 
 import styles from './people.module.css';
 
@@ -7,6 +8,7 @@ import { type GroupSong } from '/@/renderer/features/group-play/store/group-play
 import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-video.store';
 import { getSongById } from '/@/renderer/features/player/utils';
 import { avatarUrl, type SourProfile, timeAgo } from '/@/renderer/features/sour/api/sour-api';
+import { frameClass, nameClass } from '/@/renderer/features/sour/components/shop-looks';
 import { AvatarDecoration } from '/@/renderer/features/sour/components/v10';
 import { fontFamily } from '/@/renderer/features/sour/fonts';
 import { useCurrentServer } from '/@/renderer/store';
@@ -26,7 +28,7 @@ export const ProfileAvatar = ({
     size = 40,
 }: {
     online?: boolean;
-    profile: Partial<Pick<SourProfile, 'custom' | 'decoration'>> &
+    profile: Partial<Pick<SourProfile, 'custom' | 'decoration' | 'looks'>> &
         Pick<SourProfile, 'avatar' | 'id' | 'name'>;
     size?: number;
 }) => {
@@ -36,7 +38,10 @@ export const ProfileAvatar = ({
     const dnd = !!profile.custom?.dnd;
     return (
         <span
-            className={frame === 'rainbow' ? styles.avatarRainbow : styles.avatar}
+            className={clsx(
+                frame === 'rainbow' ? styles.avatarRainbow : styles.avatar,
+                frameClass(profile.looks?.frame),
+            )}
             style={{
                 background: `hsl(${hue(profile.name)} 60% 42%)`,
                 boxShadow: frame && frame !== 'rainbow' ? `0 0 0 3px ${frame}` : undefined,
@@ -145,13 +150,14 @@ export const nameColor = (profile?: null | Pick<SourProfile, 'admin' | 'gavin'>)
 export const ProfileName = ({ profile, size = 22 }: { profile: SourProfile; size?: number }) => {
     const c = profile.custom || {};
     const effect =
-        c.nameEffect === 'shimmer'
+        nameClass(profile.looks?.nameStyle) ??
+        (c.nameEffect === 'shimmer'
             ? styles.nameShimmer
             : c.nameEffect === 'rainbow'
               ? styles.nameRainbow
               : c.nameEffect === 'glow'
                 ? styles.nameGlow
-                : undefined;
+                : undefined);
     return (
         <span className={styles.nameLine}>
             <span

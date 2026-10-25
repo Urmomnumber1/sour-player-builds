@@ -10,10 +10,12 @@ export type Font = {
 };
 
 // every font bundled with Sour Player can be the app font (they're loaded as "Sour <name>")
-const BUNDLED: Font[] = SOUR_FONTS.filter((f) => f.family.startsWith('"Sour ') && !f.perk).map((f) => ({
-    label: f.label,
-    value: f.family.split('"')[1],
-}));
+const BUNDLED: Font[] = SOUR_FONTS.filter((f) => f.family.startsWith('"Sour ') && !f.perk).map(
+    (f) => ({
+        label: f.label,
+        value: f.family.split('"')[1],
+    }),
+);
 
 export const FONT_OPTIONS: Font[] = [
     { label: 'Inter', value: 'Inter' },

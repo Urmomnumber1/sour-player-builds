@@ -14,7 +14,7 @@ import {
 import { openVideoWall } from '/@/renderer/features/hermes-video/components/music-video-button';
 import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-video.store';
 import { requestApi, type RequestGuess } from '/@/renderer/features/sour/api/sour-api';
-import { HumButton } from '/@/renderer/features/sour/components/extras10';
+import { FindSong } from '/@/renderer/features/sour/components/extras10';
 import { RequestQuestion } from '/@/renderer/features/sour/components/request-question';
 import { isIphone } from '/@/renderer/features/sour/mobile/ios-look';
 import { useSourStore } from '/@/renderer/features/sour/store/sour.store';
@@ -480,7 +480,7 @@ const RequestPanel = () => {
                     )}
                 </div>
             </Stack>
-            <HumButton />
+            <FindSong />
         </Stack>
     );
 };

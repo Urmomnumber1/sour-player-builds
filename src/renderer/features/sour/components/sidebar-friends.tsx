@@ -1,9 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
 
 import styles from './sidebar-friends.module.css';
 
 import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-video.store';
-import { SidebarItem } from '/@/renderer/features/sidebar/components/sidebar-item';
 import { type SourProfile, timeAgo } from '/@/renderer/features/sour/api/sour-api';
 import { openProfile, ProfileAvatar, SongCover } from '/@/renderer/features/sour/components/people';
 import { nameColor } from '/@/renderer/features/sour/components/profile-bits';
@@ -13,7 +13,6 @@ import { toggleStage } from '/@/renderer/features/sour/stage/sour-stage';
 import { useSourProfiles, useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import { AppRoute } from '/@/renderer/router/routes';
 import { Accordion } from '/@/shared/components/accordion/accordion';
-import { Group } from '/@/shared/components/group/group';
 import { Icon } from '/@/shared/components/icon/icon';
 import { Text } from '/@/shared/components/text/text';
 
@@ -96,39 +95,29 @@ export const SidebarFriends = () => {
     );
 };
 
-// Left sidebar: Sour Player's own pages
-export const SidebarSour = () => (
-    <Accordion.Item value="sour">
-        <Accordion.Control>
-            <Text fw={500} variant="secondary">
-                Sour
-            </Text>
-        </Accordion.Control>
-        <Accordion.Panel>
-            <SidebarItem to={AppRoute.SOUR_HUB}>
-                <Group gap="md">
-                    <Icon icon="partyPopper" size="lg" />
-                    Sour Hub
-                </Group>
-            </SidebarItem>
-            <SidebarItem to={AppRoute.SOUR_LIBRARY}>
-                <Group gap="md">
-                    <Icon icon="grid" size="lg" />
-                    Sour Library
-                </Group>
-            </SidebarItem>
-            <button className={styles.link} onClick={() => toggleStage(true)} type="button">
-                <Icon icon="sparkles" size="lg" />
-                Sour Stage
-            </button>
-            <button
-                className={styles.link}
-                onClick={() => window.setTimeout(openSourStudio, 320)}
-                type="button"
-            >
-                <Icon icon="palette" size="lg" />
-                Sour Studio
-            </button>
-        </Accordion.Panel>
-    </Accordion.Item>
-);
+// Left sidebar: Sour Player's own pages (v2 and Classic looks; the v0.10 look moves them to the top row,
+// the Albums page and the player bar). All four are the same kind of row, so the icons line up.
+export const SidebarSour = () => {
+    const navigate = useNavigate();
+    const row = (icon: string, label: string, onClick: () => void) => (
+        <button className={styles.link} onClick={onClick} type="button">
+            <Icon icon={icon as 'grid'} size="lg" />
+            {label}
+        </button>
+    );
+    return (
+        <Accordion.Item value="sour">
+            <Accordion.Control>
+                <Text fw={500} variant="secondary">
+                    Sour
+                </Text>
+            </Accordion.Control>
+            <Accordion.Panel>
+                {row('partyPopper', 'Sour Hub', () => navigate(AppRoute.SOUR_HUB))}
+                {row('grid', 'Sour Library', () => navigate(AppRoute.SOUR_LIBRARY))}
+                {row('sparkles', 'Sour Stage', () => toggleStage(true))}
+                {row('palette', 'Sour Studio', () => window.setTimeout(openSourStudio, 320))}
+            </Accordion.Panel>
+        </Accordion.Item>
+    );
+};

@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { create } from 'zustand';
 
 import { fontFamily, SOUR_FONTS } from '/@/renderer/features/sour/fonts';
 import { type SourLook, useSourStore } from '/@/renderer/features/sour/store/sour.store';
+import { idbGet, idbSet } from '/@/renderer/features/sour/utils/idb';
 import { AppRoute } from '/@/renderer/router/routes';
 import { Button } from '/@/shared/components/button/button';
 import { ColorInput } from '/@/shared/components/color-input/color-input';
@@ -78,12 +80,29 @@ const setCustom = (changes: Partial<Custom10>) => {
     setLook({ custom10: { ...DEFAULT_CUSTOM, ...look.custom10, ...changes } });
 };
 
-export const stageBackground = () => {
+// your Sour Stage picture: kept in IndexedDB (localStorage is small and holds every setting; a big
+// picture there used to stop settings from saving), loaded once at start
+const useStageBg = create<{ bg: null | string }>()(() => ({ bg: null }));
+export const useStageBackground = () => useStageBg((s) => s.bg);
+const setStageBackground = async (data: null | string) => {
+    await idbSet(STAGE_BG, data);
+    useStageBg.setState({ bg: data });
+};
+const loadStageBackground = async () => {
+    let bg = (await idbGet<string>(STAGE_BG)) ?? null;
     try {
-        return localStorage.getItem(STAGE_BG);
+        const old = localStorage.getItem(STAGE_BG); // from 0.10.1: move it out of localStorage
+        if (old) {
+            if (!bg) {
+                bg = old;
+                await idbSet(STAGE_BG, old);
+            }
+            localStorage.removeItem(STAGE_BG);
+        }
     } catch {
-        return null;
+        // nothing to move
     }
+    useStageBg.setState({ bg });
 };
 
 const LEMON_CURSOR = `url("data:image/svg+xml,${encodeURIComponent(
@@ -114,6 +133,9 @@ export const CustomizeApply = () => {
     const c = useCustom();
     const navigate = useNavigate();
     const started = useRef(false);
+    useEffect(() => {
+        loadStageBackground();
+    }, []);
     useEffect(() => {
         const root = document.documentElement;
         const vars: Record<string, null | string> = c.themeOn
@@ -162,6 +184,7 @@ export const CustomizeApply = () => {
             library: AppRoute.SOUR_LIBRARY,
             stage: null,
         }[c.startPage];
+        if (!['', '/'].includes(window.location.hash.replace(/^#/, ''))) return;
         if (to) navigate(to);
         if (c.startPage === 'stage') {
             import('/@/renderer/features/sour/stage/sour-stage').then((m) => m.toggleStage(true));
@@ -176,7 +199,7 @@ export const Customize = () => {
     const c = useCustom();
     const look = useSourStore((s) => s.look);
     const [code, setCode] = useState('');
-    const [bg, setBg] = useState(stageBackground());
+    const bg = useStageBackground();
     const file = useRef<HTMLInputElement>(null);
     return (
         <Stack gap="md">
@@ -329,18 +352,7 @@ export const Customize = () => {
                         {bg ? 'Change picture' : 'Pick a picture'}
                     </Button>
                     {bg && (
-                        <Button
-                            onClick={() => {
-                                try {
-                                    localStorage.removeItem(STAGE_BG);
-                                } catch {
-                                    // nothing saved
-                                }
-                                setBg(null);
-                            }}
-                            size="xs"
-                            variant="subtle"
-                        >
+                        <Button onClick={() => setStageBackground(null)} size="xs" variant="subtle">
                             Remove
                         </Button>
                     )}
@@ -360,12 +372,9 @@ export const Customize = () => {
                             cv.height = Math.round(img.height * scale);
                             cv.getContext('2d')?.drawImage(img, 0, 0, cv.width, cv.height);
                             const data = cv.toDataURL('image/jpeg', 0.82);
-                            try {
-                                localStorage.setItem(STAGE_BG, data);
-                                setBg(data);
-                            } catch {
-                                toast.error({ message: 'That picture is too big to keep' });
-                            }
+                            setStageBackground(data).catch(() =>
+                                toast.error({ message: "Couldn't keep that picture" }),
+                            );
                             URL.revokeObjectURL(img.src);
                         };
                         img.src = URL.createObjectURL(f);

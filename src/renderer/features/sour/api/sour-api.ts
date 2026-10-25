@@ -127,23 +127,38 @@ export interface SourProfile {
     color: null | string;
     created: string;
     custom: ProfileCustom;
-    // avatar decoration: 'party-hat' for accounts made before Sour Player 0.10
+    // avatar decoration: 'party-hat' for accounts made before Sour Player 0.10, or one from the shop
     decoration?: null | string;
     favorites: GroupSong[];
     // Gavin (orange name, the Skyrim font and the lightning visualizer)
     gavin?: boolean;
+    // the Sour Shop (0.10.2): what they wear, their wishlist; your own points and things
+    gifts?: { at: number; from: string; item: string; note?: string; seen?: boolean }[];
     group: null | { code: string; name: string };
     id: string;
     karaoke?: boolean;
     lastSeen: null | number;
     listening: GroupSong | null;
+    looks?: {
+        banner?: string;
+        bubble?: string;
+        effect?: string;
+        frame?: string;
+        nameStyle?: string;
+    };
     name: string;
     nicknames: Nickname[];
     // where they're listening (Hermes Music 3.5.1+)
     on?: 'computer' | 'phone' | 'tv';
     online: boolean;
+    owned?: string[];
+    partyHat?: boolean;
     perks?: string[];
     playing: boolean;
+    points?: number;
+    pointsCap?: number;
+    pointsLog?: { at: number; n: number; why: string }[];
+    pointsToday?: number;
     position: number;
     positionAt: number;
     recentPlays?: { at: number; song: GroupSong }[];
@@ -151,6 +166,7 @@ export interface SourProfile {
     riders?: { id: string; name: string }[];
     // Hermes Music's clock when it answered
     serverNow?: number;
+    shopWish?: string[];
     speed?: number;
     stats?: ProfileStats;
     status: string;

@@ -236,11 +236,11 @@ const DuplicatesCard = () => {
                         <div className={styles.row} key={g.keep.path}>
                             <div className={styles.grow}>
                                 <Text size="sm" truncate>
-                                    Keep {g.keep.path} {g.keep.kbps}
+                                    <Listen path={g.keep.path} /> Keep {g.keep.path} {g.keep.kbps}
                                 </Text>
                                 {g.remove.map((r) => (
                                     <span className={styles.muted} key={r.path}>
-                                        move aside: {r.path} {r.kbps}
+                                        <Listen path={r.path} /> move aside: {r.path} {r.kbps}
                                         <br />
                                     </span>
                                 ))}
@@ -250,6 +250,41 @@ const DuplicatesCard = () => {
                 </div>
             )}
         </Card>
+    );
+};
+
+// a play / stop button for one file (to hear a duplicate before it's moved aside)
+let previewAudio: HTMLAudioElement | null = null;
+const Listen = ({ path }: { path: string }) => {
+    const url = useHermesUrl();
+    const [on, setOn] = useState(false);
+    return (
+        <button
+            onClick={() => {
+                previewAudio?.pause();
+                if (on) {
+                    setOn(false);
+                    return;
+                }
+                previewAudio = new Audio(
+                    `${url}/api/duplicates/preview?path=${encodeURIComponent(path)}`,
+                );
+                previewAudio.onended = () => setOn(false);
+                previewAudio.play().catch(() => setOn(false));
+                setOn(true);
+            }}
+            style={{
+                background: 'none',
+                border: 0,
+                color: 'inherit',
+                cursor: 'pointer',
+                padding: 0,
+            }}
+            title={on ? 'Stop' : 'Listen'}
+            type="button"
+        >
+            {on ? '■' : '▶'}
+        </button>
     );
 };
 

@@ -74,3 +74,14 @@
         transition: none;
     }
 }
+
+/* no dock in the mini player or in small windows */
+:global(.sour-mini) .dock {
+    display: none;
+}
+
+@media (width < 900px), (height < 560px) {
+    .dock {
+        display: none;
+    }
+}

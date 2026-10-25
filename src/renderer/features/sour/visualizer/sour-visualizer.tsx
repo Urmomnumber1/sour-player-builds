@@ -119,6 +119,7 @@ export const SourVisualizer = ({ className, colors, coverUrl, people, soulPlay, 
         const lightning = makeLightning();
         const v10a = makeV10();
         const v10b = makeV10();
+        let layer: HTMLCanvasElement | null = null;
 
         const fit = () => {
             const r = canvas.getBoundingClientRect();
@@ -170,7 +171,8 @@ export const SourVisualizer = ({ className, colors, coverUrl, people, soulPlay, 
                 cover = null;
             }
             const palette = cols?.length ? cols : FALLBACK_COLORS;
-            ctx.clearRect(0, 0, W, H);
+            // Ink and Oscilloscope fade their own trails; everything else starts clean
+            if (look !== 'ink' && look !== 'scope') ctx.clearRect(0, 0, W, H);
 
             if (look === 'bars') {
                 const bw = W / BINS;
@@ -360,11 +362,20 @@ export const SourVisualizer = ({ className, colors, coverUrl, people, soulPlay, 
                 else if (look === 'mix') {
                     const [a, b] = latest.current.mix;
                     drawV10(a, ctx, W, H, levels, v10a, o);
-                    ctx.globalAlpha = 0.7;
-                    ctx.globalCompositeOperation = 'lighter';
-                    drawV10(b, ctx, W, H, levels, v10b, o);
-                    ctx.globalCompositeOperation = 'source-over';
-                    ctx.globalAlpha = 1;
+                    // the second one on its own layer, blended in (so a full background doesn't hide the first)
+                    if (!layer || layer.width !== W || layer.height !== H) {
+                        layer = document.createElement('canvas');
+                        layer.width = W;
+                        layer.height = H;
+                    }
+                    const lc = layer.getContext('2d');
+                    if (lc) {
+                        lc.clearRect(0, 0, W, H);
+                        drawV10(b, lc, W, H, levels, v10b, o);
+                        ctx.globalCompositeOperation = 'screen';
+                        ctx.drawImage(layer, 0, 0);
+                        ctx.globalCompositeOperation = 'source-over';
+                    }
                 }
             }
         };

@@ -7,7 +7,11 @@ import { queryKeys } from '/@/renderer/api/query-keys';
 import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-video.store';
 import { type LyricsQueryResult } from '/@/renderer/features/lyrics/api/lyrics-api';
 import { openLyricSearchModal } from '/@/renderer/features/lyrics/components/lyrics-search-form';
-import { myLanguage, useTranslateLyrics } from '/@/renderer/features/sour/stage/translate';
+import {
+    myLanguage,
+    useCanTranslate,
+    useTranslateLyrics,
+} from '/@/renderer/features/sour/stage/translate';
 import { useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import { usePlayerStoreBase } from '/@/renderer/store/player.store';
 import { useTimestampStoreBase } from '/@/renderer/store/timestamp.store';
@@ -156,6 +160,27 @@ const KaraokeBacking = ({ song }: { song: QueueSong }) => {
         }
     });
     const nudgeRef = useRef(nudge);
+    // guide vocal: how much of the singer stays in (0 = none), remembered
+    const [guide, setGuide] = useState(() => {
+        try {
+            return Number(localStorage.getItem('sour-karaoke-guide')) || 0;
+        } catch {
+            return 0;
+        }
+    });
+    const guideRef = useRef(guide);
+    guideRef.current = guide;
+    // practice mixes (AI karaoke songs): no drums, no bass, vocals only
+    const [mix, setMix] = useState('');
+    const mixes = useQuery({
+        enabled: !!url,
+        queryFn: async () => {
+            const res = await fetch(`${url}/api/karaoke/mixes?${query}`);
+            return res.ok ? ((await res.json()).mixes as string[]) : [];
+        },
+        queryKey: ['sour-karaoke-mixes', url, query],
+        retry: false,
+    }).data;
     const shift = (by: number) => {
         const next = Math.round((nudgeRef.current + by) * 100) / 100;
         nudgeRef.current = next;
@@ -185,7 +210,7 @@ const KaraokeBacking = ({ song }: { song: QueueSong }) => {
 
     useEffect(() => {
         if (!available || !url) return undefined;
-        const audio = new Audio(`${url}/api/karaoke/file?${query}`);
+        const audio = new Audio(`${url}/api/karaoke/file?${query}${mix ? `&mix=${mix}` : ''}`);
         audio.preload = 'auto';
         audio.volume = 0;
         const player = () => usePlayerStoreBase.getState();
@@ -231,7 +256,9 @@ const KaraokeBacking = ({ song }: { song: QueueSong }) => {
             if (level !== target) {
                 level = Math.max(0, Math.min(1, level + (target > level ? 0.06 : -0.06)));
                 audio.volume = Math.min(1, (original / 100) * level * gain);
-                player().setVolume(Math.round(original * (1 - level)));
+                // a practice mix replaces the song; the instrumental keeps a little of the singer if you want
+                const keep = mix ? 0 : guideRef.current;
+                player().setVolume(Math.round(original * (1 - level) + original * level * keep));
                 setOn(level > 0.5);
             }
         }, 50);
@@ -248,7 +275,16 @@ const KaraokeBacking = ({ song }: { song: QueueSong }) => {
                 // nothing saved
             }
         };
-    }, [available, gain, query, url]);
+    }, [available, gain, mix, query, url]);
+
+    // the guide vocal slider moves the song's volume right away
+    useEffect(() => {
+        try {
+            localStorage.setItem('sour-karaoke-guide', String(guide));
+        } catch {
+            // not remembered then
+        }
+    }, [guide]);
 
     const ask = async () => {
         try {
@@ -302,6 +338,36 @@ const KaraokeBacking = ({ song }: { song: QueueSong }) => {
                 >
                     music +
                 </button>
+                {!mix && (
+                    <label
+                        className={styles.offset}
+                        title="Keep a little of the singer in, as a guide"
+                    >
+                        voice{' '}
+                        <input
+                            max={0.6}
+                            min={0}
+                            onChange={(e) => setGuide(Number(e.currentTarget.value))}
+                            step={0.05}
+                            style={{ verticalAlign: 'middle', width: 70 }}
+                            type="range"
+                            value={guide}
+                        />
+                    </label>
+                )}
+                {!!mixes?.length && (
+                    <select
+                        className={styles.textTool}
+                        onChange={(e) => setMix(e.currentTarget.value)}
+                        title="Practice: leave out one part"
+                        value={mix}
+                    >
+                        <option value="">Karaoke</option>
+                        <option value="nodrums">No drums</option>
+                        <option value="nobass">No bass</option>
+                        <option value="vocals">Vocals only</option>
+                    </select>
+                )}
             </>
         );
     }
@@ -363,6 +429,7 @@ export const LyricsTools = ({
     const queryClient = useQueryClient();
     const url = useHermesUrl();
     const translateOn = useTranslateLyrics((s) => s.on);
+    const canTranslate = useCanTranslate();
     if (!song?._serverId || !song.id) return null;
     const key = queryKeys.songs.lyrics(song._serverId, { songId: song.id });
     // the nudge is saved on Hermes Music for everyone (one save per pause in clicking)
@@ -403,14 +470,16 @@ export const LyricsTools = ({
         });
     return (
         <div className={styles.lyricTools}>
-            <button
-                className={styles.textTool}
-                onClick={() => useTranslateLyrics.getState().toggle()}
-                title={`Show the lyrics in ${myLanguage()} under each line`}
-                type="button"
-            >
-                {translateOn ? 'Original' : 'Translate'}
-            </button>
+            {canTranslate && (
+                <button
+                    className={styles.textTool}
+                    onClick={() => useTranslateLyrics.getState().toggle()}
+                    title={`Show the lyrics in ${myLanguage()} under each line`}
+                    type="button"
+                >
+                    {translateOn ? 'Original' : 'Translate'}
+                </button>
+            )}
             <button
                 className={styles.textTool}
                 onClick={() => shift(-500)}

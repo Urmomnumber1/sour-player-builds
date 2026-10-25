@@ -117,6 +117,13 @@ const ParticleCanvas = ({ kind }: { kind: Particles }) => {
         let nextBurst = 0;
         let frame = 0;
         let last = performance.now();
+        // the app's panels: holiday bits keep to the empty space around them
+        let zones: DOMRect[] = [];
+        let zonesAt = 0;
+        const blocked = (x: number, y: number) =>
+            zones.some(
+                (r) => x > r.left - 12 && x < r.right + 12 && y > r.top - 12 && y < r.bottom + 12,
+            );
         const draw = (now: number) => {
             frame = requestAnimationFrame(draw);
             // about 30 frames a second is plenty for drifting decorations
@@ -163,6 +170,12 @@ const ParticleCanvas = ({ kind }: { kind: Particles }) => {
                 const gone = b.y > h + 40 || b.y < -60 || b.x > w + 60 || b.x < -80;
                 return gone ? spawn(kind, w, h, false) : b;
             });
+            if (now - zonesAt > 1000) {
+                zonesAt = now;
+                zones = ['#sidebar', '#player-bar', '#sidebar-queue']
+                    .map((sel) => document.querySelector(sel)?.getBoundingClientRect())
+                    .filter((r): r is DOMRect => !!r && r.width > 0);
+            }
             for (const b of bits) {
                 if (kind === 'snow') {
                     ctx.fillStyle = 'rgb(255 255 255 / 75%)';
@@ -177,6 +190,7 @@ const ParticleCanvas = ({ kind }: { kind: Particles }) => {
                     ctx.fillRect(-b.size / 2, -b.size / 4, b.size, b.size / 2);
                     ctx.restore();
                 } else {
+                    if (blocked(b.x, b.y)) continue; // never over the sidebar, the player bar or the queue
                     const img = sprite(b.glyph, Math.round(b.size / 2) * 2);
                     ctx.save();
                     ctx.globalAlpha = 0.8;

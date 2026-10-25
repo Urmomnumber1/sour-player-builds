@@ -12,6 +12,7 @@ import {
     TasteMap,
     WrappedNightCard,
 } from '/@/renderer/features/sour/components/hub-panels';
+import { ShopPanel } from '/@/renderer/features/sour/components/shop';
 import { SourSafe } from '/@/renderer/features/sour/components/sour-safe';
 import { Tabs } from '/@/shared/components/tabs/tabs';
 import { Text } from '/@/shared/components/text/text';
@@ -29,9 +30,17 @@ const SourHubRoute = () => {
                         videos).
                     </Text>
                 ) : (
-                    <Tabs defaultValue="feed" keepMounted={false}>
+                    <Tabs
+                        defaultValue={
+                            new URLSearchParams(window.location.hash.split('?')[1] || '').get(
+                                'tab',
+                            ) || 'feed'
+                        }
+                        keepMounted={false}
+                    >
                         <Tabs.List>
                             <Tabs.Tab value="feed">Feed</Tabs.Tab>
+                            <Tabs.Tab value="shop">Shop</Tabs.Tab>
                             <Tabs.Tab value="duels">Duels</Tabs.Tab>
                             <Tabs.Tab value="gifts">Gifts and capsules</Tabs.Tab>
                             <Tabs.Tab value="map">Taste map</Tabs.Tab>
@@ -63,6 +72,11 @@ const SourHubRoute = () => {
                         <Tabs.Panel pt="md" value="gifts">
                             <SourSafe name="gifts">
                                 <GiftsPanel />
+                            </SourSafe>
+                        </Tabs.Panel>
+                        <Tabs.Panel pt="md" value="shop">
+                            <SourSafe name="shop">
+                                <ShopPanel />
                             </SourSafe>
                         </Tabs.Panel>
                         <Tabs.Panel pt="md" value="map">

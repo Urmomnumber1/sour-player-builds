@@ -4,7 +4,9 @@ import { useNavigate } from 'react-router';
 import styles from './action-bar.module.css';
 
 import { useScanStatus } from '/@/renderer/features/shared/hooks/use-scan-status';
+import { useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import { AppMenu } from '/@/renderer/features/titlebar/components/app-menu';
+import { AppRoute } from '/@/renderer/router/routes';
 import { useCommandPalette } from '/@/renderer/store';
 import { Button } from '/@/shared/components/button/button';
 import { DropdownMenu } from '/@/shared/components/dropdown-menu/dropdown-menu';
@@ -72,9 +74,19 @@ export const ActionBar = () => {
 
 const NavigateButtons = () => {
     const navigate = useNavigate();
+    const ui = useSourStore((state) => state.look.ui ?? 'liquid');
 
     return (
         <>
+            {ui === 'liquid' && (
+                <Button
+                    onClick={() => navigate(AppRoute.SOUR_HUB)}
+                    p="0"
+                    title="Sour Hub (friends, shop, duels)"
+                >
+                    <Icon icon="group" size="lg" />
+                </Button>
+            )}
             <Button onClick={() => navigate(-1)} p="0">
                 <Icon icon="arrowLeftS" size="lg" />
             </Button>

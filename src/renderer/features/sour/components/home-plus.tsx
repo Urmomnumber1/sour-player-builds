@@ -8,11 +8,13 @@ import { genresQueries } from '/@/renderer/features/genres/api/genres-api';
 import { type GroupSong } from '/@/renderer/features/group-play/store/group-play.store';
 import { VideoShelf } from '/@/renderer/features/hermes-video/components/music-video-button';
 import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-video.store';
+import { getAlbumSongsById, getSongById } from '/@/renderer/features/player/utils';
 import { songsQueries } from '/@/renderer/features/songs/api/songs-api';
 import { socialApi } from '/@/renderer/features/sour/api/social-api';
 import { sourApi, timeAgo } from '/@/renderer/features/sour/api/sour-api';
 import { HotSeatCard } from '/@/renderer/features/sour/components/hub-panels';
 import { openProfile } from '/@/renderer/features/sour/components/people';
+import { moreMixes } from '/@/renderer/features/sour/components/playback10';
 import {
     activity,
     nameColor,
@@ -21,6 +23,7 @@ import {
     usePlaySong,
 } from '/@/renderer/features/sour/components/profile-bits';
 import { quickMixes } from '/@/renderer/features/sour/components/quick-mixes';
+import { localDate, WeeklyDigest } from '/@/renderer/features/sour/components/social10';
 import { currentHoliday } from '/@/renderer/features/sour/skins/holidays';
 import {
     useMyProfile,
@@ -257,6 +260,13 @@ export const MoodTiles = () => {
             </div>
             <VideoShelf />
             <OnThisDay />
+            <ContinueRow />
+            <div className={styles.cardRow}>
+                <SongOfTheHour />
+                <FriendSpotlight />
+            </div>
+            <NewInLibrary />
+            <WeeklyDigest />
         </section>
     );
 };
@@ -291,6 +301,48 @@ const QUICK = [
         hint: 'No artist twice in a row',
         label: 'Smooth the queue',
         run: quickMixes.smooth,
+    },
+    {
+        color: '#4a1f2c',
+        hint: 'Loved, then forgotten',
+        label: 'Forgotten favourites',
+        run: moreMixes.forgotten,
+    },
+    {
+        color: '#1f3a4a',
+        hint: 'Unplayed songs by artists you play',
+        label: 'Deep cuts',
+        run: moreMixes.deepCuts,
+    },
+    {
+        color: '#3a3a1f',
+        hint: 'Unlike the last few songs',
+        label: "I'm bored",
+        run: moreMixes.bored,
+    },
+    {
+        color: '#2c1f4a',
+        hint: 'Five decades, a few songs each',
+        label: 'Decade hop',
+        run: moreMixes.decades,
+    },
+    {
+        color: '#1f4a40',
+        hint: 'From one genre into another',
+        label: 'Genre journey',
+        run: moreMixes.journey,
+    },
+    {
+        color: '#4a3a1f',
+        hint: "The playing song's year",
+        label: 'Same year',
+        run: moreMixes.sameYear,
+    },
+    {
+        color: '#333344',
+        hint: 'Ten totally random songs',
+        label: 'Random dive',
+        run: moreMixes.dive,
     },
 ];
 
@@ -396,7 +448,9 @@ export const OnThisDay = () => {
     const days = useQuery({
         enabled: !!url && !!me,
         queryFn: async () => {
-            const res = await fetch(`${url}/api/profiles/${me?.id}/on-this-day`);
+            const res = await fetch(
+                `${url}/api/profiles/${me?.id}/on-this-day?date=${localDate()}`,
+            );
             return res.ok ? ((await res.json()) as { day: string; songs: GroupSong[] }[]) : [];
         },
         queryKey: ['on-this-day', url, me?.id],
@@ -421,6 +475,170 @@ export const OnThisDay = () => {
                 </div>
             ))}
         </>
+    );
+};
+
+// ---------- 0.10.3: pick up albums you were in, song of the hour, new in the library, friend spotlight ----------
+export const ContinueRow = () => {
+    const history = useSourStore((s) => s.history);
+    const qc = useQueryClient();
+    const serverId = useCurrentServer()?.id;
+    const albums = useMemo(() => {
+        const seen = new Set<string>();
+        const out: GroupSong[] = [];
+        for (const h of history) {
+            const k = `${h.song.album}|${h.song.artist}`;
+            if (!h.song.album || seen.has(k)) continue;
+            seen.add(k);
+            out.push(h.song);
+            if (out.length >= 10) break;
+        }
+        return out;
+    }, [history]);
+    if (albums.length < 2) return null;
+    // the album again, starting from the song you were on
+    const resume = async (song: GroupSong) => {
+        if (!serverId) return;
+        try {
+            const one = await getSongById({ id: song.id, queryClient: qc, serverId });
+            const albumId = one.items[0]?.albumId;
+            if (!albumId) return;
+            const all = (await getAlbumSongsById({ id: [albumId], queryClient: qc, serverId }))
+                .items;
+            const from = Math.max(
+                0,
+                all.findIndex((s) => s.id === song.id),
+            );
+            await addToQueueByData(Play.NOW, [...all.slice(from), ...all.slice(0, from)]);
+        } catch {
+            toast.error({ message: `Couldn't open ${song.album}` });
+        }
+    };
+    return (
+        <div>
+            <Text className={styles.label}>Pick up where you left off</Text>
+            <div className={styles.shelf}>
+                {albums.map((s) => (
+                    <ShelfItem key={s.id} note={s.album} onPlay={() => resume(s)} song={s} />
+                ))}
+            </div>
+        </div>
+    );
+};
+
+export const SongOfTheHour = () => {
+    const url = useHermesUrl();
+    const play = usePlaySong();
+    const top = useQuery({
+        enabled: !!url,
+        queryFn: () => sourApi.groupTop(url),
+        queryKey: ['sour-group-top', url],
+        staleTime: 30 * 60000,
+    }).data;
+    if (!top?.length) return null;
+    const hour = new Date().getHours();
+    const song = top[(hour * 7) % Math.min(top.length, 24)];
+    return (
+        <div className={styles.hourCard}>
+            <SongCover size={64} song={song} />
+            <div style={{ minWidth: 0 }}>
+                <Text className={styles.label}>Song of the hour</Text>
+                <Text fw={700} truncate>
+                    {song.title}
+                </Text>
+                <Text isMuted size="xs" truncate>
+                    {song.artist} - played {song.plays} times by the group this week
+                </Text>
+            </div>
+            <Button ml="auto" onClick={() => play(song)} size="xs" variant="light">
+                Play
+            </Button>
+        </div>
+    );
+};
+
+export const NewInLibrary = () => {
+    const url = useHermesUrl();
+    const list = useQuery({
+        enabled: !!url,
+        queryFn: async () => {
+            const res = await fetch(`${url}/api/requests`);
+            if (!res.ok) return [];
+            const all = (await res.json()) as {
+                artist?: string;
+                askedBy?: string;
+                created: string;
+                id: string;
+                query: string;
+                status: string;
+                title?: string;
+            }[];
+            const since = Date.now() - 2 * 86400000;
+            return all
+                .filter((r) => r.status === 'done' && new Date(r.created).getTime() > since)
+                .slice(0, 12);
+        },
+        queryKey: ['sour-new-in-library', url],
+        staleTime: 10 * 60000,
+    }).data;
+    if (!list?.length) return null;
+    return (
+        <div>
+            <Text className={styles.label}>New in the library</Text>
+            <div className={styles.chips}>
+                {list.map((r) => (
+                    <span
+                        className={styles.chip}
+                        key={r.id}
+                        title={r.askedBy ? `asked by ${r.askedBy}` : undefined}
+                    >
+                        {r.title || r.query}
+                        {r.artist ? ` - ${r.artist}` : ''}
+                    </span>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+export const FriendSpotlight = () => {
+    const me = useSourStore((s) => s.me);
+    const people = (useSourProfiles().data ?? []).filter(
+        (p) => p.id !== me?.id && p.stats?.topSongs?.length,
+    );
+    const play = usePlaySong();
+    const [day] = useState(() => Math.floor(Date.now() / 86400000));
+    if (!people.length) return null;
+    const p = people[day % people.length];
+    const song = p.stats?.topSongs[0];
+    return (
+        <button className={styles.hourCard} onClick={() => openProfile(p)} type="button">
+            <ProfileAvatar profile={p} size={56} />
+            <div style={{ minWidth: 0, textAlign: 'left' }}>
+                <Text className={styles.label}>Friend spotlight</Text>
+                <Text fw={700} truncate>
+                    {p.name}
+                </Text>
+                {song && (
+                    <Text isMuted size="xs" truncate>
+                        Can&#39;t stop playing {song.title}
+                    </Text>
+                )}
+            </div>
+            {song && (
+                <Button
+                    ml="auto"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        play(song);
+                    }}
+                    size="xs"
+                    variant="light"
+                >
+                    Play it
+                </Button>
+            )}
+        </button>
     );
 };
 

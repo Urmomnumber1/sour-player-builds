@@ -1,0 +1,162 @@
+.inbox-wrap {
+    position: relative;
+    display: inline-flex;
+}
+
+.dot {
+    position: absolute;
+    top: -4px;
+    right: -6px;
+    min-width: 16px;
+    padding: 0 4px;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 16px;
+    color: #151515;
+    text-align: center;
+    pointer-events: none;
+    background: #f4d03f;
+    border-radius: 999px;
+}
+
+.msg {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    background: color-mix(in srgb, var(--theme-colors-foreground) 5%, transparent);
+    border-radius: 10px;
+}
+
+.extras {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 10px;
+    padding: 0 16px 16px;
+}
+
+.tile,
+.tile-wide {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    min-width: 0;
+    padding: 10px;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    background: color-mix(in srgb, var(--theme-colors-foreground) 5%, transparent);
+    border: 0;
+    border-radius: 12px;
+}
+
+.tile {
+    cursor: pointer;
+}
+
+.tile-wide {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    opacity: 0.6;
+}
+
+.top4 {
+    display: flex;
+    gap: 6px;
+}
+
+.clock {
+    display: flex;
+    gap: 2px;
+    align-items: flex-end;
+    height: 60px;
+}
+
+.clock span {
+    flex: 1;
+    background: var(--theme-colors-primary);
+    border-radius: 2px 2px 0 0;
+    opacity: 0.85;
+}
+
+.clock-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    opacity: 0.5;
+}
+
+.radar {
+    width: 150px;
+    height: 150px;
+    margin: 0 auto;
+}
+
+.poll-option {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 10px;
+    overflow: hidden;
+    font: inherit;
+    font-size: 13px;
+    color: inherit;
+    cursor: pointer;
+    background: color-mix(in srgb, var(--theme-colors-foreground) 6%, transparent);
+    border: 0;
+    border-radius: 8px;
+}
+
+.poll-option::before {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: var(--w);
+    content: '';
+    background: color-mix(in srgb, var(--theme-colors-primary) 30%, transparent);
+    transition: width 300ms ease;
+}
+
+.poll-option span {
+    position: relative;
+}
+
+.take {
+    display: inline-flex;
+    gap: 1px;
+    align-items: center;
+    font-size: 12px;
+}
+
+.star,
+.star-on {
+    padding: 0 1px;
+    font-size: 14px;
+    color: inherit;
+    cursor: pointer;
+    background: none;
+    border: 0;
+    opacity: 0.35;
+}
+
+.star-on {
+    color: #f4d03f;
+    opacity: 1;
+}
+
+.digest {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    margin-block: 10px;
+    background: color-mix(in srgb, var(--theme-colors-surface) 70%, transparent);
+    border: 1px solid var(--theme-colors-border);
+    border-radius: 14px;
+}

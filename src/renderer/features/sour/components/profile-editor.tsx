@@ -18,6 +18,7 @@ import { AlbumOfWeekPicker } from '/@/renderer/features/sour/components/album-pi
 import { EmojiPicker, firstGrapheme } from '/@/renderer/features/sour/components/emoji-picker';
 import { SongCover } from '/@/renderer/features/sour/components/profile-bits';
 import { ProfileView, SECTIONS } from '/@/renderer/features/sour/components/profile-view';
+import { ProfileEditor10 } from '/@/renderer/features/sour/components/social10';
 import { fontChoices } from '/@/renderer/features/sour/fonts';
 import { useMyProfile, useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import { playSound, SOUNDS } from '/@/renderer/features/sour/utils/sounds';
@@ -295,6 +296,7 @@ export const ProfileEditor = ({
                 onChange={(v) => setC({ layout: (v || 'classic') as 'classic' })}
                 value={c.layout || 'classic'}
             />
+            <ProfileEditor10 custom={c as never} setC={(x) => setC(x as Partial<ProfileCustom>)} />
             <Text fw={700}>Picture frame and name</Text>
             <Group gap="xs" grow>
                 <Select

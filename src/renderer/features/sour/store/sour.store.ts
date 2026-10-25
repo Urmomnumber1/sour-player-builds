@@ -145,12 +145,15 @@ interface BlockedArtist {
 // This computer's Sour Player state: the profile key (what lets it change the profile), blocked
 // artists, private song notes, pinned sidebar items, saved groups and look settings.
 interface SourStore {
+    // 0.10.3 playback tools
+    abLoop: null | { a: number; b: number; id: string };
     // songs heard while listening along (newest first)
     alongHistory: { at: number; friend: string; song: GroupSong }[];
     // when the friend you listen along with stops, follow someone else who is listening
     alongKeepGoing: boolean;
     block: (artist: BlockedArtist) => void;
     blocked: BlockedArtist[];
+    bookmarks: Record<string, number[]>;
     // big updates already celebrated (the 0.10 confetti shows once)
     celebrated: string[];
     crossfade: Record<string, number>;
@@ -171,13 +174,20 @@ interface SourStore {
     me: Me | null;
     notes: Record<string, string>;
     pins: Pin[];
+    // private session: nothing you play is counted or shown to friends
+    privateSession: boolean;
+    queueSnapshots: { at: number; ids: string[]; name: string }[];
+    // quiet hours: no pop-ups from friends between these hours
+    quietHours: { from: number; on: boolean; to: number };
     repeatNotified: Record<string, string>;
     savedGroups: SavedGroup[];
     seenMilestones: string[];
     set: (changes: Partial<Omit<SourStore, 'block' | 'set' | 'setLook' | 'unblock'>>) => void;
     setLook: (changes: Partial<SourLook>) => void;
     setMe: (me: Me | null) => void;
+    songVolumes: Record<string, number>;
     unblock: (name: string) => void;
+    volumeMemory: boolean;
 }
 
 // Simple mode is on (Settings > Sour Player)
@@ -186,6 +196,7 @@ export const useSimpleMode = () => useSourStore((state) => !!state.look.simple);
 export const useSourStore = createWithEqualityFn<SourStore>()(
     persist(
         (set) => ({
+            abLoop: null,
             alongHistory: [],
             alongKeepGoing: false,
             block: (artist) =>
@@ -195,6 +206,7 @@ export const useSourStore = createWithEqualityFn<SourStore>()(
                         : { blocked: [...state.blocked, artist] },
                 ),
             blocked: [],
+            bookmarks: {},
             celebrated: [],
             crossfade: {},
             focusMode: false,
@@ -211,18 +223,23 @@ export const useSourStore = createWithEqualityFn<SourStore>()(
             me: null,
             notes: {},
             pins: [],
+            privateSession: false,
+            queueSnapshots: [],
+            quietHours: { from: 23, on: false, to: 8 },
             repeatNotified: {},
             savedGroups: [],
             seenMilestones: [],
             set: (changes) => set(changes),
             setLook: (changes) => set((state) => ({ look: { ...state.look, ...changes } })),
             setMe: (me) => set({ me }),
+            songVolumes: {},
             unblock: (name) =>
                 set((state) => ({
                     blocked: state.blocked.filter(
                         (b) => b.name.toLowerCase() !== name.toLowerCase(),
                     ),
                 })),
+            volumeMemory: false,
         }),
         {
             merge: (persisted, current) => {

@@ -15,7 +15,9 @@ import {
 import { HolidayLayer } from '/@/renderer/features/sour/components/holiday-layer';
 import { KeepPlaying, UpNextHeadsUp } from '/@/renderer/features/sour/components/keep-playing';
 import { MiniPlayer } from '/@/renderer/features/sour/components/mini-player';
+import { PlaybackWatcher } from '/@/renderer/features/sour/components/playback10';
 import { ShopGifts } from '/@/renderer/features/sour/components/shop';
+import { InboxWatcher } from '/@/renderer/features/sour/components/social10';
 import {
     SocialWatchers,
     useDailyColorStore,
@@ -179,6 +181,12 @@ export const SourRoot = () => (
             <DesktopOffline />
             <CrossfadeByMood />
             <OpenLinks />
+        </SourSafe>
+        <SourSafe name="playback tools">
+            <PlaybackWatcher />
+        </SourSafe>
+        <SourSafe name="inbox">
+            <InboxWatcher />
         </SourSafe>
         <SourSafe name="shop gifts">
             <ShopGifts />

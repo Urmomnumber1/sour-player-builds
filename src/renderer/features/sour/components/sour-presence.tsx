@@ -164,7 +164,11 @@ export const SourPresence = () => {
                     on: isNativeApp() ? 'phone' : 'computer',
                     playing: player.player.status === PlayerStatus.PLAYING,
                     position: useTimestampStoreBase.getState().timestamp,
+                    // private session: Hermes counts nothing and friends see nothing playing
+                    private: useSourStore.getState().privateSession,
                     speed: player.player.speed || 1,
+                    // for the listening clock (the hour here, not the Umbrel's)
+                    tz: new Date().getTimezoneOffset(),
                     // watching the video in the Stage (friends listening along see it too)
                     video: useStage.getState().open && useVideoView.getState().view === 'video',
                 })

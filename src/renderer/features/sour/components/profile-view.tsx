@@ -45,6 +45,7 @@ import {
     bannerClass as shopBannerClass,
 } from '/@/renderer/features/sour/components/shop-looks';
 import { notify } from '/@/renderer/features/sour/components/social';
+import { FriendActions, ProfileExtras10 } from '/@/renderer/features/sour/components/social10';
 import { useSourProfiles, useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import { queueGroupSongs, shuffled } from '/@/renderer/features/sour/utils/queue';
 import { startListenAlong } from '/@/renderer/features/sour/utils/switching';
@@ -604,6 +605,8 @@ export const ProfileView = ({
                             </Button>
                         )}
                     </div>
+                    {!preview && !isMe && me && <FriendActions profile={profile} />}
+                    {!preview && <ProfileExtras10 profile={profile} />}
                     {!preview && !isMe && me && (
                         <Group gap="xs" pb="md" px="md">
                             {profile.online && profile.listening && (

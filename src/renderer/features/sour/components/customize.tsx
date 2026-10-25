@@ -286,6 +286,7 @@ export const Customize = () => {
             <Text isMuted size="xs">
                 Focus mode: Ctrl+Shift+F (Esc leaves) hides everything but the page and the player.
             </Text>
+            <QuietHours />
             <Row label="Cursor">
                 <SegmentedControl
                     data={[
@@ -433,6 +434,42 @@ export const Customize = () => {
                 />
             </Stack>
         </Stack>
+    );
+};
+
+const QuietHours = () => {
+    const q = useSourStore((s) => s.quietHours) ?? { from: 23, on: false, to: 8 };
+    const set = (c: Partial<typeof q>) =>
+        useSourStore.getState().set({ quietHours: { ...q, ...c } });
+    const hours = Array.from({ length: 24 }, (_, h) => ({ label: `${h}:00`, value: String(h) }));
+    return (
+        <Group gap="xs" wrap="nowrap">
+            <Switch
+                checked={q.on}
+                label="Quiet hours (no pop-ups from friends)"
+                onChange={(e) => set({ on: e.currentTarget.checked })}
+                size="xs"
+            />
+            {q.on && (
+                <>
+                    <Select
+                        data={hours}
+                        onChange={(v) => v && set({ from: Number(v) })}
+                        size="xs"
+                        value={String(q.from)}
+                        w={90}
+                    />
+                    <Text size="xs">to</Text>
+                    <Select
+                        data={hours}
+                        onChange={(v) => v && set({ to: Number(v) })}
+                        size="xs"
+                        value={String(q.to)}
+                        w={90}
+                    />
+                </>
+            )}
+        </Group>
     );
 };
 

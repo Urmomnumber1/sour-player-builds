@@ -351,3 +351,37 @@
         transform: translateX(-50%);
     }
 }
+
+/* 0.10.3 Home rows */
+.card-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 10px;
+    margin-block: 10px;
+}
+
+.hour-card {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 12px;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    background: color-mix(in srgb, var(--theme-colors-surface) 70%, transparent);
+    border: 1px solid var(--theme-colors-border);
+    border-radius: 14px;
+}
+
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.chip {
+    padding: 4px 10px;
+    font-size: 12px;
+    background: color-mix(in srgb, var(--theme-colors-primary) 15%, transparent);
+    border-radius: 999px;
+}

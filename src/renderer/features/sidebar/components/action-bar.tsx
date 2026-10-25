@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router';
 import styles from './action-bar.module.css';
 
 import { useScanStatus } from '/@/renderer/features/shared/hooks/use-scan-status';
+import { InboxButton } from '/@/renderer/features/sour/components/social10';
 import { useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import { AppMenu } from '/@/renderer/features/titlebar/components/app-menu';
 import { AppRoute } from '/@/renderer/router/routes';
@@ -78,6 +79,7 @@ const NavigateButtons = () => {
 
     return (
         <>
+            <InboxButton />
             {ui === 'liquid' && (
                 <Button
                     onClick={() => navigate(AppRoute.SOUR_HUB)}

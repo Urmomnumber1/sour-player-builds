@@ -6,6 +6,7 @@ import styles from './app-extras.module.css';
 
 import { openRequestWindow } from '/@/renderer/features/hermes-request/components/request-button';
 import { openPeople } from '/@/renderer/features/sour/components/people';
+import { moreMixes } from '/@/renderer/features/sour/components/playback10';
 import { SongCover, usePlaySong } from '/@/renderer/features/sour/components/profile-bits';
 import {
     copyNowPlaying,
@@ -20,6 +21,7 @@ import { useTranslateLyrics } from '/@/renderer/features/sour/stage/translate';
 import { type HistoryEntry, useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import { AppRoute } from '/@/renderer/router/routes';
 import { Text } from '/@/shared/components/text/text';
+import { toast } from '/@/shared/components/toast/toast';
 
 // ---------- queue history: everything played on this computer, newest first ----------
 const dayLabel = (at: number) => {
@@ -96,6 +98,26 @@ export const sourCommands = (navigate: (to: string) => void) => [
     { label: 'Copy what is playing', run: copyNowPlaying },
     { label: 'Switch between the new and Classic look', run: toggleClassicLook },
     { label: 'Focus mode (Ctrl+Shift+F)', run: () => toggleFocus(true) },
+    {
+        label: 'Private session on / off',
+        run: () => {
+            const on = !useSourStore.getState().privateSession;
+            useSourStore.getState().set({ privateSession: on });
+            toast.info({
+                message: on
+                    ? 'Private session: nothing is counted or shown'
+                    : 'Private session off',
+            });
+        },
+    },
+    { label: 'Mix: forgotten favourites', run: moreMixes.forgotten },
+    { label: 'Mix: deep cuts', run: moreMixes.deepCuts },
+    { label: "Mix: I'm bored (something different)", run: moreMixes.bored },
+    { label: 'Mix: decade hop', run: moreMixes.decades },
+    { label: 'Mix: genre journey', run: moreMixes.journey },
+    { label: 'Mix: same year as this song', run: moreMixes.sameYear },
+    { label: 'Mix: random dive', run: moreMixes.dive },
+    { label: 'Shuffle the queue, favourites first', run: moreMixes.weighted },
     { label: 'Smooth the queue (no artist twice in a row)', run: quickMixes.smooth },
     {
         label: 'Translate the lyrics',

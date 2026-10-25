@@ -29,6 +29,7 @@ import { useCurrentServer } from '/@/renderer/store';
 import { Button } from '/@/shared/components/button/button';
 import { Group } from '/@/shared/components/group/group';
 import { Icon } from '/@/shared/components/icon/icon';
+import { SegmentedControl } from '/@/shared/components/segmented-control/segmented-control';
 import { Select } from '/@/shared/components/select/select';
 import { TextInput } from '/@/shared/components/text-input/text-input';
 import { Text } from '/@/shared/components/text/text';
@@ -90,9 +91,33 @@ const useFriends = () => {
 };
 
 // ---------- feed ----------
+const FEED_FILTERS = [
+    { label: 'All', value: 'all' },
+    { label: 'Music', value: 'music' },
+    { label: 'Games', value: 'games' },
+    { label: 'Requests', value: 'requests' },
+];
+const feedKind = (type: string) =>
+    ['club', 'duel', 'guess', 'hotseat', 'poll'].includes(type)
+        ? 'games'
+        : type === 'request' || type === 'added'
+          ? 'requests'
+          : 'music';
+const FEED_REACTS = ['🔥', '😂', '😍', '💀'];
+
 export const FeedPanel = () => {
     const url = useHermesUrl();
     const play = usePlaySong();
+    const me = useSourStore((s) => s.me);
+    const qc = useQueryClient();
+    const [filter, setFilter] = useState('all');
+    const react = (id: string, emoji: string) =>
+        me &&
+        fetch(`${url}/api/activity/react`, {
+            body: JSON.stringify({ emoji, id, key: me.key, profile: me.id }),
+            headers: { 'content-type': 'application/json' },
+            method: 'POST',
+        }).then(() => qc.invalidateQueries({ queryKey: ['sour-activity', url] }));
     const feed = useQuery({
         enabled: !!url,
         queryFn: () => socialApi.activity(url),
@@ -101,30 +126,57 @@ export const FeedPanel = () => {
     });
     return (
         <Card icon={'\u{1F4E3}'} title="What the group is up to">
+            <SegmentedControl data={FEED_FILTERS} onChange={setFilter} size="xs" value={filter} />
             <div className={styles.list}>
-                {(feed.data ?? []).map((a) => (
-                    <div className={styles.row} key={a.id}>
-                        <span className={styles.emoji}>
-                            {ACTIVITY_EMOJI[a.type] ?? '\u{1F34B}'}
-                        </span>
-                        <div className={styles.grow}>
-                            <Text size="sm">
-                                <b>{a.byName ?? 'Someone'}</b> {a.text}
-                            </Text>
-                            <span className={styles.muted}>{timeAgo(a.at)}</span>
+                {(feed.data ?? [])
+                    .filter((a) => filter === 'all' || feedKind(a.type) === filter)
+                    .map((a) => (
+                        <div className={styles.row} key={a.id}>
+                            <span className={styles.emoji}>
+                                {ACTIVITY_EMOJI[a.type] ?? '\u{1F34B}'}
+                            </span>
+                            <div className={styles.grow}>
+                                <Text size="sm">
+                                    <b>{a.byName ?? 'Someone'}</b> {a.text}
+                                </Text>
+                                <span className={styles.muted}>{timeAgo(a.at)}</span>
+                                <span className={styles.muted} style={{ marginLeft: 8 }}>
+                                    {FEED_REACTS.map((e) => {
+                                        const n = (a as { reactions?: Record<string, string[]> })
+                                            .reactions?.[e]?.length;
+                                        return (
+                                            <button
+                                                key={e}
+                                                onClick={() => react(a.id, e)}
+                                                style={{
+                                                    background: 'none',
+                                                    border: 0,
+                                                    color: 'inherit',
+                                                    cursor: 'pointer',
+                                                    opacity: n ? 1 : 0.45,
+                                                    padding: '0 2px',
+                                                }}
+                                                type="button"
+                                            >
+                                                {e}
+                                                {n ? ` ${n}` : ''}
+                                            </button>
+                                        );
+                                    })}
+                                </span>
+                            </div>
+                            {a.song && (
+                                <button
+                                    className={styles.option}
+                                    onClick={() => a.song && play(a.song)}
+                                    title={`Play ${a.song.title}`}
+                                    type="button"
+                                >
+                                    <SongCover size={28} song={a.song} />
+                                </button>
+                            )}
                         </div>
-                        {a.song && (
-                            <button
-                                className={styles.option}
-                                onClick={() => a.song && play(a.song)}
-                                title={`Play ${a.song.title}`}
-                                type="button"
-                            >
-                                <SongCover size={28} song={a.song} />
-                            </button>
-                        )}
-                    </div>
-                ))}
+                    ))}
                 {feed.isFetched && !feed.data?.length && (
                     <Text isMuted size="sm">
                         Nothing yet. Send someone a song, start a duel or guess today&apos;s hot

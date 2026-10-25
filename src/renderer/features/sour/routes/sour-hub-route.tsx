@@ -13,6 +13,12 @@ import {
     WrappedNightCard,
 } from '/@/renderer/features/sour/components/hub-panels';
 import { ShopPanel } from '/@/renderer/features/sour/components/shop';
+import {
+    AlbumClubCard,
+    DailyGuessCard,
+    PollsCard,
+    WhosUpCard,
+} from '/@/renderer/features/sour/components/social10';
 import { SourSafe } from '/@/renderer/features/sour/components/sour-safe';
 import { Tabs } from '/@/shared/components/tabs/tabs';
 import { Text } from '/@/shared/components/text/text';
@@ -52,6 +58,18 @@ const SourHubRoute = () => {
                                     <FeedPanel />
                                 </SourSafe>
                                 <div className={styles.list}>
+                                    <SourSafe name="daily guess">
+                                        <DailyGuessCard />
+                                    </SourSafe>
+                                    <SourSafe name="who's up">
+                                        <WhosUpCard />
+                                    </SourSafe>
+                                    <SourSafe name="album club">
+                                        <AlbumClubCard />
+                                    </SourSafe>
+                                    <SourSafe name="polls">
+                                        <PollsCard />
+                                    </SourSafe>
                                     <SourSafe name="hot seat">
                                         <HotSeatCard />
                                     </SourSafe>

@@ -46,6 +46,7 @@ import {
     useQueuePeek,
 } from '/@/renderer/features/sour/components/look';
 import { PeopleButton } from '/@/renderer/features/sour/components/people';
+import { PlaybackTools } from '/@/renderer/features/sour/components/playback10';
 import { ListenAlong, SocialWatcher } from '/@/renderer/features/sour/components/social';
 import { SourPresence } from '/@/renderer/features/sour/components/sour-presence';
 import { SourStudioButton } from '/@/renderer/features/sour/components/sour-studio';
@@ -163,6 +164,7 @@ export const RightControls = () => {
             <Group align="center" gap="xs" justify="flex-end" wrap="nowrap">
                 <ListenAlong />
                 <AlongHost />
+                {!simple && <PlaybackTools />}
                 {!simple && <NextUpHint />}
                 <PlayerBarVisualizer />
                 {!simple && <FriendChips />}

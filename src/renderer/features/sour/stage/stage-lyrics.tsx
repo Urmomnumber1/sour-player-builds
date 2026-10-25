@@ -7,6 +7,7 @@ import { queryKeys } from '/@/renderer/api/query-keys';
 import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-video.store';
 import { type LyricsQueryResult } from '/@/renderer/features/lyrics/api/lyrics-api';
 import { openLyricSearchModal } from '/@/renderer/features/lyrics/components/lyrics-search-form';
+import { HotTake } from '/@/renderer/features/sour/components/social10';
 import {
     myLanguage,
     useCanTranslate,
@@ -470,6 +471,7 @@ export const LyricsTools = ({
         });
     return (
         <div className={styles.lyricTools}>
+            <HotTake songId={song.id} />
             {canTranslate && (
                 <button
                     className={styles.textTool}

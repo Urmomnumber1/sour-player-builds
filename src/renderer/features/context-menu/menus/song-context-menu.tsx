@@ -14,6 +14,7 @@ import { ShowInFileExplorerAction } from '/@/renderer/features/context-menu/acti
 import { ContextMenuPreview } from '/@/renderer/features/context-menu/components/context-menu-preview';
 import { AddToGroupAction } from '/@/renderer/features/group-play/components/add-to-group-action';
 import { SongDnaAction } from '/@/renderer/features/sour/components/extras10';
+import { PlayAfterAlbumAction } from '/@/renderer/features/sour/components/playback10';
 import { SocialSongMenu } from '/@/renderer/features/sour/components/social-song-actions';
 import {
     AddToProfileAction,
@@ -53,6 +54,7 @@ export const SongContextMenu = ({ items, type }: SongContextMenuProps) => {
                     <AddToProfileAction songs={items} />
                     <SocialSongMenu songs={items} />
                     <SongDnaAction songs={items} />
+                    <PlayAfterAlbumAction songs={items} />
                     <ShareSongAction songs={items} />
                     <WhoElseLikesAction songs={items} />
                     <SongNoteAction songs={items} />

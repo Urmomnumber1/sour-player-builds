@@ -14,6 +14,7 @@ import {
 import { VideosCard } from '/@/renderer/features/hermes-video/components/video-manager';
 import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-video.store';
 import { searchQueries } from '/@/renderer/features/search/api/search-api';
+import { AdminCard, LyricsWall } from '/@/renderer/features/sour/components/extras104';
 import { Card } from '/@/renderer/features/sour/components/hub-panels';
 import { useAllAlbums } from '/@/renderer/features/sour/components/library-views';
 import { useMyProfile, useSourStore } from '/@/renderer/features/sour/store/sour.store';
@@ -748,7 +749,9 @@ export const LibraryTools = () => {
                 <HealthCard />
                 <TagsAndCoverCard />
                 <LyricsTapCard />
+                <AdminCard />
                 <LyricsDoctorCard />
+                <LyricsWall />
                 <StorageCard />
                 <MyRequestsCard />
             </div>

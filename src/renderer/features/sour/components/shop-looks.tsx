@@ -289,6 +289,13 @@ export const bubbleClass = (bubble?: string) =>
           }[bubble]
         : undefined;
 
+const SIDEBAR_ICON: Record<string, string> = {
+    'sidebar-glass': '🪟',
+    'sidebar-neon': '🌃',
+    'sidebar-pixel': '👾',
+    'sidebar-wood': '🪵',
+};
+
 // a small preview of any item (shop cards, inventory)
 export const ItemPreview = ({ id, name, slot }: { id: string; name: string; slot: string }) => {
     const avatar = (extra?: string, deco?: string) => (
@@ -305,6 +312,8 @@ export const ItemPreview = ({ id, name, slot }: { id: string; name: string; slot
         return (
             <span className={clsx(styles.previewBanner, bannerClass(id))} style={bannerStyle(id)} />
         );
+    if (slot === 'sidebar')
+        return <span className={styles.previewFx}>{SIDEBAR_ICON[id] ?? '📚'}</span>;
     if (slot === 'bubble')
         return <span className={clsx(styles.previewBubble, bubbleClass(id))}>hey!</span>;
     return <span className={styles.previewFx}>{FX[id]?.[0] ?? '🎉'}</span>;

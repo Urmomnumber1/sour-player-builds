@@ -40,7 +40,7 @@ export interface ShopItem {
     season: null | string;
     slot: Slot;
 }
-type Slot = 'banner' | 'bubble' | 'decoration' | 'effect' | 'frame' | 'nameStyle';
+type Slot = 'banner' | 'bubble' | 'decoration' | 'effect' | 'frame' | 'nameStyle' | 'sidebar';
 
 const SLOTS: { label: string; value: 'featured' | Slot }[] = [
     { label: 'Today', value: 'featured' },
@@ -50,6 +50,7 @@ const SLOTS: { label: string; value: 'featured' | Slot }[] = [
     { label: 'Banners', value: 'banner' },
     { label: 'Entrances', value: 'effect' },
     { label: 'Chat', value: 'bubble' },
+    { label: 'Sidebar', value: 'sidebar' },
 ];
 
 const post = async (url: string, body: unknown) => {
@@ -73,6 +74,7 @@ export const useShop = () => {
             return (await res.json()) as {
                 cap: number;
                 featured: string[];
+                fund?: { done: boolean; goal: number; have: number };
                 items: ShopItem[];
                 sale: null | string;
             };
@@ -151,6 +153,17 @@ export const ShopPanel = () => {
                         A point for every song you listen to past halfway. Songs new to you and
                         listening with friends give a bonus.
                     </Text>
+                    {shop?.fund && (
+                        <Text
+                            size="xs"
+                            title="A tenth of everything bought goes in. When it's full, everyone gets the Group crown."
+                        >
+                            Group fund:{' '}
+                            {shop.fund.done
+                                ? 'full - everyone got the Group crown!'
+                                : `${shop.fund.have} / ${shop.fund.goal}`}
+                        </Text>
+                    )}
                 </Stack>
                 {trying && (
                     <Button ml="auto" onClick={() => setTrying(null)} size="xs" variant="subtle">

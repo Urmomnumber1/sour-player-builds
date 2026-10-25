@@ -1,0 +1,90 @@
+.announce {
+    position: fixed;
+    top: 12px;
+    left: 50%;
+    z-index: 400;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    max-width: min(640px, calc(100vw - 32px));
+    padding: 10px 14px;
+    font-size: 14px;
+    color: #151515;
+    background: #f4d03f;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgb(0 0 0 / 35%);
+    transform: translateX(-50%);
+}
+
+.announce button {
+    padding: 4px 10px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    color: #f4d03f;
+    cursor: pointer;
+    background: #151515;
+    border: 0;
+    border-radius: 8px;
+}
+
+.credits {
+    position: absolute;
+    inset: auto 0 18%;
+    z-index: 30;
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.credits-roll {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+    font-size: 15px;
+    color: #fff;
+    text-shadow: 0 2px 10px rgb(0 0 0 / 70%);
+    animation: roll 8s linear forwards;
+}
+
+.credits-roll b {
+    font-size: 22px;
+}
+
+@keyframes roll {
+    0% {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+
+    15% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.2;
+        transform: translateY(-60px);
+    }
+}
+
+.tool {
+    padding: 2px 8px;
+    font: inherit;
+    font-size: 12px;
+    color: inherit;
+    cursor: pointer;
+    background: rgb(255 255 255 / 8%);
+    border: 0;
+    border-radius: 999px;
+}
+
+.tool:hover {
+    background: rgb(255 255 255 / 16%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .credits-roll {
+        animation: none;
+    }
+}

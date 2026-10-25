@@ -145,6 +145,7 @@ export interface SourProfile {
         effect?: string;
         frame?: string;
         nameStyle?: string;
+        sidebar?: string;
     };
     name: string;
     nicknames: Nickname[];

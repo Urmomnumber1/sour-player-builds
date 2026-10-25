@@ -141,3 +141,85 @@ html[data-icons='colour'] svg[stroke-width] {
 .sour-sidebar-right #sidebar [class*='resize-handle'] {
     display: none;
 }
+
+/* ---------- 0.10.4 ---------- */
+
+/* low-power mode: no animations, transitions or blur */
+.sour-lowpower *,
+.sour-lowpower *::before,
+.sour-lowpower *::after {
+    backdrop-filter: none !important;
+    transition: none !important;
+    animation: none !important;
+}
+
+/* high contrast */
+.sour-contrast {
+    --theme-colors-foreground: #fff !important;
+    --theme-colors-border: #fff !important;
+}
+
+.sour-contrast body,
+.sour-contrast #default-layout {
+    background: #000 !important;
+}
+
+.sour-contrast a,
+.sour-contrast button {
+    text-decoration-thickness: 2px;
+}
+
+/* duet: lines alternate colours */
+.sour-duet [class*='sour-stage-module-line']:nth-child(odd) {
+    color: #7ad7ff;
+}
+
+.sour-duet [class*='sour-stage-module-line']:nth-child(even) {
+    color: #ff8fd0;
+}
+
+/* Stage layouts */
+[data-stage-layout='lyrics'] [class*='sour-stage-module-left'] {
+    display: none;
+}
+
+[data-stage-layout='lyrics'] [class*='sour-stage-module-lyrics-column'] {
+    flex: 1;
+    max-width: 1100px;
+    margin-inline: auto;
+}
+
+[data-stage-layout='cover'] [class*='sour-stage-module-lyrics-column'] {
+    display: none;
+}
+
+[data-stage-layout='cover'] [class*='sour-stage-module-left'] {
+    flex: 1;
+    align-items: center;
+}
+
+/* sidebar skins from the shop */
+html[data-sidebar-skin='sidebar-glass'] #sidebar {
+    background: rgb(255 255 255 / 6%) !important;
+    backdrop-filter: blur(30px) saturate(1.8);
+}
+
+html[data-sidebar-skin='sidebar-wood'] #sidebar {
+    background:
+        repeating-linear-gradient(90deg, rgb(0 0 0 / 8%) 0 2px, transparent 2px 9px),
+        linear-gradient(180deg, #5a3a22, #3b2414) !important;
+}
+
+html[data-sidebar-skin='sidebar-neon'] #sidebar {
+    background: #0d0420 !important;
+    box-shadow:
+        inset 0 0 0 1px #ff5c8a,
+        0 0 18px rgb(255 92 138 / 35%);
+}
+
+html[data-sidebar-skin='sidebar-pixel'] #sidebar {
+    font-family: ui-monospace, Consolas, monospace;
+    background: #1d1d2b !important;
+    border: 3px solid #eee !important;
+    border-radius: 0 !important;
+}

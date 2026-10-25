@@ -11,6 +11,7 @@ import {
 } from '/@/renderer/features/group-play/store/group-play.store';
 import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-video.store';
 import { GroupRequest } from '/@/renderer/features/sour/components/extras10';
+import { KaraokeSignup } from '/@/renderer/features/sour/components/extras104';
 import { SongPicker } from '/@/renderer/features/sour/components/song-picker';
 import { useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import { Button } from '/@/shared/components/button/button';
@@ -135,6 +136,7 @@ export const PartyGames = ({ state }: { state: GroupState }) => {
             </Stack>
 
             <GroupRequest />
+            <KaraokeSignup state={state} />
             {!game && !setup && (
                 <div className={styles.games}>
                     {GAMES.map((g) => (

@@ -23,7 +23,8 @@ import { SleepTimerButton } from '/@/renderer/features/player/components/sleep-t
 import { usePlayer } from '/@/renderer/features/player/context/player-context';
 import { socialApi } from '/@/renderer/features/sour/api/social-api';
 import { avatarUrl } from '/@/renderer/features/sour/api/sour-api';
-import { useStageBackground } from '/@/renderer/features/sour/components/customize';
+import { useCustom, useStageBackground } from '/@/renderer/features/sour/components/customize';
+import { StageCredits } from '/@/renderer/features/sour/components/extras104';
 import { openProfile } from '/@/renderer/features/sour/components/people';
 import { favoritesThemeId } from '/@/renderer/features/sour/components/playlist-theme';
 import { hue, ProfileAvatar } from '/@/renderer/features/sour/components/profile-bits';
@@ -214,6 +215,7 @@ const StageView = () => {
     const view = useVideoView((s) => s.view);
     const { data: stageVideo } = useMusicVideo(song?.artistName, song?.name);
     const showVideo = view === 'video' && !!stageVideo && !!song;
+    const stageLayout = useCustom().stageLayout;
     // one video at a time: the small window closes while the Stage shows it
     useEffect(() => {
         if (showVideo) useVideoWindow.setState({ floating: false });
@@ -363,6 +365,7 @@ const StageView = () => {
                 [styles.phone]: phone,
                 [styles.phoneNoLyrics]: phone && !phoneLyrics,
             })}
+            data-stage-layout={stageLayout}
             style={{ '--stage-color': color } as CSSProperties}
         >
             {backdrop ? (
@@ -508,6 +511,7 @@ const StageView = () => {
                     </div>
                 </div>
             )}
+            <StageCredits />
             <div className={styles.main} style={showVideo ? { display: 'none' } : undefined}>
                 <div className={styles.left}>
                     <div

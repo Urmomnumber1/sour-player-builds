@@ -21,48 +21,63 @@ import { toast } from '/@/shared/components/toast/toast';
 // it opens on, fonts for headings and lyrics, which side the sidebar sits on, density, your own Sour
 // Stage background and sharing the whole setup as a code.
 export interface Custom10 {
+    // 0.10.4
+    autostart: boolean;
     background: string;
+    credits: boolean;
     cursor: 'big' | 'default' | 'lemon';
     density: 'compact' | 'normal';
     dock: boolean;
     gallery: boolean;
     headingFont: string;
+    highContrast: boolean;
     icons: 'bold' | 'colour' | 'regular' | 'thin';
+    lowPower: 'battery' | 'off' | 'on';
     lyricsFont: string;
     moodCrossfade: boolean;
     morph: boolean;
     parallax: boolean;
     poster: boolean;
     primary: string;
+    quickRequest: boolean;
     sidebar: 'left' | 'right';
     sounds: 'none' | 'pop' | 'soft';
+    stageLayout: 'cover' | 'lyrics' | 'split';
     startPage: 'favorites' | 'home' | 'hub' | 'library' | 'stage';
     surface: string;
     text: string;
+    textScale: number;
     themeOn: boolean;
     timeOfDay: boolean;
     widget: boolean;
 }
 
 export const DEFAULT_CUSTOM: Custom10 = {
+    autostart: false,
     background: '#101014',
+    credits: true,
     cursor: 'default',
     density: 'normal',
     dock: false,
     gallery: false,
     headingFont: 'default',
+    highContrast: false,
     icons: 'regular',
+    lowPower: 'battery',
     lyricsFont: 'default',
     moodCrossfade: false,
     morph: true,
     parallax: true,
     poster: true,
     primary: '#f4d03f',
+    quickRequest: true,
     sidebar: 'left',
     sounds: 'none',
+    stageLayout: 'split',
     startPage: 'home',
     surface: '#1b1b22',
     text: '#f2f2f2',
+    textScale: 1,
     themeOn: false,
     timeOfDay: true,
     widget: false,
@@ -272,6 +287,10 @@ export const Customize = () => {
                         ['timeOfDay', 'Light follows the time of day'],
                         ['moodCrossfade', 'Crossfade follows the mood'],
                         ['widget', 'Mini player as a desktop widget'],
+                        ['autostart', 'Start with the computer'],
+                        ['quickRequest', 'Ctrl+Alt+R requests a song from anywhere'],
+                        ['credits', 'Credits at the end of songs in the Stage'],
+                        ['highContrast', 'High contrast'],
                     ] as const
                 ).map(([k, label]) => (
                     <Switch
@@ -287,6 +306,39 @@ export const Customize = () => {
                 Focus mode: Ctrl+Shift+F (Esc leaves) hides everything but the page and the player.
             </Text>
             <QuietHours />
+            <Row label="Low-power mode">
+                <SegmentedControl
+                    data={[
+                        { label: 'Off', value: 'off' },
+                        { label: 'On battery', value: 'battery' },
+                        { label: 'Always', value: 'on' },
+                    ]}
+                    onChange={(v) => setCustom({ lowPower: v as Custom10['lowPower'] })}
+                    value={c.lowPower}
+                />
+            </Row>
+            <Row label="Text size">
+                <SegmentedControl
+                    data={[
+                        { label: 'Normal', value: '1' },
+                        { label: 'Bigger', value: '1.1' },
+                        { label: 'Biggest', value: '1.25' },
+                    ]}
+                    onChange={(v) => setCustom({ textScale: Number(v) })}
+                    value={String(c.textScale || 1)}
+                />
+            </Row>
+            <Row label="Sour Stage layout">
+                <SegmentedControl
+                    data={[
+                        { label: 'Cover and lyrics', value: 'split' },
+                        { label: 'Lyrics only', value: 'lyrics' },
+                        { label: 'Cover only', value: 'cover' },
+                    ]}
+                    onChange={(v) => setCustom({ stageLayout: v as Custom10['stageLayout'] })}
+                    value={c.stageLayout}
+                />
+            </Row>
             <Row label="Cursor">
                 <SegmentedControl
                     data={[

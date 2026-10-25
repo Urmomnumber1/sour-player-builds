@@ -154,6 +154,8 @@ export const SourVisualizer = ({ className, colors, coverUrl, people, soulPlay, 
                 (look !== 'soul' || (soul.broken > 0.97 && !soul.stars.length && soul.hurt <= 0)) &&
                 (look !== 'lightning' || !lightningBusy(lightning));
             if (settled && still && now - drawn < 400) return;
+            if (document.documentElement.classList.contains('sour-lowpower') && now - drawn < 250)
+                return;
             drawn = now;
             if (playing) spin += dt / 540;
             const W = canvas.width;

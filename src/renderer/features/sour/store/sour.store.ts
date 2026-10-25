@@ -151,12 +151,15 @@ interface SourStore {
     alongHistory: { at: number; friend: string; song: GroupSong }[];
     // when the friend you listen along with stops, follow someone else who is listening
     alongKeepGoing: boolean;
+    // 0.10.4: the admins' announcement already seen, the lyrics wall, duets
+    announcementSeen: number;
     block: (artist: BlockedArtist) => void;
     blocked: BlockedArtist[];
     bookmarks: Record<string, number[]>;
     // big updates already celebrated (the 0.10 confetti shows once)
     celebrated: string[];
     crossfade: Record<string, number>;
+    duet: boolean;
     // focus mode (Ctrl+Shift+F): only the page and the player
     focusMode: boolean;
     greeted: string;
@@ -181,6 +184,7 @@ interface SourStore {
     quietHours: { from: number; on: boolean; to: number };
     repeatNotified: Record<string, string>;
     savedGroups: SavedGroup[];
+    savedLines: { artist: string; at: number; song: string; text: string }[];
     seenMilestones: string[];
     set: (changes: Partial<Omit<SourStore, 'block' | 'set' | 'setLook' | 'unblock'>>) => void;
     setLook: (changes: Partial<SourLook>) => void;
@@ -199,6 +203,7 @@ export const useSourStore = createWithEqualityFn<SourStore>()(
             abLoop: null,
             alongHistory: [],
             alongKeepGoing: false,
+            announcementSeen: 0,
             block: (artist) =>
                 set((state) =>
                     state.blocked.some((b) => b.name.toLowerCase() === artist.name.toLowerCase())
@@ -209,6 +214,7 @@ export const useSourStore = createWithEqualityFn<SourStore>()(
             bookmarks: {},
             celebrated: [],
             crossfade: {},
+            duet: false,
             focusMode: false,
             greeted: '',
             groupQuiet: false,
@@ -228,6 +234,7 @@ export const useSourStore = createWithEqualityFn<SourStore>()(
             quietHours: { from: 23, on: false, to: 8 },
             repeatNotified: {},
             savedGroups: [],
+            savedLines: [],
             seenMilestones: [],
             set: (changes) => set(changes),
             setLook: (changes) => set((state) => ({ look: { ...state.look, ...changes } })),

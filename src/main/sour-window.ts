@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, nativeImage } from 'electron';
+import { app, BrowserWindow, globalShortcut, ipcMain, nativeImage } from 'electron';
 
 import { keepIcon } from './sour-icon';
 
@@ -135,4 +135,69 @@ ipcMain.on('sour-icon', (event, data: string) => {
     win.setIcon(image);
     if (process.platform === 'darwin') app.dock?.setIcon(image);
     keepIcon(image);
+});
+
+// ---- Sour Player 0.10.4 desktop extras ----
+// start with the computer (minimised to the tray)
+ipcMain.on('sour-autostart', (_event, on: boolean) => {
+    if (process.platform === 'linux') return; // Linux desktops use their own autostart folder
+    app.setLoginItemSettings({ args: ['--hidden'], openAsHidden: true, openAtLogin: !!on });
+});
+
+// Windows taskbar thumbnail buttons: previous, play / pause, next. The icons are drawn here (tiny
+// white shapes on a see-through square) so no image files are needed.
+const icon = (kind: 'next' | 'pause' | 'play' | 'prev') => {
+    const n = 16;
+    const buf = Buffer.alloc(n * n * 4);
+    const dot = (x: number, y: number) => {
+        if (x < 0 || y < 0 || x >= n || y >= n) return;
+        const i = (y * n + x) * 4;
+        buf[i] = 255;
+        buf[i + 1] = 255;
+        buf[i + 2] = 255;
+        buf[i + 3] = 255;
+    };
+    for (let y = 2; y < 14; y++) {
+        const half = Math.abs(y - 8);
+        if (kind === 'play') for (let x = 4; x < 13 - half; x++) dot(x, y);
+        if (kind === 'pause') for (const x of [4, 5, 6, 10, 11, 12]) dot(x, y);
+        if (kind === 'next') {
+            for (let x = 2; x < 9 - half * 0.6; x++) dot(x, y);
+            for (let x = 8; x < 15 - half * 0.6; x++) dot(x, y);
+        }
+        if (kind === 'prev') {
+            for (let x = 7 + Math.round(half * 0.6); x < 14; x++) dot(x, y);
+            for (let x = 1 + Math.round(half * 0.6); x < 8; x++) dot(x, y);
+        }
+    }
+    return nativeImage.createFromBitmap(buf, { height: n, width: n });
+};
+ipcMain.on('sour-thumbar', (event, playing: boolean) => {
+    if (process.platform !== 'win32') return;
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win) return;
+    const click = (what: string) => () => win.webContents.send('sour-thumbar-click', what);
+    win.setThumbarButtons([
+        { click: click('prev'), icon: icon('prev'), tooltip: 'Previous' },
+        {
+            click: click('toggle'),
+            icon: icon(playing ? 'pause' : 'play'),
+            tooltip: playing ? 'Pause' : 'Play',
+        },
+        { click: click('next'), icon: icon('next'), tooltip: 'Next' },
+    ]);
+});
+
+// Ctrl+Alt+R anywhere: Sour Player comes to the front with the request box open
+ipcMain.on('sour-quick-request', (event, on: boolean) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    const key = 'CommandOrControl+Alt+R';
+    if (globalShortcut.isRegistered(key)) globalShortcut.unregister(key);
+    if (!on || !win) return;
+    globalShortcut.register(key, () => {
+        if (win.isMinimized()) win.restore();
+        win.show();
+        win.focus();
+        win.webContents.send('sour-quick-request-open');
+    });
 });

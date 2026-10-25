@@ -535,6 +535,7 @@ export const ProfileView = ({
     return (
         <div
             className={styles.profilePage}
+            data-profile-layout={c.layout || 'classic'}
             style={{
                 background: c.theme?.background || undefined,
                 backgroundImage: background

@@ -80,6 +80,8 @@ export interface ProfileCustom {
     invisible?: boolean;
     joinSound?: string;
     jokes?: string;
+    // how their profile page is laid out
+    layout?: 'centered' | 'classic' | 'compact';
     moodRing?: boolean;
     nameEffect?: string;
     nameFont?: string;

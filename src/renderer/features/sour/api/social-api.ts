@@ -108,6 +108,7 @@ export interface SongNote {
     from: string;
     fromName: string;
     id: string;
+    position?: number;
     text: string;
 }
 
@@ -183,7 +184,12 @@ export const socialApi = {
         if (!res.ok) throw new Error(`Hermes Music returned ${res.status}`);
         return (await res.json()) as HotSeat;
     },
-    note: (base: string, me: Me, songId: string, change: { remove?: string; text?: string }) =>
+    note: (
+        base: string,
+        me: Me,
+        songId: string,
+        change: { position?: number; remove?: string; text?: string },
+    ) =>
         request<SongNote[]>(`${base}/api/song-notes/${encodeURIComponent(songId)}`, {
             ...who(me),
             ...change,

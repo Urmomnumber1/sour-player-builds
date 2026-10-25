@@ -34,6 +34,7 @@ import '/@/shared/styles/sour-ios.css';
 import '/@/shared/styles/sour-v8.css';
 import '/@/shared/styles/sour-v10.css';
 import '/@/shared/styles/sour-custom.css';
+import '/@/shared/styles/sour-ui10.css';
 import '/@/renderer/features/sour/mobile/ios-look';
 import { PlayerProvider } from '/@/renderer/features/player/context/player-context';
 import { isIosApp } from '/@/renderer/features/sour/mobile/android';

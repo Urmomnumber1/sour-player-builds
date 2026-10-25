@@ -22,9 +22,15 @@ export interface Custom10 {
     background: string;
     cursor: 'big' | 'default' | 'lemon';
     density: 'compact' | 'normal';
+    dock: boolean;
+    gallery: boolean;
     headingFont: string;
-    icons: 'bold' | 'regular' | 'thin';
+    icons: 'bold' | 'colour' | 'regular' | 'thin';
     lyricsFont: string;
+    moodCrossfade: boolean;
+    morph: boolean;
+    parallax: boolean;
+    poster: boolean;
     primary: string;
     sidebar: 'left' | 'right';
     sounds: 'none' | 'pop' | 'soft';
@@ -32,15 +38,23 @@ export interface Custom10 {
     surface: string;
     text: string;
     themeOn: boolean;
+    timeOfDay: boolean;
+    widget: boolean;
 }
 
 export const DEFAULT_CUSTOM: Custom10 = {
     background: '#101014',
     cursor: 'default',
     density: 'normal',
+    dock: false,
+    gallery: false,
     headingFont: 'default',
     icons: 'regular',
     lyricsFont: 'default',
+    moodCrossfade: false,
+    morph: true,
+    parallax: true,
+    poster: true,
     primary: '#f4d03f',
     sidebar: 'left',
     sounds: 'none',
@@ -48,6 +62,8 @@ export const DEFAULT_CUSTOM: Custom10 = {
     surface: '#1b1b22',
     text: '#f2f2f2',
     themeOn: false,
+    timeOfDay: true,
+    widget: false,
 };
 
 const STAGE_BG = 'sour-stage-background';
@@ -222,6 +238,31 @@ export const Customize = () => {
                     value={c.lyricsFont}
                 />
             </Group>
+            <Group gap="lg">
+                {(
+                    [
+                        ['dock', 'Dock'],
+                        ['morph', 'Pages morph in'],
+                        ['parallax', 'Parallax headers'],
+                        ['poster', 'Poster album pages'],
+                        ['gallery', 'Gallery library'],
+                        ['timeOfDay', 'Light follows the time of day'],
+                        ['moodCrossfade', 'Crossfade follows the mood'],
+                        ['widget', 'Mini player as a desktop widget'],
+                    ] as const
+                ).map(([k, label]) => (
+                    <Switch
+                        checked={c[k]}
+                        key={k}
+                        label={label}
+                        onChange={(e) => setCustom({ [k]: e.currentTarget.checked })}
+                        size="xs"
+                    />
+                ))}
+            </Group>
+            <Text isMuted size="xs">
+                Focus mode: Ctrl+Shift+F (Esc leaves) hides everything but the page and the player.
+            </Text>
             <Row label="Cursor">
                 <SegmentedControl
                     data={[
@@ -250,6 +291,7 @@ export const Customize = () => {
                         { label: 'Thin', value: 'thin' },
                         { label: 'Regular', value: 'regular' },
                         { label: 'Bold', value: 'bold' },
+                        { label: 'Colour', value: 'colour' },
                     ]}
                     onChange={(v) => setCustom({ icons: v as Custom10['icons'] })}
                     value={c.icons}

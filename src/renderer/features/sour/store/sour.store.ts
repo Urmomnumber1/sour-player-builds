@@ -154,6 +154,8 @@ interface SourStore {
     // big updates already celebrated (the 0.10 confetti shows once)
     celebrated: string[];
     crossfade: Record<string, number>;
+    // focus mode (Ctrl+Shift+F): only the page and the player
+    focusMode: boolean;
     greeted: string;
     // Group Play quiet mode: no soundboard or join sounds
     groupQuiet: boolean;
@@ -195,6 +197,7 @@ export const useSourStore = createWithEqualityFn<SourStore>()(
             blocked: [],
             celebrated: [],
             crossfade: {},
+            focusMode: false,
             greeted: '',
             groupQuiet: false,
             hiddenPlaylists: [],

@@ -1147,11 +1147,26 @@ const singleInstance = isDevelopment ? true : app.requestSingleInstanceLock();
 if (!singleInstance) {
     app.quit();
 } else {
-    app.on('second-instance', () => {
+    // sourplayer://listen/<profile> (Discord's "Listen along" button) opens Sour Player and listens along
+    app.setAsDefaultProtocolClient('sourplayer');
+    const openSourLink = (link?: string) => {
+        if (!link || !link.startsWith('sourplayer://')) return;
+        const send = () => getMainWindow()?.webContents.send('sour-open-url', link);
+        if (getMainWindow()?.webContents.isLoading())
+            getMainWindow()?.webContents.once('did-finish-load', send);
+        else send();
+    };
+    app.on('open-url', (event, link) => {
+        event.preventDefault();
+        openSourLink(link);
+    });
+    app.on('second-instance', (_event, argv) => {
         if (mainWindow) {
             showMainWindow();
         }
+        openSourLink(argv.find((a) => a.startsWith('sourplayer://')));
     });
+    setTimeout(() => openSourLink(process.argv.find((a) => a.startsWith('sourplayer://'))), 4000);
 
     app.whenReady()
         .then(() => {

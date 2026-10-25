@@ -35,12 +35,34 @@ export const toggleMiniPlayer = () => {
     const on = !useMini.getState().on;
     useMini.setState({ on });
     document.documentElement.classList.toggle('sour-mini', on);
-    if (isElectron()) window.api?.ipc?.send('sour-mini', on);
+    const widget = !!useSourStore.getState().look.custom10?.widget;
+    document.documentElement.classList.toggle('sour-widget', on && widget);
+    if (isElectron()) window.api?.ipc?.send('sour-mini', on, { widget });
 };
 
 const time = (seconds: number) => {
     const s = Math.max(0, Math.floor(seconds));
     return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+};
+
+// desktop widget: a clock over the song
+const WidgetClock = () => {
+    const widget = useSourStore((s) => !!s.look.custom10?.widget);
+    const [now, setNow] = useState(() => new Date());
+    useEffect(() => {
+        if (!widget) return undefined;
+        const t = setInterval(() => setNow(new Date()), 15000);
+        return () => clearInterval(t);
+    }, [widget]);
+    if (!widget) return null;
+    return (
+        <div className={styles.clock}>
+            {now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            <span>
+                {now.toLocaleDateString([], { day: 'numeric', month: 'short', weekday: 'short' })}
+            </span>
+        </div>
+    );
 };
 
 const MiniPlayerView = () => {
@@ -84,6 +106,7 @@ const MiniPlayerView = () => {
                 {cover ? <img alt="" src={cover} /> : <Icon icon="itemSong" size="xl" />}
             </div>
             <div className={styles.body}>
+                <WidgetClock />
                 <div className={styles.top}>
                     <div className={styles.titles}>
                         <div className={styles.title} title={song?.name}>

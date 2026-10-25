@@ -5,11 +5,13 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { api } from '/@/renderer/api';
 import { useItemImageUrl } from '/@/renderer/components/item-image/item-image';
+import { useHermesVideoStore } from '/@/renderer/features/hermes-video/store/hermes-video.store';
 import { usePlayerEvents } from '/@/renderer/features/player/audio-player/hooks/use-player-events';
 import {
     useIsRadioActive,
     useRadioPlayer,
 } from '/@/renderer/features/radio/hooks/use-radio-player';
+import { useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import {
     DiscordDisplayType,
     DiscordLinkType,
@@ -211,6 +213,21 @@ export const useDiscordRpc = () => {
                 // but manually installing the discord-types package appears to break things
                 type: discordSettings.showAsListening ? 2 : 0,
             };
+            // friends on the same Hermes Music can jump in: the page opens Sour Player and listens along
+            const sour = useSourStore.getState().me;
+            const hermes = useHermesVideoStore.getState().url;
+            if (sour && hermes && /^https?:/.test(hermes)) {
+                activity.buttons = [
+                    {
+                        label: 'Listen along',
+                        url: `${hermes.replace(/\/+$/, '')}/listen/${sour.id}`,
+                    },
+                    {
+                        label: 'Get Sour Player',
+                        url: 'https://github.com/Urmomnumber1/feishin/releases/latest',
+                    },
+                ];
+            }
 
             if (
                 (discordSettings.linkType == DiscordLinkType.LAST_FM ||

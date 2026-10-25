@@ -284,6 +284,17 @@ export const ProfileEditor = ({
                     value={c.theme?.background || ''}
                 />
             </Group>
+            <Select
+                data={[
+                    { label: 'Classic', value: 'classic' },
+                    { label: 'Centered', value: 'centered' },
+                    { label: 'Compact', value: 'compact' },
+                ]}
+                description="How your profile page is laid out"
+                label="Profile layout"
+                onChange={(v) => setC({ layout: (v || 'classic') as 'classic' })}
+                value={c.layout || 'classic'}
+            />
             <Text fw={700}>Picture frame and name</Text>
             <Group gap="xs" grow>
                 <Select

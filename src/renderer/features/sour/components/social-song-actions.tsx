@@ -12,6 +12,8 @@ import {
     useSourProfiles,
     useSourStore,
 } from '/@/renderer/features/sour/store/sour.store';
+import { usePlayerStoreBase } from '/@/renderer/store/player.store';
+import { useTimestampStoreBase } from '/@/renderer/store/timestamp.store';
 import { Button } from '/@/shared/components/button/button';
 import { ContextMenu } from '/@/shared/components/context-menu/context-menu';
 import { Group } from '/@/shared/components/group/group';
@@ -92,7 +94,14 @@ const StickyNotes = ({ song }: { song: GroupSong }) => {
     const change = (c: { remove?: string; text?: string }) =>
         me &&
         socialApi
-            .note(url, me, song.id, c)
+            .note(url, me, song.id, {
+                ...c,
+                // pinned to the moment on the seek bar when you're listening to it
+                position:
+                    c.text && usePlayerStoreBase.getState().getCurrentSong()?.id === song.id
+                        ? useTimestampStoreBase.getState().timestamp
+                        : undefined,
+            })
             .then(() => {
                 setText('');
                 qc.invalidateQueries({ queryKey: ['sour-song-notes', url, song.id] });

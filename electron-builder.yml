@@ -1,4 +1,8 @@
 appId: com.urmomnumber1.sourplayer
+protocols:
+    - name: Sour Player
+      schemes:
+          - sourplayer
 productName: Sour Player
 executableName: sour-player
 artifactName: Sour-Player-${os}-${arch}.${ext}

@@ -1,5 +1,7 @@
 import type { QueueSong, Song } from '/@/shared/types/domain-types';
 
+import isElectron from 'is-electron';
+
 import { api } from '/@/renderer/api';
 import { isIosApp, isNativeApp, sourMedia } from '/@/renderer/features/sour/mobile/android';
 import { usePhoneStore } from '/@/renderer/features/sour/mobile/phone-store';
@@ -10,10 +12,12 @@ import { usePhoneStore } from '/@/renderer/features/sour/mobile/phone-store';
 
 // the web app served by Hermes Music (Safari > Add to Home Screen on an iPhone)
 export const isWebApp = () => !isNativeApp() && window.location.pathname.startsWith('/app/');
-export const offlineAvailable = () => isNativeApp() || isWebApp();
+// the desktop app keeps offline songs in its own browser storage too (played by the built-in player)
+const isDesktop = () => !isNativeApp() && isElectron();
+export const offlineAvailable = () => isNativeApp() || isWebApp() || isDesktop();
 // browser storage: the web app, and the iPhone app (it runs from Hermes over http, where the app's own
 // files can't be played)
-const inBrowserStore = () => isWebApp() || isIosApp();
+const inBrowserStore = () => isWebApp() || isIosApp() || isDesktop();
 
 const CACHE = 'sour-offline';
 const cacheKey = (id: string) => `/app/__offline/${encodeURIComponent(id)}`;

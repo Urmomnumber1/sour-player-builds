@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router';
 
 import styles from './app-extras.module.css';
 
+import { openRequestWindow } from '/@/renderer/features/hermes-request/components/request-button';
 import { openPeople } from '/@/renderer/features/sour/components/people';
 import { SongCover, usePlaySong } from '/@/renderer/features/sour/components/profile-bits';
 import {
@@ -13,7 +14,9 @@ import {
     toggleClassicLook,
 } from '/@/renderer/features/sour/components/quick-mixes';
 import { openSourStudio } from '/@/renderer/features/sour/components/sour-studio';
+import { toggleFocus } from '/@/renderer/features/sour/components/ui10';
 import { toggleStage } from '/@/renderer/features/sour/stage/sour-stage';
+import { useTranslateLyrics } from '/@/renderer/features/sour/stage/translate';
 import { type HistoryEntry, useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import { AppRoute } from '/@/renderer/router/routes';
 import { Text } from '/@/shared/components/text/text';
@@ -92,6 +95,20 @@ export const sourCommands = (navigate: (to: string) => void) => [
     { label: 'Remove duplicates from the queue', run: removeQueueDuplicates },
     { label: 'Copy what is playing', run: copyNowPlaying },
     { label: 'Switch between the new and Classic look', run: toggleClassicLook },
+    { label: 'Focus mode (Ctrl+Shift+F)', run: () => toggleFocus(true) },
+    { label: 'Smooth the queue (no artist twice in a row)', run: quickMixes.smooth },
+    {
+        label: 'Translate the lyrics',
+        run: () => {
+            toggleStage(true);
+            useTranslateLyrics.getState().toggle();
+        },
+    },
+    { label: 'Request music', run: openRequestWindow },
+    {
+        label: 'Sour Library tools (storage, wishlist, lyrics doctor)',
+        run: () => navigate(AppRoute.SOUR_LIBRARY),
+    },
 ];
 
 // ---------- startup splash ----------

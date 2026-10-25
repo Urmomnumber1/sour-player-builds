@@ -21,7 +21,11 @@
 .sour-v8:not(.sour-ios) #default-layout {
     background:
         radial-gradient(1200px 600px at 12% -10%, var(--v8-glow), transparent 60%),
-        radial-gradient(900px 500px at 100% 110%, color-mix(in srgb, var(--theme-colors-primary) 8%, transparent), transparent 60%),
+        radial-gradient(
+            900px 500px at 100% 110%,
+            color-mix(in srgb, var(--theme-colors-primary) 8%, transparent),
+            transparent 60%
+        ),
         var(--theme-colors-background);
 }
 
@@ -61,7 +65,6 @@
 .sour-v8:not(.sour-ios) [class*='left-controls-module-image-wrapper'] {
     padding-block: 4px;
 }
-
 
 .sour-v8:not(.sour-ios) #player-bar > div {
     /* ultrawide screens: the bar stays together in the middle instead of spreading to both edges */

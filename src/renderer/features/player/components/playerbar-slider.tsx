@@ -6,6 +6,7 @@ import styles from './playerbar-slider.module.css';
 
 import { GroupSeekMarks } from '/@/renderer/features/group-play/components/group-room';
 import { ScrobbleStatus } from '/@/renderer/features/player/components/scrobble-status';
+import { NoteMarks } from '/@/renderer/features/sour/components/extras10';
 import {
     useAppStore,
     useAppStoreActions,
@@ -54,6 +55,7 @@ export const PlayerbarSlider = () => {
                         <PlayerbarSeekSlider max={songDuration} min={0} />
                     )}
                     <GroupSeekMarks duration={songDuration} songId={currentSong?.id} />
+                    <NoteMarks duration={songDuration} songId={currentSong?.id} />
                 </div>
                 <div className={styles.sliderValueWrapper}>
                     <Text

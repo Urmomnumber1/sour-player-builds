@@ -29,8 +29,15 @@ const applyMini = (win: BrowserWindow) => {
     else win.setSize(MINI.width, MINI.height);
 };
 
+// desktop widget: the mini player sits on the desktop like a widget instead of on top of everything
+let widget = false;
+
 const keepOnTop = (win: BrowserWindow) => {
     if (win.isDestroyed()) return;
+    if (widget) {
+        win.setAlwaysOnTop(false);
+        return;
+    }
     if (process.platform === 'linux') {
         // X11 ignores the "floating" level; plain always-on-top plus "on every workspace" is what
         // most Linux desktops honour
@@ -86,9 +93,10 @@ const restore = (win: BrowserWindow) => {
     if (fullScreen) win.setFullScreen(true);
 };
 
-ipcMain.on('sour-mini', (event, on: boolean) => {
+ipcMain.on('sour-mini', (event, on: boolean, opts?: { widget?: boolean }) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (!win) return;
+    if (on) widget = !!opts?.widget;
     if (on && !saved) {
         shrink(win);
         if (!watched.has(win)) {

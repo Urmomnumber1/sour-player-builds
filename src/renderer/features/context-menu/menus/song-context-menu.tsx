@@ -13,6 +13,7 @@ import { ShareAction } from '/@/renderer/features/context-menu/actions/share-act
 import { ShowInFileExplorerAction } from '/@/renderer/features/context-menu/actions/show-in-file-explorer-action';
 import { ContextMenuPreview } from '/@/renderer/features/context-menu/components/context-menu-preview';
 import { AddToGroupAction } from '/@/renderer/features/group-play/components/add-to-group-action';
+import { SongDnaAction } from '/@/renderer/features/sour/components/extras10';
 import { SocialSongMenu } from '/@/renderer/features/sour/components/social-song-actions';
 import {
     AddToProfileAction,
@@ -51,6 +52,7 @@ export const SongContextMenu = ({ items, type }: SongContextMenuProps) => {
                     <AddToGroupAction songs={items} />
                     <AddToProfileAction songs={items} />
                     <SocialSongMenu songs={items} />
+                    <SongDnaAction songs={items} />
                     <ShareSongAction songs={items} />
                     <WhoElseLikesAction songs={items} />
                     <SongNoteAction songs={items} />

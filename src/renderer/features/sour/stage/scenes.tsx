@@ -8,6 +8,7 @@ export const SCENES: { id: SourLook['stageScene']; label: string }[] = [
     { id: 'stars', label: 'Night sky' },
     { id: 'drive', label: 'Night drive' },
     { id: 'snow', label: 'Snowfall' },
+    { id: 'concert', label: 'Concert' },
 ];
 
 interface Dot {
@@ -142,6 +143,41 @@ export const Scene = ({
                     const h = 4 + depth * 40;
                     ctx.fillStyle = `rgb(255 214 120 / ${0.15 + depth * 0.5})`;
                     ctx.fillRect(W / 2 - w / 2, y, w, h);
+                }
+            } else if (scene === 'concert') {
+                // concert mode: stage lights sweeping over a crowd with phone lights up
+                ctx.globalCompositeOperation = 'lighter';
+                for (let i = 0; i < 5; i++) {
+                    const a = Math.sin(now / (1800 + i * 300) + i) * 0.5;
+                    const x = ((i + 0.5) / 5) * W;
+                    const g = ctx.createLinearGradient(x, 0, x + Math.sin(a) * H, H);
+                    const hue = (i * 70 + now / 60) % 360;
+                    g.addColorStop(0, `hsl(${hue} 90% 60% / 35%)`);
+                    g.addColorStop(1, 'transparent');
+                    ctx.fillStyle = g;
+                    ctx.beginPath();
+                    ctx.moveTo(x - 6, 0);
+                    ctx.lineTo(x + 6, 0);
+                    ctx.lineTo(x + Math.sin(a) * H + 90, H);
+                    ctx.lineTo(x + Math.sin(a) * H - 90, H);
+                    ctx.fill();
+                }
+                ctx.globalCompositeOperation = 'source-over';
+                // the crowd: heads bobbing, a few phone lights
+                ctx.fillStyle = 'rgb(0 0 0 / 85%)';
+                for (const d of dots) {
+                    const x = d.x * W;
+                    const bob = Math.abs(Math.sin(now / 380 + d.l * 10)) * 6;
+                    const y = H - 30 - d.z * 40 - bob;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 12 + d.z * 8, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillRect(x - 16 - d.z * 8, y + 8, 32 + d.z * 16, H - y);
+                }
+                for (const d of dots.slice(0, 12)) {
+                    const sway = Math.sin(now / 900 + d.s * 6) * 14;
+                    ctx.fillStyle = 'rgb(255 255 230 / 85%)';
+                    ctx.fillRect(d.x * W + sway, H - 110 - d.z * 40, 4, 7);
                 }
             }
         };

@@ -151,6 +151,8 @@ export const SourPresence = () => {
             const group = useGroupPlayStore.getState().state;
             sourApi
                 .presence(url, me, {
+                    // who you're listening along with (they see you riding along)
+                    alongWith: useSourStore.getState().listenAlong,
                     device: deviceId(),
                     group: group && !group.ended ? { code: group.code, name: group.name } : null,
                     // listen along copies these (a sped up song used to drift and stutter for friends)

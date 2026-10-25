@@ -4,7 +4,9 @@ import {
     BlindWatcher,
     CountdownOverlay,
 } from '/@/renderer/features/group-play/components/group-room';
+import { AlongWatcher } from '/@/renderer/features/sour/components/along-extras';
 import { ExtraShortcuts, Splash } from '/@/renderer/features/sour/components/app-extras';
+import { CustomizeApply } from '/@/renderer/features/sour/components/customize';
 import { HolidayLayer } from '/@/renderer/features/sour/components/holiday-layer';
 import { KeepPlaying, UpNextHeadsUp } from '/@/renderer/features/sour/components/keep-playing';
 import { MiniPlayer } from '/@/renderer/features/sour/components/mini-player';
@@ -14,6 +16,7 @@ import {
 } from '/@/renderer/features/sour/components/social-watchers';
 import { SourSafe } from '/@/renderer/features/sour/components/sour-safe';
 import { TvInvite } from '/@/renderer/features/sour/components/sour-tv';
+import { LiquidTint, TenthUpdate } from '/@/renderer/features/sour/components/v10';
 import { applyAppIcon } from '/@/renderer/features/sour/skins/app-icon';
 import { currentHoliday, holidayById } from '/@/renderer/features/sour/skins/holidays';
 import { LoopWatcher } from '/@/renderer/features/sour/stage/loop';
@@ -72,6 +75,7 @@ const LookSwitches = () => {
         root.classList.toggle('sour-fade-covers', look.fadeCovers && !look.reducedMotion);
         root.classList.toggle('sour-lemon-loader', look.lemonLoader && !simple);
         root.classList.toggle('sour-v8', look.ui !== 'classic');
+        root.classList.toggle('sour-v10', (look.ui ?? 'liquid') === 'liquid');
     }, [look]);
 
     useEffect(() => {
@@ -157,6 +161,18 @@ export const SourRoot = () => (
         </SourSafe>
         <SourSafe name="holiday layer">
             <HolidayLayer />
+        </SourSafe>
+        <SourSafe name="listen along extras">
+            <AlongWatcher />
+        </SourSafe>
+        <SourSafe name="customize">
+            <CustomizeApply />
+        </SourSafe>
+        <SourSafe name="liquid tint">
+            <LiquidTint />
+        </SourSafe>
+        <SourSafe name="tenth update">
+            <TenthUpdate />
         </SourSafe>
         <SourSafe name="mini player">
             <MiniPlayer />

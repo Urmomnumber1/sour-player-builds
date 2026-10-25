@@ -25,6 +25,7 @@ import {
     RoomSettings,
     ThemeNightBanner,
 } from '/@/renderer/features/group-play/components/group-room';
+import { PartyGames } from '/@/renderer/features/group-play/components/party-games';
 import {
     type GroupControl,
     type GroupListing,
@@ -648,6 +649,7 @@ export const GroupPlayPanel = () => {
             {state && <RoomActions state={state} />}
             {isHost && state && <PendingRequests state={state} />}
             {state && <CatchUp state={state} />}
+            {state && !isRadio && <PartyGames state={state} />}
 
             <Stack gap={8}>
                 <Group justify="space-between">

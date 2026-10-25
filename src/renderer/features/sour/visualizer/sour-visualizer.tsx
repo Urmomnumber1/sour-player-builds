@@ -23,6 +23,12 @@ import {
     makeLightning,
 } from '/@/renderer/features/sour/visualizer/lightning';
 import { drawSoul, makeSoul, steerSoul } from '/@/renderer/features/sour/visualizer/soul';
+import {
+    drawV10,
+    isV10,
+    makeV10,
+    V10_STYLES,
+} from '/@/renderer/features/sour/visualizer/v10-scenes';
 import { useFastAverageColor } from '/@/renderer/hooks';
 import { usePlayerSong } from '/@/renderer/store';
 import { LibraryItem } from '/@/shared/types/domain-types';
@@ -40,6 +46,8 @@ export const VISUALIZER_STYLES: { id: VisualizerStyle; label: string; perk?: str
     { id: 'river', label: 'Sour river' },
     { id: 'glow', label: 'Album glow' },
     { id: 'orbit', label: 'Group orbit' },
+    ...V10_STYLES,
+    { id: 'mix', label: 'Mix your own' },
     { id: 'soul', label: 'Soul (admins)', perk: 'determination' },
     { id: 'lightning', label: 'Lightning in a bottle (Gavin)', perk: 'gavin' },
 ];
@@ -77,9 +85,14 @@ const loadImage = (src: string) => {
 // off screen, and only redraws a few times a second once the music has stopped and settled.
 export const SourVisualizer = ({ className, colors, coverUrl, people, soulPlay, style }: Props) => {
     useLevelSource();
+    const song = usePlayerSong();
+    const mix = useSourStore((s) => s.look.vizMix ?? ['aurora', 'constellations']);
+    const words = `${song?.name ?? ''} ${song?.artistName ?? ''}`
+        .split(/\s+/)
+        .filter((w) => w.length > 1);
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const latest = useRef({ colors, coverUrl, people, soulPlay, style });
-    latest.current = { colors, coverUrl, people, soulPlay, style };
+    const latest = useRef({ colors, coverUrl, mix, people, soulPlay, style, words });
+    latest.current = { colors, coverUrl, mix, people, soulPlay, style, words };
     const steering = !!soulPlay && style === 'soul';
     useEffect(() => {
         if (!steering) return undefined;
@@ -104,6 +117,8 @@ export const SourVisualizer = ({ className, colors, coverUrl, people, soulPlay, 
         let visible = true;
         const soul = makeSoul();
         const lightning = makeLightning();
+        const v10a = makeV10();
+        const v10b = makeV10();
 
         const fit = () => {
             const r = canvas.getBoundingClientRect();
@@ -330,6 +345,27 @@ export const SourVisualizer = ({ className, colors, coverUrl, people, soulPlay, 
                 drawSoul(ctx, W, H, levels, soul, playing, dt, now, !!steer);
             } else if (look === 'lightning') {
                 drawLightning(ctx, W, H, levels, dpr, lightning, dt, playing);
+            } else {
+                const o = {
+                    cover,
+                    coverSrc,
+                    dpr,
+                    dt,
+                    now,
+                    palette,
+                    playing,
+                    words: latest.current.words,
+                };
+                if (isV10(look)) drawV10(look, ctx, W, H, levels, v10a, o);
+                else if (look === 'mix') {
+                    const [a, b] = latest.current.mix;
+                    drawV10(a, ctx, W, H, levels, v10a, o);
+                    ctx.globalAlpha = 0.7;
+                    ctx.globalCompositeOperation = 'lighter';
+                    drawV10(b, ctx, W, H, levels, v10b, o);
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.globalAlpha = 1;
+                }
             }
         };
         frame = requestAnimationFrame(draw);

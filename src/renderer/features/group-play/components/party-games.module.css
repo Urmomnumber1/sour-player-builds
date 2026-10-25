@@ -1,0 +1,64 @@
+.box {
+    padding: 10px;
+    background: color-mix(in srgb, var(--theme-colors-surface) 70%, transparent);
+    border: 1px solid var(--theme-colors-border);
+    border-radius: 12px;
+}
+
+.games {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 6px;
+}
+
+.game {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    background: var(--theme-colors-background);
+    border: 1px solid var(--theme-colors-border);
+    border-radius: 10px;
+}
+
+.game:hover {
+    border-color: var(--theme-colors-primary);
+}
+
+.game span {
+    font-size: 11px;
+    opacity: 0.7;
+}
+
+.live {
+    padding: 8px;
+    border: 1px solid var(--theme-colors-primary);
+    border-radius: 10px;
+}
+
+.bingo {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+}
+
+.bingo span {
+    padding: 6px 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 11px;
+    text-align: center;
+    white-space: nowrap;
+    background: var(--theme-colors-background);
+    border-radius: 6px;
+}
+
+.bingo .heard {
+    font-weight: 700;
+    color: #151515;
+    background: #f4d03f;
+}

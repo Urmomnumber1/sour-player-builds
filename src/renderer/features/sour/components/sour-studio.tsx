@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 import styles from './sour-studio.module.css';
 
+import { Customize } from '/@/renderer/features/sour/components/customize';
 import { fontFamily, SOUR_FONTS } from '/@/renderer/features/sour/fonts';
 import { drawAppIcon, ICON_PACKS } from '/@/renderer/features/sour/skins/app-icon';
 import { currentHoliday, HOLIDAY_LIST } from '/@/renderer/features/sour/skins/holidays';
@@ -18,11 +19,13 @@ import {
     SourVisualizer,
     VISUALIZER_STYLES,
 } from '/@/renderer/features/sour/visualizer/sour-visualizer';
+import { V10_STYLES, type V10Style } from '/@/renderer/features/sour/visualizer/v10-scenes';
 import { useCustomThemes } from '/@/renderer/store/custom-themes.store';
 import { useSettingsStore } from '/@/renderer/store/settings.store';
 import { THEME_DATA } from '/@/renderer/themes/use-app-theme';
 import { fontOptions } from '/@/renderer/types/fonts';
 import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
+import { Group } from '/@/shared/components/group/group';
 import { SegmentedControl } from '/@/shared/components/segmented-control/segmented-control';
 import { Select } from '/@/shared/components/select/select';
 import { Slider } from '/@/shared/components/slider/slider';
@@ -163,6 +166,7 @@ const Visualizers = () => {
     const barStyle = useSourStore((s) => s.look.barStyle) ?? 'bars';
     const setLook = useSourStore((s) => s.setLook);
     const perks = useMyProfile().data?.perks ?? [];
+    const mix = useSourStore((s) => s.look.vizMix) ?? ['aurora', 'constellations'];
     return (
         <Stack gap="sm">
             <LookSwitch
@@ -190,6 +194,24 @@ const Visualizers = () => {
                     </button>
                 ))}
             </div>
+            {current === 'mix' && (
+                <Group gap="xs" grow>
+                    {[0, 1].map((i) => (
+                        <Select
+                            data={V10_STYLES.map((v) => ({ label: v.label, value: v.id }))}
+                            key={i}
+                            label={i ? 'On top' : 'Underneath'}
+                            onChange={(v) => {
+                                if (!v) return;
+                                const next = [...mix] as typeof mix;
+                                next[i] = v as V10Style;
+                                setLook({ vizMix: next });
+                            }}
+                            value={mix[i]}
+                        />
+                    ))}
+                </Group>
+            )}
             <Text isMuted size="sm">
                 The big one lives in the Sour Stage (full screen now playing).
             </Text>
@@ -208,11 +230,12 @@ const Layout = () => {
                 </Text>
                 <SegmentedControl
                     data={[
-                        { label: 'New (v0.8)', value: 'new' },
+                        { label: 'New (v0.10)', value: 'liquid' },
+                        { label: 'v2 (v0.9)', value: 'new' },
                         { label: 'Classic (v0.7)', value: 'classic' },
                     ]}
                     onChange={(v) => setLook({ ui: v as SourLook['ui'] })}
-                    value={look.ui ?? 'new'}
+                    value={look.ui ?? 'liquid'}
                 />
             </Stack>
             <Stack gap={4}>
@@ -439,6 +462,7 @@ const Studio = () => (
             <Tabs.Tab value="layout">Layout</Tabs.Tab>
             <Tabs.Tab value="fonts">Fonts</Tabs.Tab>
             <Tabs.Tab value="icon">Icon</Tabs.Tab>
+            <Tabs.Tab value="customize">Customize</Tabs.Tab>
             <Tabs.Tab value="extras">Extras</Tabs.Tab>
         </Tabs.List>
         <Tabs.Panel pt="md" value="skins">
@@ -458,6 +482,9 @@ const Studio = () => (
         </Tabs.Panel>
         <Tabs.Panel pt="md" value="icon">
             <Icons />
+        </Tabs.Panel>
+        <Tabs.Panel pt="md" value="customize">
+            <Customize />
         </Tabs.Panel>
         <Tabs.Panel pt="md" value="extras">
             <Extras />

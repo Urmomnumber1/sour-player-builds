@@ -167,12 +167,24 @@ export const GroupPlaySync = () => {
             const profiles = queryClientRef.current.getQueryData<
                 { custom?: { joinSound?: string }; id: string }[]
             >(['sour-profiles', url]);
-            playSound(profiles?.find((p) => p.id === j.profile)?.custom?.joinSound);
+            if (!useSourStore.getState().groupQuiet) {
+                playSound(profiles?.find((p) => p.id === j.profile)?.custom?.joinSound);
+            }
         });
         events.addEventListener('sound', (event) => {
             const r = JSON.parse((event as MessageEvent).data) as { by: string; name: string };
+            if (useSourStore.getState().groupQuiet) return; // quiet mode
             setSoundBase(url); // custom soundboard clips come from Hermes Music
             playSound(r.name);
+        });
+        events.addEventListener('game', (event) => {
+            const r = JSON.parse((event as MessageEvent).data) as {
+                by?: string;
+                result?: string;
+                started?: string;
+            };
+            if (r.result) toast.success({ message: r.result });
+            else if (r.started) toast.info({ message: `${r.by} started a game: ${r.started}` });
         });
         events.addEventListener('countdown', (event) => {
             const r = JSON.parse((event as MessageEvent).data) as { at: number; serverNow: number };

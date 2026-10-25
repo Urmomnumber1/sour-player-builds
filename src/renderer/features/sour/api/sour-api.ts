@@ -114,6 +114,8 @@ export interface SourProfile {
     account?: null | string;
     // a Navidrome admin (shown with a royal blue name; gets the admin extras)
     admin?: boolean;
+    // listen along (0.10): who they follow, who follows them, and what they played lately
+    alongWith?: null | string;
     avatar: number;
     avatarHistory?: number[];
     away: string;
@@ -123,6 +125,8 @@ export interface SourProfile {
     color: null | string;
     created: string;
     custom: ProfileCustom;
+    // avatar decoration: 'party-hat' for accounts made before Sour Player 0.10
+    decoration?: null | string;
     favorites: GroupSong[];
     // Gavin (orange name, the Skyrim font and the lightning visualizer)
     gavin?: boolean;
@@ -140,7 +144,9 @@ export interface SourProfile {
     playing: boolean;
     position: number;
     positionAt: number;
+    recentPlays?: { at: number; song: GroupSong }[];
     resume?: null | { at: number; device: string; position: number; song: GroupSong };
+    riders?: { id: string; name: string }[];
     // Hermes Music's clock when it answered
     serverNow?: number;
     speed?: number;

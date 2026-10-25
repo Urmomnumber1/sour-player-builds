@@ -1,0 +1,51 @@
+/* stylelint-disable selector-class-pattern */
+
+/* Sour Studio > Customize (Sour Player 0.10) */
+
+/* sidebar on the right: the layout grid reads its columns right to left, its contents stay normal */
+.sour-sidebar-right #main-content {
+    direction: rtl;
+}
+
+.sour-sidebar-right #main-content > * {
+    direction: ltr;
+}
+
+/* a bigger pointer that's easier to find */
+.sour-big-cursor,
+.sour-big-cursor * {
+    cursor:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 24 24'%3E%3Cpath d='M4 2l14 9-6 1 4 8-3 1-4-8-5 4z' fill='white' stroke='black' stroke-width='1.2'/%3E%3C/svg%3E")
+            4 2,
+        auto !important;
+}
+
+/* icon weight */
+html[data-icons='thin'] svg[stroke-width] {
+    stroke-width: 1.25;
+}
+
+html[data-icons='bold'] svg[stroke-width] {
+    stroke-width: 2.6;
+}
+
+/* fonts per area */
+h1,
+h2,
+[class*='library-header'] h1 {
+    font-family: var(--sour-heading-font, inherit);
+}
+
+[class*='sour-stage-module-line'],
+[class*='lyrics-module'] {
+    font-family: var(--sour-lyrics-font, inherit);
+}
+
+/* compact: tighter rows and sidebar */
+.sour-compact [role='row'] {
+    font-size: 0.92em;
+}
+
+.sour-compact [class*='sidebar-item-module-link'] {
+    padding-block: 3px;
+}

@@ -102,6 +102,9 @@ export const groupApi = {
     // Sour Radio: random songs from this computer's library when it runs low
     fill: (base: string, code: string, member: string, songs: GroupSong[]) =>
         post<{ added: number }>(`${base}/api/group/${code}/fill`, { member, songs }),
+    // Sour Player 0.10 party games: start, vote, pick, rank, bingo, stop
+    game: (base: string, code: string, who: Who, body: Record<string, unknown>) =>
+        post<{ ok: boolean }>(`${base}/api/group/${code}/game`, { ...body, ...who }),
     guess: (base: string, code: string, member: string, songId: string, name: string) =>
         post<{ ok: boolean }>(`${base}/api/group/${code}/guess`, { member, name, songId }),
     // pass the group to someone in it; you stay as a listener (the answer is your new member id)
@@ -122,6 +125,9 @@ export const groupApi = {
         if (!Array.isArray(list)) throw new Error("That address doesn't answer like Hermes Music");
         return list as GroupListing[];
     },
+    // the mood dial (0 chill - 100 hype)
+    mood: (base: string, code: string, who: Who, value: number) =>
+        post<{ ok: boolean }>(`${base}/api/group/${code}/mood`, { value, ...who }),
     ping: (base: string, code: string, who: Who, position?: number) =>
         post<{ ok: boolean }>(`${base}/api/group/${code}/ping`, { ...who, position }),
     // change your picture while in a group

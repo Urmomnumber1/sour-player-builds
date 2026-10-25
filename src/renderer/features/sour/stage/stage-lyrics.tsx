@@ -7,6 +7,7 @@ import { queryKeys } from '/@/renderer/api/query-keys';
 import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-video.store';
 import { type LyricsQueryResult } from '/@/renderer/features/lyrics/api/lyrics-api';
 import { openLyricSearchModal } from '/@/renderer/features/lyrics/components/lyrics-search-form';
+import { myLanguage, useTranslateLyrics } from '/@/renderer/features/sour/stage/translate';
 import { useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import { usePlayerStoreBase } from '/@/renderer/store/player.store';
 import { useTimestampStoreBase } from '/@/renderer/store/timestamp.store';
@@ -361,6 +362,7 @@ export const LyricsTools = ({
 }) => {
     const queryClient = useQueryClient();
     const url = useHermesUrl();
+    const translateOn = useTranslateLyrics((s) => s.on);
     if (!song?._serverId || !song.id) return null;
     const key = queryKeys.songs.lyrics(song._serverId, { songId: song.id });
     // the nudge is saved on Hermes Music for everyone (one save per pause in clicking)
@@ -401,6 +403,14 @@ export const LyricsTools = ({
         });
     return (
         <div className={styles.lyricTools}>
+            <button
+                className={styles.textTool}
+                onClick={() => useTranslateLyrics.getState().toggle()}
+                title={`Show the lyrics in ${myLanguage()} under each line`}
+                type="button"
+            >
+                {translateOn ? 'Original' : 'Translate'}
+            </button>
             <button
                 className={styles.textTool}
                 onClick={() => shift(-500)}

@@ -19,6 +19,7 @@ import {
     sourApi,
     type SourProfile,
 } from '/@/renderer/features/sour/api/sour-api';
+import { AlongChat } from '/@/renderer/features/sour/components/along-extras';
 import {
     ProfileAvatar,
     SongCover,
@@ -395,6 +396,9 @@ export const ListenAlong = () => {
     const videoOpened = useRef(false);
     const catchUp = useRef(false);
     const tickRef = useRef<(() => Promise<void>) | null>(null);
+    const [drift, setDrift] = useState<null | number>(null);
+    const keepGoing = useSourStore((state) => !!state.alongKeepGoing);
+    const queryClient = useQueryClient();
     const profiles = useSourProfiles().data ?? [];
     const friend = profiles.find((p) => p.id === following);
 
@@ -403,6 +407,25 @@ export const ListenAlong = () => {
         lastSong.current = null;
         videoOpened.current = false;
         const stop = (message: string) => {
+            // keep going: follow another friend who is listening right now
+            if (useSourStore.getState().alongKeepGoing) {
+                const next = (
+                    queryClient.getQueryData<SourProfile[]>(['sour-profiles', url]) ?? []
+                ).find(
+                    (p) =>
+                        p.id !== following &&
+                        p.id !== useSourStore.getState().me?.id &&
+                        p.online &&
+                        p.listening &&
+                        p.playing &&
+                        !p.tv,
+                );
+                if (next) {
+                    setStore({ listenAlong: next.id, listenAlongName: next.name });
+                    toast.info({ message: `${message} - now listening along with ${next.name}` });
+                    return;
+                }
+            }
             setStore({ listenAlong: null, listenAlongName: null });
             toast.info({ message });
         };
@@ -455,6 +478,7 @@ export const ListenAlong = () => {
             // "Catch up" seeks right away
             const now = useTimestampStoreBase.getState().timestamp;
             const off = Math.abs(now - target);
+            setDrift(off);
             const forced = catchUp.current;
             catchUp.current = false;
             if ((off > 1.5 && Date.now() - lastSeek.current > 6000) || (forced && off > 0.25)) {
@@ -466,7 +490,7 @@ export const ListenAlong = () => {
         tick();
         const timer = setInterval(tick, 3000);
         return () => clearInterval(timer);
-    }, [following, playSong, setStore, url]);
+    }, [following, playSong, queryClient, setStore, url]);
 
     if (!following || !friend) return null;
     return (
@@ -488,7 +512,17 @@ export const ListenAlong = () => {
                 title={`Jump to exactly where ${friend.name} is`}
                 variant="subtle"
             >
-                Catch up
+                {/* sync check: how far off you are from them */}
+                {drift === null ? 'Catch up' : drift < 0.6 ? 'In sync' : `${drift.toFixed(1)}s off`}
+            </Button>
+            <AlongChat host={following} label="Chat" />
+            <Button
+                onClick={() => setStore({ alongKeepGoing: !keepGoing })}
+                size="compact-xs"
+                title="When they stop, listen along with someone else who is listening"
+                variant={keepGoing ? 'light' : 'subtle'}
+            >
+                Keep going
             </Button>
         </Group>
     );

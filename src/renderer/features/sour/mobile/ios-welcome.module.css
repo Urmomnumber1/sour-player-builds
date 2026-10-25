@@ -10,8 +10,7 @@
     color: #fff;
     background:
         radial-gradient(120% 70% at 50% 0%, rgb(80 88 204 / 55%), transparent 60%),
-        radial-gradient(90% 60% at 100% 100%, rgb(242 193 78 / 22%), transparent 60%),
-        #0b0710;
+        radial-gradient(90% 60% at 100% 100%, rgb(242 193 78 / 22%), transparent 60%), #0b0710;
 }
 
 .card {

@@ -275,7 +275,9 @@
     background: transparent;
     border: 1px solid transparent;
     border-radius: 10px;
-    transition: border-color 0.15s, background 0.15s;
+    transition:
+        border-color 0.15s,
+        background 0.15s;
 }
 
 .cover-pick:hover {

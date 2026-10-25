@@ -1,3 +1,6 @@
+import type { Custom10 } from '/@/renderer/features/sour/components/customize';
+import type { V10Style } from '/@/renderer/features/sour/visualizer/v10-scenes';
+
 import { useQuery } from '@tanstack/react-query';
 import { persist } from 'zustand/middleware';
 import { createWithEqualityFn } from 'zustand/traditional';
@@ -42,6 +45,8 @@ export interface SourLook {
     barVisualizer: boolean;
     corners: 'normal' | 'round' | 'sharp';
     cursor: boolean;
+    // Sour Studio > Customize (0.10)
+    custom10?: Partial<Custom10>;
     dailyTheme: boolean;
     density: number;
     fadeCovers: boolean;
@@ -67,14 +72,17 @@ export interface SourLook {
     simple: boolean;
     socialToasts: boolean;
     splash: boolean;
-    stageScene: 'drive' | 'none' | 'rain' | 'snow' | 'stars';
+    stageScene: 'concert' | 'drive' | 'none' | 'rain' | 'snow' | 'stars';
     stageVinyl: boolean;
     startupSound: boolean;
     // the whole app's look: the v0.8 redesign, or Classic (how it looked up to v0.7)
-    ui: 'classic' | 'new';
+    // liquid = the v0.10 look, new = v2 (v0.8-0.9), classic = v0.7
+    ui: 'classic' | 'liquid' | 'new';
     // a heads-up with the next song a few seconds before this one ends
     upNext: boolean;
     visualizer: VisualizerStyle;
+    // Mix your own: two v0.10 visualizers drawn on top of each other
+    vizMix: [V10Style, V10Style];
 }
 
 export type VisualizerStyle =
@@ -82,10 +90,12 @@ export type VisualizerStyle =
     | 'glow'
     | 'halo'
     | 'lightning'
+    | 'mix'
     | 'orbit'
     | 'pulp'
     | 'river'
-    | 'soul';
+    | 'soul'
+    | V10Style;
 
 export const DEFAULT_LOOK: SourLook = {
     albumAccent: false,
@@ -121,9 +131,10 @@ export const DEFAULT_LOOK: SourLook = {
     stageScene: 'none',
     stageVinyl: false,
     startupSound: false,
-    ui: 'new',
+    ui: 'liquid',
     upNext: false,
     visualizer: 'bars',
+    vizMix: ['aurora', 'constellations'],
 };
 
 interface BlockedArtist {
@@ -134,10 +145,18 @@ interface BlockedArtist {
 // This computer's Sour Player state: the profile key (what lets it change the profile), blocked
 // artists, private song notes, pinned sidebar items, saved groups and look settings.
 interface SourStore {
+    // songs heard while listening along (newest first)
+    alongHistory: { at: number; friend: string; song: GroupSong }[];
+    // when the friend you listen along with stops, follow someone else who is listening
+    alongKeepGoing: boolean;
     block: (artist: BlockedArtist) => void;
     blocked: BlockedArtist[];
+    // big updates already celebrated (the 0.10 confetti shows once)
+    celebrated: string[];
     crossfade: Record<string, number>;
     greeted: string;
+    // Group Play quiet mode: no soundboard or join sounds
+    groupQuiet: boolean;
     // playlists hidden from this computer's sidebar (right-click a playlist > Hide)
     hiddenPlaylists?: { id: string; name: string }[];
     history: HistoryEntry[];
@@ -165,6 +184,8 @@ export const useSimpleMode = () => useSourStore((state) => !!state.look.simple);
 export const useSourStore = createWithEqualityFn<SourStore>()(
     persist(
         (set) => ({
+            alongHistory: [],
+            alongKeepGoing: false,
             block: (artist) =>
                 set((state) =>
                     state.blocked.some((b) => b.name.toLowerCase() === artist.name.toLowerCase())
@@ -172,8 +193,10 @@ export const useSourStore = createWithEqualityFn<SourStore>()(
                         : { blocked: [...state.blocked, artist] },
                 ),
             blocked: [],
+            celebrated: [],
             crossfade: {},
             greeted: '',
+            groupQuiet: false,
             hiddenPlaylists: [],
             history: [],
             holidayRestore: null,

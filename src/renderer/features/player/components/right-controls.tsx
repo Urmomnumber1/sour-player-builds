@@ -34,6 +34,7 @@ import {
 import { useSetRating } from '/@/renderer/features/shared/hooks/use-set-rating';
 import { useCreateFavorite } from '/@/renderer/features/shared/mutations/create-favorite-mutation';
 import { useDeleteFavorite } from '/@/renderer/features/shared/mutations/delete-favorite-mutation';
+import { AlongHost } from '/@/renderer/features/sour/components/along-extras';
 import { FeedbackButton } from '/@/renderer/features/sour/components/feedback';
 import {
     CrossfadeWatcher,
@@ -161,6 +162,7 @@ export const RightControls = () => {
             </Group>
             <Group align="center" gap="xs" justify="flex-end" wrap="nowrap">
                 <ListenAlong />
+                <AlongHost />
                 {!simple && <NextUpHint />}
                 <PlayerBarVisualizer />
                 {!simple && <FriendChips />}

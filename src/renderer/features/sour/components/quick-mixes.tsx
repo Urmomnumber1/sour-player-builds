@@ -51,6 +51,28 @@ export const quickMixes = {
     neverHeard: () => playMix('Never heard', { played: Played.Never }),
     // songs you've played before
     oldFavorites: () => playMix('Old favorites', { played: Played.Played }),
+    // smart queue: spreads out what's coming up so the same artist doesn't play twice in a row
+    smooth: () => {
+        const player = usePlayerStoreBase.getState();
+        const items = player.getQueue().items;
+        const now = player.player.index;
+        const upcoming = items.slice(now + 1);
+        if (upcoming.length < 3)
+            return toast.info({ message: 'Not enough songs coming up to smooth out' });
+        const left = [...upcoming];
+        const out: typeof upcoming = [];
+        let last = items[now]?.artistName ?? '';
+        while (left.length) {
+            const i = left.findIndex((s) => s.artistName !== last);
+            const [next] = left.splice(i === -1 ? 0 : i, 1);
+            out.push(next);
+            last = next.artistName;
+        }
+        player.moveSelectedToBottom(out);
+        return toast.success({
+            message: `Smoothed out ${out.length} songs - no artist twice in a row`,
+        });
+    },
 };
 
 // the same song twice in the queue: keep the first one (the playing song always stays)
@@ -85,7 +107,7 @@ export const copyNowPlaying = () => {
 
 export const toggleClassicLook = () => {
     const { look, setLook } = useSourStore.getState();
-    const ui = look.ui === 'classic' ? 'new' : 'classic';
+    const ui = look.ui === 'classic' ? 'liquid' : 'classic';
     setLook({ ui });
-    toast.info({ message: ui === 'classic' ? 'Classic look (v0.7)' : 'New look (v0.8)' });
+    toast.info({ message: ui === 'classic' ? 'Classic look (v0.7)' : 'New look (v0.10)' });
 };

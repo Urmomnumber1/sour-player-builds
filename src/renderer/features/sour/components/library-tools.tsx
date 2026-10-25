@@ -4,6 +4,13 @@ import { useEffect, useMemo, useState } from 'react';
 import styles from './hub.module.css';
 
 import { api } from '/@/renderer/api';
+import {
+    BundleCard,
+    LyricsDoctorCard,
+    MyRequestsCard,
+    StorageCard,
+    WishlistCard,
+} from '/@/renderer/features/hermes-request/components/request-extras';
 import { VideosCard } from '/@/renderer/features/hermes-video/components/video-manager';
 import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-video.store';
 import { searchQueries } from '/@/renderer/features/search/api/search-api';
@@ -706,12 +713,17 @@ export const LibraryTools = () => {
                 <HealthCard />
                 <TagsAndCoverCard />
                 <LyricsTapCard />
+                <LyricsDoctorCard />
+                <StorageCard />
+                <MyRequestsCard />
             </div>
             <div className={styles.list}>
                 <VideosCard />
                 <MoodCard />
                 <DuplicatesCard />
                 <ArchiveCard />
+                <WishlistCard />
+                <BundleCard />
             </div>
         </div>
     );

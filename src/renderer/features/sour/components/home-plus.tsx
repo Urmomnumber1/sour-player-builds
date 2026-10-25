@@ -256,6 +256,7 @@ export const MoodTiles = () => {
                 ))}
             </div>
             <VideoShelf />
+            <OnThisDay />
         </section>
     );
 };
@@ -284,6 +285,12 @@ const QUICK = [
         hint: "The playing song's genre",
         label: 'This genre',
         run: quickMixes.genre,
+    },
+    {
+        color: '#2c2c4a',
+        hint: 'No artist twice in a row',
+        label: 'Smooth the queue',
+        run: quickMixes.smooth,
     },
 ];
 
@@ -378,6 +385,42 @@ const ShelfItem = ({
                 {note}
             </Text>
         </button>
+    );
+};
+
+// ---------- on this day: what you played on this date in earlier months and years ----------
+export const OnThisDay = () => {
+    const url = useHermesUrl();
+    const me = useSourStore((s) => s.me);
+    const play = usePlaySong();
+    const days = useQuery({
+        enabled: !!url && !!me,
+        queryFn: async () => {
+            const res = await fetch(`${url}/api/profiles/${me?.id}/on-this-day`);
+            return res.ok ? ((await res.json()) as { day: string; songs: GroupSong[] }[]) : [];
+        },
+        queryKey: ['on-this-day', url, me?.id],
+        staleTime: 3600000,
+    }).data;
+    if (!days?.length) return null;
+    const label = (day: string) =>
+        new Date(`${day}T12:00:00`).toLocaleDateString(undefined, {
+            month: 'long',
+            year: 'numeric',
+        });
+    return (
+        <>
+            {days.slice(0, 2).map((d) => (
+                <div key={d.day}>
+                    <Text className={styles.label}>On this day - {label(d.day)}</Text>
+                    <div className={styles.shelf}>
+                        {d.songs.map((s) => (
+                            <ShelfItem key={s.id} note={s.artist} onPlay={() => play(s)} song={s} />
+                        ))}
+                    </div>
+                </div>
+            ))}
+        </>
     );
 };
 

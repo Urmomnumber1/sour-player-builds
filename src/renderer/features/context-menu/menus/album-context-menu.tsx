@@ -12,6 +12,7 @@ import { SetRatingAction } from '/@/renderer/features/context-menu/actions/set-r
 import { ShareAction } from '/@/renderer/features/context-menu/actions/share-action';
 import { ContextMenuPreview } from '/@/renderer/features/context-menu/components/context-menu-preview';
 import { AddCollectionToGroupAction } from '/@/renderer/features/group-play/components/add-to-group-action';
+import { CompleteAlbumAction } from '/@/renderer/features/hermes-request/components/request-extras';
 import {
     FindVideosAction,
     PlayAsVideosAction,
@@ -46,6 +47,7 @@ export const AlbumContextMenu = ({ items, type }: AlbumContextMenuProps) => {
             <AddCollectionToGroupAction ids={ids} itemType={LibraryItem.ALBUM} />
             <PlayAsVideosAction ids={ids} itemType={LibraryItem.ALBUM} />
             <FindVideosAction ids={ids} itemType={LibraryItem.ALBUM} />
+            <CompleteAlbumAction ids={ids} />
             <AddAlbumToProfileAction albums={items} />
             <PinAction item={items[0]} kind="album" />
             <ContextMenu.Divider />

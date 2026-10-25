@@ -1,0 +1,120 @@
+/* stylelint-disable selector-class-pattern, no-descending-specificity */
+
+/*
+ * Sour Player v0.10 look ("New (v0.10)" in Sour Studio > Layout). It builds on the v0.8 panels
+ * (.sour-v8 stays on) and adds .sour-v10: the whole app takes on the colour of the song that's
+ * playing (--liquid-tint, set by LiquidTint), slow drifting light behind the panels, deeper frosted
+ * glass and a floating-island player bar. "v2 (v0.9)" and "Classic (v0.7)" leave all of this off.
+ */
+
+.sour-v10:not(.sour-ios) {
+    --liquid: var(--liquid-tint, var(--theme-colors-primary));
+    --v8-radius: 20px;
+    --v8-panel: color-mix(in srgb, var(--theme-colors-surface) 62%, transparent);
+    --v8-line: color-mix(in srgb, var(--liquid) 22%, var(--theme-colors-border) 40%);
+    --v8-glow: color-mix(in srgb, var(--liquid) 30%, transparent);
+}
+
+/* the backdrop: two soft pools of the song's colour that slowly drift */
+.sour-v10:not(.sour-ios) body,
+.sour-v10:not(.sour-ios) #default-layout {
+    background:
+        radial-gradient(
+            1100px 700px at var(--liquid-x, 15%) var(--liquid-y, -5%),
+            var(--v8-glow),
+            transparent 62%
+        ),
+        radial-gradient(
+            1000px 600px at 95% 105%,
+            color-mix(in srgb, var(--liquid) 18%, transparent),
+            transparent 60%
+        ),
+        var(--theme-colors-background);
+    background-size: 160% 160%;
+    transition: background-color 1.2s ease;
+    animation: liquid-drift 40s ease-in-out infinite alternate;
+}
+
+@keyframes liquid-drift {
+    from {
+        background-position: 0% 0%;
+    }
+
+    to {
+        background-position: 100% 60%;
+    }
+}
+
+/* frosted panels */
+.sour-v10:not(.sour-ios) #sidebar,
+.sour-v10:not(.sour-ios) #sidebar-queue,
+.sour-v10:not(.sour-ios) #main-content > div:not(#sidebar, #sidebar-queue, [class*='resize']) {
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 6%),
+        0 12px 40px rgb(0 0 0 / 22%);
+    backdrop-filter: blur(28px) saturate(1.6);
+    transition:
+        border-color 1.2s ease,
+        box-shadow 1.2s ease;
+}
+
+/* the player bar: a floating island lit by the song */
+.sour-v10:not(.sour-ios) #player-bar {
+    padding: 8px 14px 10px;
+}
+
+.sour-v10:not(.sour-ios) #player-bar > div {
+    max-width: 1500px;
+    background: color-mix(in srgb, var(--theme-colors-surface) 58%, transparent);
+    border-radius: 26px;
+    box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--liquid) 25%, transparent),
+        0 14px 44px color-mix(in srgb, var(--liquid) 22%, rgb(0 0 0 / 35%));
+    backdrop-filter: blur(30px) saturate(1.8);
+    transition: box-shadow 1.2s ease;
+}
+
+.sour-v10:not(.sour-ios) [class*='left-controls-module-image-wrapper'] img {
+    border-radius: 12px;
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--liquid) 45%, transparent);
+}
+
+/* active sidebar item and accents follow the song */
+.sour-v10:not(.sour-ios) [class*='sidebar-item-module-active'] {
+    background: color-mix(in srgb, var(--liquid) 22%, transparent);
+}
+
+.sour-v10:not(.sour-ios) .mantine-Slider-bar {
+    background: var(--liquid);
+}
+
+/* cards lift a little further and catch the colour */
+.sour-v10:not(.sour-ios) [class*='item-card-module-container']:hover {
+    box-shadow: 0 14px 34px color-mix(in srgb, var(--liquid) 25%, rgb(0 0 0 / 30%));
+    transform: translateY(-3px);
+}
+
+/* page titles: big, tight, a little glow */
+.sour-v10:not(.sour-ios) [class*='library-header'] h1 {
+    letter-spacing: -0.03em;
+    text-shadow: 0 6px 30px color-mix(in srgb, var(--liquid) 40%, transparent);
+}
+
+/* menus and dialogs are glass too */
+.sour-v10:not(.sour-ios) .mantine-Popover-dropdown,
+.sour-v10:not(.sour-ios) .mantine-Menu-dropdown,
+.sour-v10:not(.sour-ios) .mantine-Modal-content {
+    background: color-mix(in srgb, var(--theme-colors-surface) 78%, transparent);
+    backdrop-filter: blur(24px) saturate(1.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sour-v10:not(.sour-ios) body,
+    .sour-v10:not(.sour-ios) #default-layout {
+        animation: none;
+    }
+
+    .sour-v10:not(.sour-ios) [class*='item-card-module-container']:hover {
+        transform: none;
+    }
+}

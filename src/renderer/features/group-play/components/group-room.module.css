@@ -9,8 +9,7 @@
 .theme-club {
     background:
         radial-gradient(circle at 20% 0%, rgb(255 0 170 / 35%), transparent 50%),
-        radial-gradient(circle at 80% 0%, rgb(0 200 255 / 30%), transparent 50%),
-        #120b1c;
+        radial-gradient(circle at 80% 0%, rgb(0 200 255 / 30%), transparent 50%), #120b1c;
     animation: club 4s linear infinite alternate;
 }
 
@@ -33,8 +32,7 @@
         radial-gradient(1px 1px at 20% 30%, #fff, transparent),
         radial-gradient(1px 1px at 70% 60%, #fff, transparent),
         radial-gradient(2px 2px at 40% 80%, #fff, transparent),
-        radial-gradient(circle at 80% 20%, rgb(120 90 255 / 35%), transparent 50%),
-        #05060f;
+        radial-gradient(circle at 80% 20%, rgb(120 90 255 / 35%), transparent 50%), #05060f;
 }
 
 .theme-rainy {

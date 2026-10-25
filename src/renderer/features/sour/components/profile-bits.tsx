@@ -7,6 +7,7 @@ import { type GroupSong } from '/@/renderer/features/group-play/store/group-play
 import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-video.store';
 import { getSongById } from '/@/renderer/features/player/utils';
 import { avatarUrl, type SourProfile, timeAgo } from '/@/renderer/features/sour/api/sour-api';
+import { AvatarDecoration } from '/@/renderer/features/sour/components/v10';
 import { fontFamily } from '/@/renderer/features/sour/fonts';
 import { useCurrentServer } from '/@/renderer/store';
 import { addToQueueByData, usePlayerStoreBase } from '/@/renderer/store/player.store';
@@ -25,7 +26,8 @@ export const ProfileAvatar = ({
     size = 40,
 }: {
     online?: boolean;
-    profile: Partial<Pick<SourProfile, 'custom'>> & Pick<SourProfile, 'avatar' | 'id' | 'name'>;
+    profile: Partial<Pick<SourProfile, 'custom' | 'decoration'>> &
+        Pick<SourProfile, 'avatar' | 'id' | 'name'>;
     size?: number;
 }) => {
     const url = useHermesUrl();
@@ -54,6 +56,7 @@ export const ProfileAvatar = ({
                     title={dnd && online ? 'Do not disturb' : online ? 'Online' : 'Offline'}
                 />
             )}
+            <AvatarDecoration kind={profile.decoration} size={size} />
         </span>
     );
 };

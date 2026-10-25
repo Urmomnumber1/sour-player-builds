@@ -19,6 +19,7 @@ import {
     timeAgo,
 } from '/@/renderer/features/sour/api/sour-api';
 import { albumMenuById } from '/@/renderer/features/sour/components/album-menu';
+import { usePlaySongs } from '/@/renderer/features/sour/components/along-extras';
 import { EmojiPicker } from '/@/renderer/features/sour/components/emoji-picker';
 import {
     activity,
@@ -105,6 +106,7 @@ export const ProfileView = ({
     const profiles = useSourProfiles().data ?? [];
     const queryClient = useQueryClient();
     const playSong = usePlaySong();
+    const playSongs = usePlaySongs();
     const navigate = useNavigate();
     const serverId = useCurrentServer()?.id;
     const current = usePlayerSong();
@@ -604,6 +606,22 @@ export const ProfileView = ({
                                     variant="filled"
                                 >
                                     Listen along
+                                </Button>
+                            )}
+                            {!!profile.recentPlays?.length && (
+                                <Button
+                                    onClick={() =>
+                                        playSongs(
+                                            [...(profile.recentPlays ?? [])]
+                                                .reverse()
+                                                .map((r) => r.song),
+                                        )
+                                    }
+                                    size="xs"
+                                    title="Their last songs, in the order they played them"
+                                    variant="default"
+                                >
+                                    Play what they played
                                 </Button>
                             )}
                             <Button

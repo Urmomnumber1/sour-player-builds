@@ -1,0 +1,14 @@
+.confetti {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    pointer-events: none;
+}
+
+.hat {
+    position: absolute;
+    z-index: 2;
+    overflow: visible;
+    pointer-events: none;
+    filter: drop-shadow(0 2px 2px rgb(0 0 0 / 35%));
+}

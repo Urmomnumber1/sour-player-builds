@@ -30,6 +30,19 @@ export type GroupControl =
     | 'remove'
     | 'seek';
 
+export type GroupGame = GameBase &
+    (
+        | { a: GroupSong; b: GroupSong; kind: 'battle'; votesA: number; votesB: number }
+        | { cards: Record<string, string[]>; heard: string[]; kind: 'bingo' }
+        | {
+              kind: 'countdown';
+              picks: { artist: string; by: string; id: string; title: string; votes: number }[];
+          }
+        | { kind: 'hotseat'; songsLeft: number; who: string }
+        | { kind: 'ranking'; ranked: number; songs: GroupSong[] }
+        | { kind: 'rounds'; picks: { artist: string; title: string; who: string }[]; theme: string }
+    );
+
 export interface GroupListing {
     code: string;
     host: string;
@@ -82,7 +95,6 @@ export interface GroupSong {
     title: string;
     year?: null | number;
 }
-
 export interface GroupState {
     approval?: boolean;
     birthday?: null | string;
@@ -95,6 +107,7 @@ export interface GroupState {
     encore?: number;
     encoreNeeded?: number;
     ended: boolean;
+    game?: GroupGame | null;
     guess?: boolean;
     guessScores?: Record<string, number>;
     guestControl: boolean;
@@ -107,6 +120,7 @@ export interface GroupState {
     listed: boolean;
     marks?: GroupMark[];
     members: GroupMember[];
+    mood?: null | { avg: number; count: number };
     name: string;
     needSongs?: boolean;
     pending?: GroupRequest[];
@@ -144,6 +158,9 @@ export interface ThemeNight {
     label: null | string;
     value: null | number | string;
 }
+
+// Sour Player 0.10 party games (see Hermes Music's gameState)
+type GameBase = { by: string; ends: null | number; result: null | string; started: number };
 
 // Group Play session (like a Spotify Jam). Hermes Music runs the group; the host's player is the
 // source of truth and members follow it. Your name and picture are remembered between restarts.

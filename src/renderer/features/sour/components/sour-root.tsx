@@ -13,6 +13,7 @@ import {
     OpenLinks,
 } from '/@/renderer/features/sour/components/extras10';
 import { Announcement, DesktopBits } from '/@/renderer/features/sour/components/extras104';
+import { SetupGuide } from '/@/renderer/features/sour/components/extras105';
 import { HolidayLayer } from '/@/renderer/features/sour/components/holiday-layer';
 import { KeepPlaying, UpNextHeadsUp } from '/@/renderer/features/sour/components/keep-playing';
 import { MiniPlayer } from '/@/renderer/features/sour/components/mini-player';
@@ -185,6 +186,9 @@ export const SourRoot = () => (
         </SourSafe>
         <SourSafe name="playback tools">
             <PlaybackWatcher />
+        </SourSafe>
+        <SourSafe name="setup guide">
+            <SetupGuide />
         </SourSafe>
         <SourSafe name="desktop extras">
             <DesktopBits />

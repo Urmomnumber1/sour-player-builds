@@ -158,6 +158,9 @@ interface SourStore {
     bookmarks: Record<string, number[]>;
     // big updates already celebrated (the 0.10 confetti shows once)
     celebrated: string[];
+    // 0.10.5
+    closeFriends: string[];
+    closeOnlyNudges: boolean;
     crossfade: Record<string, number>;
     duet: boolean;
     // focus mode (Ctrl+Shift+F): only the page and the player
@@ -176,6 +179,7 @@ interface SourStore {
     look: SourLook;
     me: Me | null;
     notes: Record<string, string>;
+    outfits: { looks: Record<string, string | undefined>; name: string }[];
     pins: Pin[];
     // private session: nothing you play is counted or shown to friends
     privateSession: boolean;
@@ -189,6 +193,7 @@ interface SourStore {
     set: (changes: Partial<Omit<SourStore, 'block' | 'set' | 'setLook' | 'unblock'>>) => void;
     setLook: (changes: Partial<SourLook>) => void;
     setMe: (me: Me | null) => void;
+    setupDone: boolean;
     songVolumes: Record<string, number>;
     unblock: (name: string) => void;
     volumeMemory: boolean;
@@ -213,6 +218,8 @@ export const useSourStore = createWithEqualityFn<SourStore>()(
             blocked: [],
             bookmarks: {},
             celebrated: [],
+            closeFriends: [],
+            closeOnlyNudges: false,
             crossfade: {},
             duet: false,
             focusMode: false,
@@ -228,6 +235,7 @@ export const useSourStore = createWithEqualityFn<SourStore>()(
             look: DEFAULT_LOOK,
             me: null,
             notes: {},
+            outfits: [],
             pins: [],
             privateSession: false,
             queueSnapshots: [],
@@ -239,6 +247,7 @@ export const useSourStore = createWithEqualityFn<SourStore>()(
             set: (changes) => set(changes),
             setLook: (changes) => set((state) => ({ look: { ...state.look, ...changes } })),
             setMe: (me) => set({ me }),
+            setupDone: false,
             songVolumes: {},
             unblock: (name) =>
                 set((state) => ({

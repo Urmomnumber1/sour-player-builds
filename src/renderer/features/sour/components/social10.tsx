@@ -8,9 +8,12 @@ import { type GroupSong } from '/@/renderer/features/group-play/store/group-play
 import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-video.store';
 import { type SourProfile } from '/@/renderer/features/sour/api/sour-api';
 import { AlbumOfWeekPicker } from '/@/renderer/features/sour/components/album-picker';
+import { CloseFriendButton } from '/@/renderer/features/sour/components/extras105';
 import { Card } from '/@/renderer/features/sour/components/hub-panels';
 import { SongCover } from '/@/renderer/features/sour/components/people';
 import { usePlaySong } from '/@/renderer/features/sour/components/profile-bits';
+import { useShop } from '/@/renderer/features/sour/components/shop';
+import { ItemPreview } from '/@/renderer/features/sour/components/shop-looks';
 import { SongPicker } from '/@/renderer/features/sour/components/song-picker';
 import {
     useMyProfile,
@@ -246,6 +249,9 @@ export const InboxWatcher = () => {
             if (seen.current.has(m.id)) continue;
             seen.current.add(m.id);
             if (m.read || inQuietHours()) continue;
+            const { closeFriends = [], closeOnlyNudges } = useSourStore.getState();
+            if (m.kind === 'nudge' && closeOnlyNudges && !(m.from && closeFriends.includes(m.from)))
+                continue;
             toast.info({
                 message:
                     m.kind === 'rec'
@@ -299,6 +305,7 @@ export const FriendActions = ({ profile }: { profile: SourProfile }) => {
                 >
                     Come listen with me
                 </Button>
+                <CloseFriendButton id={profile.id} name={profile.name} />
             </Group>
             {picking && (
                 <Group align="flex-end" gap="xs" wrap="nowrap">
@@ -346,9 +353,24 @@ export const ProfileExtras10 = ({
             );
     const top4 = (profile.custom as undefined | { top4?: GroupSong[] })?.top4 ?? [];
     const profileSong = (profile.custom as undefined | { profileSong?: GroupSong })?.profileSong;
-    if (!profile.obsessed && !hours && !decades.size && !top4.length && !profileSong) return null;
+    const showcase = (profile.custom as undefined | { showcase?: string[] })?.showcase ?? [];
+    if (
+        !profile.obsessed &&
+        !hours &&
+        !decades.size &&
+        !top4.length &&
+        !profileSong &&
+        !showcase.length
+    )
+        return null;
     return (
         <div className={styles.extras}>
+            {!!showcase.length && (
+                <div className={styles.tileWide}>
+                    <Text className={styles.label}>Showcase</Text>
+                    <Showcase ids={showcase} />
+                </div>
+            )}
             {profileSong && (
                 <button className={styles.tile} onClick={() => play(profileSong)} type="button">
                     <SongCover size={48} song={profileSong} />
@@ -497,6 +519,10 @@ export const ProfileEditor10 = ({
                     value={null}
                 />
             )}
+            <ShowcasePicker
+                setC={setC}
+                value={(custom as { showcase?: string[] }).showcase ?? []}
+            />
             <Text fw={700}>Profile song</Text>
             <SongPicker
                 onPick={(s) => setC({ profileSong: s ?? undefined })}
@@ -906,5 +932,70 @@ export const WeeklyDigest = () => {
                 </Text>
             ))}
         </div>
+    );
+};
+
+// ---------- showcase: three things from the shop you're proud of ----------
+const Showcase = ({ ids }: { ids: string[] }) => {
+    const items = useShop().data?.items ?? [];
+    return (
+        <div className={styles.top4}>
+            {ids.slice(0, 3).map((id) => {
+                const it = items.find((x) => x.id === id);
+                return it ? (
+                    <div
+                        key={id}
+                        style={{
+                            alignItems: 'center',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 4,
+                            width: 90,
+                        }}
+                        title={it.name}
+                    >
+                        <ItemPreview id={it.id} name={it.name} slot={it.slot} />
+                        <Text size="xs" truncate>
+                            {it.name}
+                        </Text>
+                    </div>
+                ) : null;
+            })}
+        </div>
+    );
+};
+
+const ShowcasePicker = ({
+    setC,
+    value,
+}: {
+    setC: (c: Record<string, unknown>) => void;
+    value: string[];
+}) => {
+    const owned = useMyProfile().data?.owned ?? [];
+    const items = (useShop().data?.items ?? []).filter((i) => owned.includes(i.id));
+    if (!items.length) return null;
+    return (
+        <Stack gap={4}>
+            <Text fw={700}>Showcase (up to 3 things from the shop)</Text>
+            <Group gap={4}>
+                {items.map((i) => (
+                    <Button
+                        key={i.id}
+                        onClick={() =>
+                            setC({
+                                showcase: value.includes(i.id)
+                                    ? value.filter((x) => x !== i.id)
+                                    : [...value, i.id].slice(-3),
+                            })
+                        }
+                        size="compact-xs"
+                        variant={value.includes(i.id) ? 'filled' : 'default'}
+                    >
+                        {i.name}
+                    </Button>
+                ))}
+            </Group>
+        </Stack>
     );
 };

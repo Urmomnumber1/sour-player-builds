@@ -5,9 +5,17 @@ import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-vid
 
 // Lyrics translation (Sour Player 0.10): Hermes Music translates the song's lyrics line by line into
 // your language (and keeps them, so each song is only translated once)
-export const useTranslateLyrics = create<{ on: boolean; toggle: () => void }>()((set) => ({
+export const useTranslateLyrics = create<{
+    mode: 'romanize' | 'translate';
+    on: boolean;
+    romanize: () => void;
+    toggle: () => void;
+}>()((set) => ({
+    mode: 'translate',
     on: false,
-    toggle: () => set((s) => ({ on: !s.on })),
+    // romanize: the same words in Latin letters (for Japanese, Korean, Russian, Arabic...)
+    romanize: () => set((s) => ({ mode: 'romanize', on: !(s.on && s.mode === 'romanize') })),
+    toggle: () => set((s) => ({ mode: 'translate', on: !(s.on && s.mode === 'translate') })),
 }));
 
 export const myLanguage = () => {
@@ -25,7 +33,11 @@ export const useLineTranslations = (
 ) => {
     const url = useHermesUrl();
     const on = useTranslateLyrics((s) => s.on);
-    const lang = myLanguage();
+    const mode = useTranslateLyrics((s) => s.mode);
+    const lang =
+        mode === 'romanize'
+            ? 'romanized: the same lyrics in Latin letters (transliteration, not translation)'
+            : myLanguage();
     return useQuery({
         enabled: on && !!url && !!song?.id && lines.length > 0,
         queryFn: async () => {
@@ -60,3 +72,11 @@ export const useCanTranslate = () => {
         staleTime: 10 * 60000,
     }).data;
 };
+
+// lyrics written in another script (worth offering Romanize)
+export const nonLatin = (lines: { text: string }[]) =>
+    lines.some((l) =>
+        /\p{Script=Cyrillic}|\p{Script=Arabic}|\p{Script=Hebrew}|\p{Script=Devanagari}|\p{Script=Thai}|\p{Script=Hangul}|\p{Script=Hiragana}|\p{Script=Katakana}|\p{Script=Han}/u.test(
+            l.text,
+        ),
+    );

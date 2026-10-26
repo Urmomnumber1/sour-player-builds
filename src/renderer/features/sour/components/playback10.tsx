@@ -407,6 +407,25 @@ const ToolsBody = () => {
                 size="xs"
             />
             <Switch
+                checked={!!store.closeOnlyNudges}
+                label="Only close friends can nudge me"
+                onChange={(e) => store.set({ closeOnlyNudges: e.currentTarget.checked })}
+                size="xs"
+            />
+            <Button
+                onClick={() => {
+                    window.location.hash = '#/settings';
+                    toast.info({
+                        message: 'The equalizer and compressor are in Settings > Playback',
+                    });
+                }}
+                size="compact-xs"
+                variant="subtle"
+                w="fit-content"
+            >
+                Equalizer...
+            </Button>
+            <Switch
                 checked={!!store.volumeMemory}
                 label="Remember the volume for each song"
                 onChange={(e) => store.set({ volumeMemory: e.currentTarget.checked })}

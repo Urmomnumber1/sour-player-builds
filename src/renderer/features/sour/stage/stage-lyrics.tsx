@@ -436,6 +436,7 @@ export const LyricsTools = ({
     const queryClient = useQueryClient();
     const url = useHermesUrl();
     const translateOn = useTranslateLyrics((s) => s.on);
+    const translateMode = useTranslateLyrics((s) => s.mode);
     const canTranslate = useCanTranslate();
     if (!song?._serverId || !song.id) return null;
     const key = queryKeys.songs.lyrics(song._serverId, { songId: song.id });
@@ -482,6 +483,16 @@ export const LyricsTools = ({
             <ShareCardButton />
             {karaoke && <DuetButton />}
             {karaoke && <RecordButton />}
+            {canTranslate && (
+                <button
+                    className={styles.textTool}
+                    onClick={() => useTranslateLyrics.getState().romanize()}
+                    title="The same lyrics in Latin letters"
+                    type="button"
+                >
+                    {translateOn && translateMode === 'romanize' ? 'Original script' : 'Romanize'}
+                </button>
+            )}
             {canTranslate && (
                 <button
                     className={styles.textTool}

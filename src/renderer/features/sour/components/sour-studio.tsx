@@ -25,6 +25,7 @@ import { useSettingsStore } from '/@/renderer/store/settings.store';
 import { THEME_DATA } from '/@/renderer/themes/use-app-theme';
 import { fontOptions } from '/@/renderer/types/fonts';
 import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
+import { Button } from '/@/shared/components/button/button';
 import { Group } from '/@/shared/components/group/group';
 import { SegmentedControl } from '/@/shared/components/segmented-control/segmented-control';
 import { Select } from '/@/shared/components/select/select';
@@ -32,6 +33,7 @@ import { Slider } from '/@/shared/components/slider/slider';
 import { Stack } from '/@/shared/components/stack/stack';
 import { Switch } from '/@/shared/components/switch/switch';
 import { Tabs } from '/@/shared/components/tabs/tabs';
+import { TextInput } from '/@/shared/components/text-input/text-input';
 import { Text } from '/@/shared/components/text/text';
 import { getAppTheme } from '/@/shared/themes/app-theme';
 import { FontType } from '/@/shared/types/types';
@@ -453,44 +455,122 @@ const Extras = () => (
     </Stack>
 );
 
-const Studio = () => (
-    <Tabs defaultValue="skins" keepMounted={false}>
-        <Tabs.List>
-            <Tabs.Tab value="skins">Skins</Tabs.Tab>
-            <Tabs.Tab value="holidays">Holidays</Tabs.Tab>
-            <Tabs.Tab value="visualizer">Visualizer</Tabs.Tab>
-            <Tabs.Tab value="layout">Layout</Tabs.Tab>
-            <Tabs.Tab value="fonts">Fonts</Tabs.Tab>
-            <Tabs.Tab value="icon">Icon</Tabs.Tab>
-            <Tabs.Tab value="customize">Customize</Tabs.Tab>
-            <Tabs.Tab value="extras">Extras</Tabs.Tab>
-        </Tabs.List>
-        <Tabs.Panel pt="md" value="skins">
-            <Skins />
-        </Tabs.Panel>
-        <Tabs.Panel pt="md" value="holidays">
-            <Holidays />
-        </Tabs.Panel>
-        <Tabs.Panel pt="md" value="visualizer">
-            <Visualizers />
-        </Tabs.Panel>
-        <Tabs.Panel pt="md" value="layout">
-            <Layout />
-        </Tabs.Panel>
-        <Tabs.Panel pt="md" value="fonts">
-            <Fonts />
-        </Tabs.Panel>
-        <Tabs.Panel pt="md" value="icon">
-            <Icons />
-        </Tabs.Panel>
-        <Tabs.Panel pt="md" value="customize">
-            <Customize />
-        </Tabs.Panel>
-        <Tabs.Panel pt="md" value="extras">
-            <Extras />
-        </Tabs.Panel>
-    </Tabs>
-);
+// everything you can change in the Studio, for the search box
+const STUDIO_INDEX: [string, string][] = [
+    ['skin theme colours', 'skins'],
+    ['holiday skins snow bats halloween christmas', 'holidays'],
+    ['visualizer player bar strip mix', 'visualizer'],
+    ['app look new v2 classic player bar corners', 'layout'],
+    ['font app font name font playlist font', 'fonts'],
+    ['app icon icon pack', 'icon'],
+    ['theme builder colours accent', 'customize'],
+    ['cursor lemon big', 'customize'],
+    ['click sounds', 'customize'],
+    ['icons thin bold colour', 'customize'],
+    ['opens on start page', 'customize'],
+    ['heading font lyrics font', 'customize'],
+    ['sidebar right left', 'customize'],
+    ['density compact', 'customize'],
+    ['stage background picture', 'customize'],
+    ['share setup code', 'customize'],
+    ['dock morph parallax poster gallery time of day', 'customize'],
+    ['crossfade mood widget desktop', 'customize'],
+    ['start with the computer autostart', 'customize'],
+    ['ctrl alt r quick request', 'customize'],
+    ['low power battery', 'customize'],
+    ['high contrast text size accessibility', 'customize'],
+    ['stage layout lyrics only cover only credits', 'customize'],
+    ['quiet hours', 'customize'],
+    ['hover previews keep playing up next splash', 'extras'],
+];
+const STUDIO_TABS: Record<string, string> = {
+    customize: 'Customize',
+    extras: 'Extras',
+    fonts: 'Fonts',
+    holidays: 'Holidays',
+    icon: 'Icon',
+    layout: 'Layout',
+    skins: 'Skins',
+    visualizer: 'Visualizer',
+};
+
+const Studio = () => {
+    const [tab, setTab] = useState<null | string>('skins');
+    const [q, setQ] = useState('');
+    const words = q.trim().toLowerCase();
+    const hits = words
+        ? [...new Set(STUDIO_INDEX.filter(([k]) => k.includes(words)).map(([, t]) => t))]
+        : [];
+    return (
+        <Stack gap="sm">
+            <TextInput
+                onChange={(e) => setQ(e.currentTarget.value)}
+                placeholder="Search the Studio (e.g. cursor, dock, font)"
+                size="xs"
+                value={q}
+            />
+            {!!words && (
+                <Group gap={4}>
+                    {hits.length ? (
+                        hits.map((t) => (
+                            <Button
+                                key={t}
+                                onClick={() => {
+                                    setTab(t);
+                                    setQ('');
+                                }}
+                                size="compact-xs"
+                                variant="light"
+                            >
+                                {STUDIO_TABS[t]}
+                            </Button>
+                        ))
+                    ) : (
+                        <Text isMuted size="xs">
+                            Nothing called that - try another word
+                        </Text>
+                    )}
+                </Group>
+            )}
+            <Tabs keepMounted={false} onChange={setTab} value={tab}>
+                <Tabs.List>
+                    <Tabs.Tab value="skins">Skins</Tabs.Tab>
+                    <Tabs.Tab value="holidays">Holidays</Tabs.Tab>
+                    <Tabs.Tab value="visualizer">Visualizer</Tabs.Tab>
+                    <Tabs.Tab value="layout">Layout</Tabs.Tab>
+                    <Tabs.Tab value="fonts">Fonts</Tabs.Tab>
+                    <Tabs.Tab value="icon">Icon</Tabs.Tab>
+                    <Tabs.Tab value="customize">Customize</Tabs.Tab>
+                    <Tabs.Tab value="extras">Extras</Tabs.Tab>
+                </Tabs.List>
+                <Tabs.Panel pt="md" value="skins">
+                    <Skins />
+                </Tabs.Panel>
+                <Tabs.Panel pt="md" value="holidays">
+                    <Holidays />
+                </Tabs.Panel>
+                <Tabs.Panel pt="md" value="visualizer">
+                    <Visualizers />
+                </Tabs.Panel>
+                <Tabs.Panel pt="md" value="layout">
+                    <Layout />
+                </Tabs.Panel>
+                <Tabs.Panel pt="md" value="fonts">
+                    <Fonts />
+                </Tabs.Panel>
+                <Tabs.Panel pt="md" value="icon">
+                    <Icons />
+                </Tabs.Panel>
+                <Tabs.Panel pt="md" value="customize">
+                    <Customize />
+                </Tabs.Panel>
+                <Tabs.Panel pt="md" value="extras">
+                    <Extras />
+                </Tabs.Panel>
+            </Tabs>
+        </Stack>
+    );
+};
 
 // The Sour Studio: everything about how Sour Player looks, in one place.
 export const openSourStudio = () =>

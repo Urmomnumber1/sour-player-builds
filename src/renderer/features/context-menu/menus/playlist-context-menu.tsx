@@ -13,6 +13,10 @@ import {
 } from '/@/renderer/features/hermes-video/components/video-actions';
 import { KeepOfflineAction } from '/@/renderer/features/sour/components/extras10';
 import {
+    CoverMakerAction,
+    PlaylistVersionAction,
+} from '/@/renderer/features/sour/components/extras105';
+import {
     HidePlaylistAction,
     PinAction,
     PinPlaylistToProfileAction,
@@ -50,6 +54,8 @@ export const PlaylistContextMenu = ({ items, type }: PlaylistContextMenuProps) =
             <AddToPlaylistAction items={ids} itemType={LibraryItem.PLAYLIST} />
             <AddCollectionToGroupAction ids={ids} itemType={LibraryItem.PLAYLIST} />
             <PlayAsVideosAction ids={ids} itemType={LibraryItem.PLAYLIST} />
+            <PlaylistVersionAction ids={ids} names={items.map((i) => i.name)} />
+            <CoverMakerAction ids={ids} names={items.map((i) => i.name)} />
             <FindVideosAction ids={ids} itemType={LibraryItem.PLAYLIST} />
             <KeepOfflineAction ids={ids} />
             <PinAction item={items[0]} kind="playlist" />

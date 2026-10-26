@@ -23,10 +23,13 @@ export const SidebarFriends = () => {
     const me = useSourStore((state) => state.me);
     const profiles = useSourProfiles();
     const [showOffline, setShowOffline] = useState(false);
+    const close = useSourStore((state) => state.closeFriends ?? []);
 
     if (!url) return null;
 
-    const others = (profiles.data ?? []).filter((p) => p.id !== me?.id);
+    const others = (profiles.data ?? [])
+        .filter((p) => p.id !== me?.id)
+        .sort((a, b) => Number(close.includes(b.id)) - Number(close.includes(a.id)));
     const online = others.filter((p) => p.online);
     const offline = others.filter((p) => !p.online);
 

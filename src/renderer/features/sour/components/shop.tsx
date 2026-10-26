@@ -6,6 +6,7 @@ import styles from './shop.module.css';
 
 import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-video.store';
 import { type SourProfile } from '/@/renderer/features/sour/api/sour-api';
+import { OutfitPresets } from '/@/renderer/features/sour/components/extras105';
 import { ProfileAvatar, ProfileName } from '/@/renderer/features/sour/components/profile-bits';
 import {
     bannerClass,
@@ -276,6 +277,7 @@ export const ShopPanel = () => {
                     </Text>
                 ))}
             </Stack>
+            <OutfitPresets />
             {mine.admin && <AdminItems />}
         </Stack>
     );

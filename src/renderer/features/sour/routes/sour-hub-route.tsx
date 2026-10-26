@@ -2,6 +2,7 @@ import styles from '../components/hub.module.css';
 
 import { NativeScrollArea } from '/@/renderer/components/native-scroll-area/native-scroll-area';
 import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-video.store';
+import { PredictCard } from '/@/renderer/features/sour/components/extras105';
 import {
     ColorOfTheDay,
     DuelsPanel,
@@ -66,6 +67,9 @@ const SourHubRoute = () => {
                                     </SourSafe>
                                     <SourSafe name="album club">
                                         <AlbumClubCard />
+                                    </SourSafe>
+                                    <SourSafe name="call it">
+                                        <PredictCard />
                                     </SourSafe>
                                     <SourSafe name="polls">
                                         <PollsCard />

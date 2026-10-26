@@ -18,6 +18,7 @@ import {
     PlayAsVideosAction,
 } from '/@/renderer/features/hermes-video/components/video-actions';
 import { ChangeCoverAction } from '/@/renderer/features/sour/components/cover-changer';
+import { LinerNotesAction } from '/@/renderer/features/sour/components/extras105';
 import {
     AddAlbumToProfileAction,
     PinAction,
@@ -48,6 +49,7 @@ export const AlbumContextMenu = ({ items, type }: AlbumContextMenuProps) => {
             <PlayAsVideosAction ids={ids} itemType={LibraryItem.ALBUM} />
             <FindVideosAction ids={ids} itemType={LibraryItem.ALBUM} />
             <CompleteAlbumAction ids={ids} />
+            <LinerNotesAction ids={ids} />
             <AddAlbumToProfileAction albums={items} />
             <PinAction item={items[0]} kind="album" />
             <ContextMenu.Divider />

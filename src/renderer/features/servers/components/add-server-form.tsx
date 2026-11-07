@@ -92,6 +92,44 @@ const SERVER_TYPES: Record<ServerType, ServerDetails> = {
     },
 };
 
+// Sour Player: the addresses to try when signing in, in order. What was typed first, then the usual
+// slips that all end in the same "A network error occurred": no http:// at all, https:// on a server that
+// only speaks http (Navidrome on an Umbrel), or no port (Navidrome's is 4533).
+const addressesToTry = (typed: string, type: ServerType): string[] => {
+    const raw = normalizeServerUrl(typed);
+    const bare = raw.replace(/^https?:\/\//i, '');
+    if (!bare) return [raw];
+    const out: string[] = [];
+    const add = (u: string) => {
+        if (!out.includes(u)) out.push(u);
+    };
+    if (/^https?:\/\//i.test(raw)) add(raw);
+    add(`http://${bare}`);
+    add(`https://${bare}`);
+    const host = bare.split('/')[0];
+    if (type !== ServerType.JELLYFIN && !/:\d+$/.test(host)) {
+        add(`http://${host}:4533${bare.slice(host.length)}`);
+    }
+    return out;
+};
+
+const isNetworkFailure = (error: any) => {
+    const message = String(error?.message || '').toLowerCase();
+    return message.includes('network') || message.includes('timed out');
+};
+
+// an unreachable address can hang for a minute: give each try a few seconds
+const withTimeout = <T,>(promise: Promise<T>, ms: number) =>
+    Promise.race([
+        promise,
+        new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Network: timed out')), ms),
+        ),
+    ]);
+
+const unreachableMessage = (typed: string) =>
+    `Couldn't reach ${normalizeServerUrl(typed) || 'the server'}. Type the whole address with http:// and the port, like http://192.168.1.20:4533 at home, or your Umbrel's Tailscale address with :4533 when you're away (with Tailscale on). umbrel.local doesn't work on most Android phones: use the Umbrel's IP address instead.`;
+
 const ALL_SERVERS = Object.keys(SERVER_TYPES).map((serverType) => {
     const info = SERVER_TYPES[serverType];
     return {
@@ -125,7 +163,8 @@ export const AddServerForm = ({ onCancel }: AddServerFormProps) => {
                 (localSettings
                     ? localSettings.env.SERVER_TYPE
                     : toServerType(window.SERVER_TYPE)) ?? ServerType.NAVIDROME,
-            url: (localSettings ? localSettings.env.SERVER_URL : window.SERVER_URL) ?? 'https://',
+            // http:// (Navidrome on an Umbrel only speaks http; the phone apps used to start at https://)
+            url: (localSettings ? localSettings.env.SERVER_URL : window.SERVER_URL) ?? 'http://',
             username: '',
         },
     });
@@ -205,15 +244,39 @@ export const AddServerForm = ({ onCancel }: AddServerFormProps) => {
 
         try {
             setIsLoading(true);
-            const data: AuthenticationResponse | undefined = await authFunction(
-                values.url,
-                {
-                    legacy: values.legacyAuth,
-                    password: values.password,
-                    username: values.username,
-                },
-                values.type as ServerType,
-            );
+            // the address as typed, then the usual fixes for it (see addressesToTry); a wrong password
+            // or any other answer from the server stops there, only "can't reach it" tries the next one
+            let data: AuthenticationResponse | undefined;
+            let workingUrl = values.url;
+            let lastError: any = null;
+            for (const candidate of addressesToTry(values.url, values.type as ServerType)) {
+                try {
+                    data = await withTimeout(
+                        authFunction(
+                            candidate,
+                            {
+                                legacy: values.legacyAuth,
+                                password: values.password,
+                                username: values.username,
+                            },
+                            values.type as ServerType,
+                        ),
+                        8000,
+                    );
+                    workingUrl = candidate;
+                    lastError = null;
+                    break;
+                } catch (error) {
+                    lastError = error;
+                    if (!isNetworkFailure(error)) break;
+                }
+            }
+            if (lastError) {
+                throw isNetworkFailure(lastError)
+                    ? new Error(unreachableMessage(values.url))
+                    : lastError;
+            }
+            if (workingUrl !== values.url) form.setFieldValue('url', workingUrl);
 
             if (!data) {
                 return toast.error({
@@ -227,7 +290,7 @@ export const AddServerForm = ({ onCancel }: AddServerFormProps) => {
                 isAdmin: data.isAdmin,
                 name: values.name,
                 type: values.type as ServerType,
-                url: normalizeServerUrl(values.url),
+                url: normalizeServerUrl(workingUrl),
                 userId: data.userId,
                 username: data.username,
             };

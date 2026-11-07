@@ -23,6 +23,15 @@
       },
       "versions": [
         {
+          "version": "0.10.6",
+          "buildVersion": "4",
+          "date": "2026-11-07",
+          "localizedDescription": "The phone app look (tabs, mini player, sheets, tap to play), the Sour Stage with the video behind the lyrics and Rainy day / Stormy night, Not the right song, and everything else from the computer version.",
+          "downloadURL": "https://github.com/Urmomnumber1/feishin/releases/download/ios-v0.10.6/Sour-Player-0.10.6.ipa",
+          "size": 29059459,
+          "minOSVersion": "15.0"
+        },
+        {
           "version": "0.3.0",
           "buildVersion": "3",
           "date": "2026-10-19",

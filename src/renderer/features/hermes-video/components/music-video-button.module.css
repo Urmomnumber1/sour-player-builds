@@ -241,3 +241,34 @@
     object-fit: cover;
     border-radius: 8px;
 }
+
+/* the video behind the Sour Stage: fills it like a cover picture (an iframe can't be told to "cover", so it's
+   made bigger than the Stage in both directions and centred), dimmed so the words stay readable */
+.backdrop,
+.backdrop-blur {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.backdrop iframe,
+.backdrop-blur iframe {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 177.78vh);
+    height: max(100%, 56.25vw);
+    border: 0;
+    transform: translate(-50%, -50%);
+}
+
+.backdrop iframe {
+    filter: brightness(0.55);
+}
+
+.backdrop-blur iframe {
+    filter: blur(26px) brightness(0.6) saturate(1.2);
+    transform: translate(-50%, -50%) scale(1.15);
+}

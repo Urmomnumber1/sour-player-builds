@@ -90,6 +90,21 @@ const SourHubRoute = lazy(() => import('/@/renderer/features/sour/routes/sour-hu
 
 const SourLibraryRoute = lazy(() => import('/@/renderer/features/sour/routes/sour-library-route'));
 
+// phones: the Library, Search and You tabs
+const PhoneLibraryRoute = lazy(() =>
+    import('/@/renderer/features/sour/mobile/phone-pages').then((m) => ({
+        default: m.PhoneLibrary,
+    })),
+);
+const PhoneSearchRoute = lazy(() =>
+    import('/@/renderer/features/sour/mobile/phone-pages').then((m) => ({
+        default: m.PhoneSearch,
+    })),
+);
+const PhoneMeRoute = lazy(() =>
+    import('/@/renderer/features/sour/mobile/phone-pages').then((m) => ({ default: m.PhoneMe })),
+);
+
 const LazyLyricsSettingsContextModal = lazy(() =>
     import('/@/renderer/features/lyrics/components/lyrics-settings-modal').then((module) => ({
         default: module.LyricsSettingsContextModal,
@@ -249,6 +264,18 @@ export const AppRouter = () => {
                                         <Route
                                             element={<SourLibraryRoute />}
                                             path={AppRoute.SOUR_LIBRARY}
+                                        />
+                                        <Route
+                                            element={<PhoneLibraryRoute />}
+                                            path={AppRoute.PHONE_LIBRARY}
+                                        />
+                                        <Route
+                                            element={<PhoneSearchRoute />}
+                                            path={AppRoute.PHONE_SEARCH}
+                                        />
+                                        <Route
+                                            element={<PhoneMeRoute />}
+                                            path={AppRoute.PHONE_ME}
                                         />
                                         <Route
                                             element={<NowPlayingRoute />}

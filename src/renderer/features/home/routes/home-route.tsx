@@ -20,6 +20,7 @@ import {
     SourHomeSection,
 } from '/@/renderer/features/sour/components/home-sections';
 import { useSimpleMode } from '/@/renderer/features/sour/store/sour.store';
+import { useIsMobile } from '/@/renderer/hooks/use-is-mobile';
 import {
     HomeFeatureStyle,
     HomeItem,
@@ -111,6 +112,8 @@ const HomeRoute = () => {
         }));
 
     const simple = useSimpleMode();
+    // phones: the greeting comes first (no big picture banner), with phone-sized margins
+    const phone = useIsMobile();
     return (
         <AnimatedPage>
             <HomeBackground />
@@ -128,18 +131,20 @@ const HomeRoute = () => {
             >
                 <LibraryContainer>
                     <Stack
-                        gap="2xl"
-                        mb="5rem"
-                        pt={windowBarStyle === Platform.WEB ? '5rem' : '3rem'}
-                        px="2rem"
+                        gap={phone ? 'xl' : '2xl'}
+                        mb={phone ? '2rem' : '5rem'}
+                        pt={phone ? '0.5rem' : windowBarStyle === Platform.WEB ? '5rem' : '3rem'}
+                        px={phone ? '1rem' : '2rem'}
                         ref={containerQuery.ref}
                     >
-                        {homeFeature && homeFeatureStyle === HomeFeatureStyle.SINGLE && (
+                        {!phone && homeFeature && homeFeatureStyle === HomeFeatureStyle.SINGLE && (
                             <AlbumInfiniteSingleFeatureCarousel />
                         )}
-                        {homeFeature && homeFeatureStyle === HomeFeatureStyle.MULTIPLE && (
-                            <AlbumInfiniteFeatureCarousel />
-                        )}
+                        {!phone &&
+                            homeFeature &&
+                            homeFeatureStyle === HomeFeatureStyle.MULTIPLE && (
+                                <AlbumInfiniteFeatureCarousel />
+                            )}
                         {sortedItems.map((item) => {
                             // Sour Player: friend-group sections (radio, friends, requests, ...)
                             if (SOUR_HOME_ITEMS.has(item.id)) {

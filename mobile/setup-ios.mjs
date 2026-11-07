@@ -66,6 +66,11 @@ const extra = `
 edit(path.join(app, 'Info.plist'), (s) =>
     s
         .replace(/<key>CFBundleDisplayName<\/key>\s*<string>[^<]*<\/string>/, '<key>CFBundleDisplayName</key>\n\t<string>Sour Player</string>')
+        // a white clock and battery on the dark app (one style for the whole app, set here)
+        .replace(
+            /<key>UIViewControllerBasedStatusBarAppearance<\/key>\s*<true\/>/,
+            '<key>UIViewControllerBasedStatusBarAppearance</key>\n\t<false/>\n\t<key>UIStatusBarStyle</key>\n\t<string>UIStatusBarStyleLightContent</string>',
+        )
         .replace(/<\/dict>\s*<\/plist>\s*$/, `${extra}</dict>\n</plist>\n`),
 );
 

@@ -12,6 +12,7 @@ import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState } from 'reac
 import i18n from '/@/i18n/i18n';
 import { WebAudioContext } from '/@/renderer/features/player/context/webaudio-context';
 import { useCheckForUpdates } from '/@/renderer/hooks/use-check-for-updates';
+import { useIsMobile } from '/@/renderer/hooks/use-is-mobile';
 import { useFullscreenAutoOpen } from '/@/renderer/hooks/use-fullscreen-auto-open';
 import { useFullscreenToggle } from '/@/renderer/hooks/use-fullscreen-toggle';
 import { useNativeMenuSync } from '/@/renderer/hooks/use-native-menu-sync';
@@ -35,6 +36,7 @@ import '/@/shared/styles/sour-v8.css';
 import '/@/shared/styles/sour-v10.css';
 import '/@/shared/styles/sour-custom.css';
 import '/@/shared/styles/sour-ui10.css';
+import '/@/shared/styles/sour-phone.css';
 import '/@/renderer/features/sour/mobile/ios-look';
 import { PlayerProvider } from '/@/renderer/features/player/context/player-context';
 import { isIosApp } from '/@/renderer/features/sour/mobile/android';
@@ -89,21 +91,23 @@ const AppShell = memo(function AppShell() {
         return { setWebAudio, webAudio };
     }, [webAudio]);
 
+    // phones: notifications drop from the top (the mini player and tab bar are at the bottom)
+    const phone = useIsMobile();
     const notificationStyles = useMemo(
         () => ({
-            root: {
-                marginBottom: 90,
-            },
+            root: phone
+                ? { marginTop: 'calc(env(safe-area-inset-top, 0px) + 6px)', paddingInline: 8 }
+                : { marginBottom: 90 },
         }),
-        [],
+        [phone],
     );
 
     return (
         <>
             <AppEffects />
             <Notifications
-                containerWidth="300px"
-                position="bottom-center"
+                containerWidth={phone ? '100%' : '300px'}
+                position={phone ? 'top-center' : 'bottom-center'}
                 styles={notificationStyles}
                 zIndex={50000}
             />

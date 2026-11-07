@@ -624,6 +624,26 @@ const validateUrl = (url: string): boolean => {
     return url.startsWith('http://') || url.startsWith('https://');
 };
 
+// Minimise, and on Linux make sure it happened: some window managers ignore minimising a frameless
+// window that's always on top, on every workspace (the mini player) or full screen, so try again
+// without those (they come back when the window does)
+const minimizeWindow = (win: BrowserWindow) => {
+    if (win.isDestroyed()) return;
+    if (!win.isMinimizable()) win.setMinimizable(true);
+    win.minimize();
+    if (process.platform !== 'linux') return;
+    setTimeout(() => {
+        if (win.isDestroyed() || win.isMinimized() || !win.isVisible() || !win.isFocused()) return;
+        log.info('Minimise was ignored, trying again');
+        if (win.isFullScreen()) win.setFullScreen(false);
+        if (win.isAlwaysOnTop()) {
+            win.setAlwaysOnTop(false);
+            win.once('restore', () => win.setAlwaysOnTop(true));
+        }
+        win.minimize();
+    }, 300);
+};
+
 async function createWindow(first = true): Promise<void> {
     if (isDevelopment) {
         await installExtensions().catch((error) => log.error(error));
@@ -713,8 +733,8 @@ async function createWindow(first = true): Promise<void> {
         if (store.get('window_minimize_to_tray') === true) {
             log.info('Main window minimized to tray');
             hideMainWindowToTray();
-        } else {
-            mainWindow?.minimize();
+        } else if (mainWindow) {
+            minimizeWindow(mainWindow);
         }
     });
 

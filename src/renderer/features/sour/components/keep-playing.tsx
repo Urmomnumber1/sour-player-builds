@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import { api } from '/@/renderer/api';
 import { useGroupPlayStore } from '/@/renderer/features/group-play/store/group-play.store';
 import { isBlockedSong, useSourStore } from '/@/renderer/features/sour/store/sour.store';
-import { usePlayerSong } from '/@/renderer/store';
+import { usePlayerSong, useSettingsStore } from '/@/renderer/store';
 import { addToQueueByData, usePlayerStoreBase } from '/@/renderer/store/player.store';
 import { useTimestampStoreBase } from '/@/renderer/store/timestamp.store';
 import { toast } from '/@/shared/components/toast/toast';
@@ -12,9 +12,12 @@ import { Play } from '/@/shared/types/types';
 
 // Keep playing: when the last song in the queue is nearly over, more like it is added so the music
 // doesn't stop (songs similar to it, or random ones from the same genre when the server has none).
-// Never in Group Play or Listen Along, where someone else decides what plays.
+// Only when you switched it on (Sour Studio > Extras), never while Auto DJ is on (it does the same
+// thing), and never in Group Play or Listen Along, where someone else decides what plays.
 export const KeepPlaying = () => {
-    const on = useSourStore((s) => s.look.keepPlaying ?? true);
+    const keep = useSourStore((s) => !!s.look.keepPlayingOn);
+    const autoDj = useSettingsStore((s) => !!s.autoDJ?.enabled);
+    const on = keep && !autoDj;
     const song = usePlayerSong();
     const length = useRef(0);
     length.current = song?.duration ? song.duration / 1000 : 0;
@@ -60,7 +63,7 @@ const addMore = async (song: Song) => {
     const seen = new Set<string>();
     const picks = more
         .filter((x) => !inQueue.has(x.id) && !isBlockedSong(x) && !seen.has(x.id) && seen.add(x.id))
-        .slice(0, 15);
+        .slice(0, 10);
     if (!picks.length) return;
     await addToQueueByData(Play.LAST, picks);
     toast.info({ message: `Keep playing: added ${picks.length} songs like ${song.name}` });

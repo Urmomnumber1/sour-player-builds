@@ -424,6 +424,11 @@ export const ReleaseNotesModal = () => {
         const timeoutId = setTimeout(() => {
             const valueFromLocalStorage = localStorage.getItem('version');
             const versionString = `"${version}"`;
+            if (valueFromLocalStorage === null) {
+                // the first start ever: nothing changed for you yet
+                localStorage.setItem('version', versionString);
+                return;
+            }
 
             // Only show modal if the stored version is different from current version (not in the
             // Android app: its releases are mobile-v... ones this popup can't find)

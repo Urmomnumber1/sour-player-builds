@@ -29,8 +29,19 @@
 }
 
 /* poster album pages: a huge cover and a huge title */
-.sour-poster[data-route='album'] [class*='library-header-module-library-header'] {
+
+/* (only the header: its button row's class starts the same way and used to get this too, leaving a big gap) */
+.sour-poster[data-route='album']
+    [class*='library-header-module-library-header']:not([class*='menu']) {
     min-height: 460px;
+}
+
+/* the big cover gets a column as wide as it is (it used to spill over the album's title) */
+@media (width >= 1000px) {
+    .sour-poster:not(.sour-phone)[data-route='album']
+        [class*='library-header-module-library-header']:not([class*='menu']) {
+        grid-template-columns: 320px minmax(0, 1fr);
+    }
 }
 
 .sour-poster[data-route='album'] [class*='library-header-module-image'] {

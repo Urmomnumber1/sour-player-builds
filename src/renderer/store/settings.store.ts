@@ -1,3 +1,4 @@
+import { useMediaQuery } from '@mantine/hooks';
 import isElectron from 'is-electron';
 import cloneDeep from 'lodash/cloneDeep';
 import mergeWith from 'lodash/mergeWith';
@@ -3135,11 +3136,21 @@ export const useSettingsForExport = (): SettingsState & { version: number } =>
 export const migrateSettings = (settings: SettingsState, settingsVersion: number): SettingsState =>
     useSettingsStore.persist.getOptions().migrate!(settings, settingsVersion) as SettingsState;
 
-export const useListSettings = (type: ItemListKey) =>
-    useSettingsStore(
+export const useListSettings = (type: ItemListKey) => {
+    const settings = useSettingsStore(
         (state) => state.lists[type as keyof typeof state.lists],
         shallow,
     ) as ItemListSettings;
+    // phones scroll forever instead of showing page buttons
+    const phone = useMediaQuery('(max-width: 768px)');
+    return useMemo(
+        () =>
+            phone && settings?.pagination === ListPaginationType.PAGINATED
+                ? { ...settings, pagination: ListPaginationType.INFINITE }
+                : settings,
+        [phone, settings],
+    );
+};
 
 export const usePrimaryColor = () => useSettingsStore((store) => store.general.accent, shallow);
 

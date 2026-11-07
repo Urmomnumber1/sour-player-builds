@@ -175,7 +175,10 @@ export const PlayAfterAlbumAction = ({ songs }: { songs: Song[] }) => {
 
 // ---------- background: A/B loop and per-song volume ----------
 export const PlaybackWatcher = () => {
+    // only ticks while an A-B loop or the per-song volume memory is on (saves battery on phones)
+    const needed = useSourStore((s) => !!s.abLoop || !!s.volumeMemory);
     useEffect(() => {
+        if (!needed) return undefined;
         let lastSong = '';
         let lastVol = -1;
         const timer = setInterval(() => {
@@ -200,7 +203,7 @@ export const PlaybackWatcher = () => {
             }
         }, 250);
         return () => clearInterval(timer);
-    }, []);
+    }, [needed]);
     return null;
 };
 

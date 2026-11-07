@@ -756,6 +756,8 @@ const VolumeButton = () => {
                     }}
                     onWheel={handleVolumeWheel}
                     size={6}
+                    // never squeezed away by the other buttons on a narrow window
+                    style={{ flexShrink: 0, minWidth: Math.min(volumeWidth, 60) }}
                     value={sliderValue}
                     w={volumeWidth}
                 />

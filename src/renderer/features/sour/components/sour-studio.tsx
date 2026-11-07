@@ -443,8 +443,8 @@ const Extras = () => (
             label="Hover previews"
         />
         <LookSwitch
-            description="When the queue runs out, songs like the last one are added so the music doesn't stop."
-            id="keepPlaying"
+            description="When the queue runs out, 10 songs like the last one are added so the music doesn't stop. Off by default; Auto DJ (Settings > Playback) does this too."
+            id="keepPlayingOn"
             label="Keep playing"
         />
         <LookSwitch

@@ -1,3 +1,4 @@
+import { openModal } from '@mantine/modals';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
@@ -999,3 +1000,7 @@ const ShowcasePicker = ({
         </Stack>
     );
 };
+
+// the inbox as a sheet (phones: You > Inbox)
+const InboxSheet = () => <InboxList items={useInbox().data ?? []} />;
+export const openInbox = () => openModal({ children: <InboxSheet />, title: 'Inbox' });

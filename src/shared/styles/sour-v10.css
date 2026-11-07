@@ -95,7 +95,7 @@
 }
 
 /* page titles: big, tight, a little glow */
-.sour-v10:not(.sour-ios) [class*='library-header'] h1 {
+.sour-v10:not(.sour-ios) [class*='library-header'] h1:not([class*='overflow-hidden']) {
     letter-spacing: -0.03em;
     text-shadow: 0 6px 30px color-mix(in srgb, var(--liquid) 40%, transparent);
 }

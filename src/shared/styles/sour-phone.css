@@ -1,0 +1,303 @@
+/* stylelint-disable selector-class-pattern, no-descending-specificity -- Mantine's and Radix's own class names */
+
+/*
+ * Sour Player on a phone (Android app, iPhone app, a phone browser). Everything here sits under
+ * .sour-phone, which the phone layout puts on <html> while it's showing. It turns the app into a
+ * phone music app: dialogs and menus slide up from the bottom, notifications drop from the top,
+ * everything is sized for fingers, and the effects that cost battery on a phone are off.
+ */
+
+.sour-phone {
+    --phone-line: color-mix(in srgb, var(--theme-colors-foreground) 9%, transparent);
+    --phone-card: color-mix(in srgb, var(--theme-colors-foreground) 6%, transparent);
+    --phone-sheet: color-mix(in srgb, var(--theme-colors-background) 95%, #fff);
+
+    -webkit-tap-highlight-color: transparent;
+    text-size-adjust: 100%;
+}
+
+.sour-phone body {
+    overscroll-behavior: none;
+}
+
+/* long-pressing opens menus, so it shouldn't select text or show the phone's own pop-up */
+.sour-phone #mobile-layout,
+.sour-phone [class*='sour-stage-module-stage'] {
+    -webkit-touch-callout: none;
+    user-select: none;
+}
+
+.sour-phone input,
+.sour-phone textarea,
+.sour-phone [contenteditable='true'] {
+    -webkit-touch-callout: default;
+    user-select: text;
+}
+
+/* phones zoom into any text box with text under 16px */
+.sour-phone input,
+.sour-phone textarea,
+.sour-phone select {
+    font-size: 16px !important;
+}
+
+/* things that only make sense with a mouse */
+.sour-phone .mantine-Tooltip-tooltip,
+.sour-phone [class*='resize-handle'],
+.sour-phone kbd {
+    display: none !important;
+}
+
+/* buttons that only show on hover are always there on a touch screen */
+.sour-phone .hover-only {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.sour-phone .hover-only-flex {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.sour-phone ::-webkit-scrollbar {
+    display: none;
+}
+
+.sour-phone * {
+    scrollbar-width: none;
+}
+
+/* a press shrinks buttons a little, like a phone app */
+.sour-phone button:active,
+.sour-phone [role='button']:active {
+    transform: scale(0.97);
+    transition: transform 0.08s;
+}
+
+/* ---------- dialogs: sheets that slide up from the bottom ---------- */
+.sour-phone .mantine-Modal-inner {
+    align-items: flex-end !important;
+    padding: 0 !important;
+}
+
+.sour-phone .mantine-Modal-content {
+    flex: 0 0 100% !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: calc(100% - 36px - env(safe-area-inset-top, 0px)) !important;
+    background: var(--phone-sheet) !important;
+    border-radius: 20px 20px 0 0 !important;
+    animation: sour-phone-sheet 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* the grab handle */
+.sour-phone .mantine-Modal-content::before {
+    display: block;
+    width: 38px;
+    height: 5px;
+    margin: 8px auto 0;
+    content: '';
+    background: rgb(255 255 255 / 25%);
+    border-radius: 3px;
+}
+
+.sour-phone .mantine-Modal-header {
+    min-height: 48px;
+    padding-top: 6px;
+    background: transparent !important;
+}
+
+.sour-phone .mantine-Modal-title {
+    font-size: 19px;
+    font-weight: 700;
+}
+
+.sour-phone .mantine-Modal-body {
+    padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+}
+
+@keyframes sour-phone-sheet {
+    from {
+        transform: translateY(100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+/* ---------- menus (long-press or the ... button): a sheet too ---------- */
+.sour-phone [data-radix-popper-content-wrapper]:has([class*='context-menu-module-content']) {
+    position: fixed !important;
+    inset: auto 0 0 !important;
+    z-index: 1000 !important;
+    min-width: 100% !important;
+    transform: none !important;
+}
+
+.sour-phone [class*='context-menu-module-content'] {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    max-height: 75vh;
+    padding: 10px 8px calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+    background: var(--phone-sheet) !important;
+    border: 0 !important;
+    border-radius: 20px 20px 0 0 !important;
+    box-shadow: 0 0 0 100vmax rgb(0 0 0 / 55%) !important;
+    filter: none !important;
+}
+
+.sour-phone [class*='context-menu-module-item'] {
+    min-height: 48px;
+    font-size: 15px !important;
+    border-radius: 10px;
+}
+
+/* Mantine menus and pop-overs: finger sized, never wider than the screen */
+.sour-phone .mantine-Menu-item {
+    min-height: 44px;
+}
+
+.sour-phone .mantine-Popover-dropdown,
+.sour-phone .mantine-Menu-dropdown {
+    max-width: calc(100vw - 16px) !important;
+}
+
+/* ---------- notifications: drop down from the top ---------- */
+.sour-phone .mantine-Notification-root {
+    background: color-mix(in srgb, var(--theme-colors-background) 85%, transparent) !important;
+    border: 1px solid var(--phone-line);
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgb(0 0 0 / 35%);
+    backdrop-filter: blur(18px) saturate(160%);
+}
+
+/* ---------- tabs and switches: one row you can swipe ---------- */
+.sour-phone .mantine-Tabs-list {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+}
+
+.sour-phone .mantine-Tabs-tab {
+    flex: 0 0 auto;
+    min-height: 42px;
+}
+
+.sour-phone .mantine-SegmentedControl-root {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+/* buttons and text boxes sized for fingers */
+.sour-phone .mantine-Input-input {
+    min-height: 42px;
+}
+
+/* ---------- pages: phone-sized headers ---------- */
+.sour-phone [class*='library-header-module-library-header']:not([class*='menu']) {
+    flex-shrink: 0 !important;
+    min-height: auto !important;
+    padding: 0.75rem 1rem 1.25rem !important;
+}
+
+.sour-phone [class*='library-header-module-image-section'] [class*='library-header-module-image'],
+.sour-phone.sour-poster[data-route='album'] [class*='library-header-module-image'] {
+    width: min(58vw, 230px) !important;
+    height: min(58vw, 230px) !important;
+    border-radius: 14px;
+}
+
+.sour-phone [class*='library-header-module-title'],
+.sour-phone.sour-poster[data-route='album'] [class*='library-header-module-title'] {
+    font-size: clamp(1.4rem, 7vw, 1.9rem) !important;
+    line-height: 1.15 !important;
+    letter-spacing: -0.01em;
+}
+
+.sour-phone [class*='page-header-module-title-wrapper'] h1,
+.sour-phone [class*='library-header-bar-module'] h1 {
+    font-size: 28px !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.02em;
+}
+
+/* ---------- battery: the v0.10 look's drifting light, holiday critters and big blurs stay off ---------- */
+.sour-phone.sour-v10 body,
+.sour-phone.sour-v10 #mobile-layout {
+    background-size: auto;
+    animation: none !important;
+}
+
+.sour-phone [class*='holiday-layer-module-canvas'] {
+    display: none;
+}
+
+.sour-phone.sour-lowpower *,
+.sour-phone.sour-lowpower *::before,
+.sour-phone.sour-lowpower *::after {
+    backdrop-filter: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sour-phone .mantine-Modal-content {
+        animation: none;
+    }
+
+    .sour-phone button:active,
+    .sour-phone [role='button']:active {
+        transform: none;
+    }
+}
+
+/* ---------- the mini player's spot: the card draws itself, so its holder is see-through ---------- */
+.sour-phone #player-bar {
+    padding: 0 !important;
+    background: transparent !important;
+    transition: none;
+}
+
+.sour-phone #player-bar > div {
+    max-width: none !important;
+    overflow: visible !important;
+    background: none !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+}
+
+/* ---------- song lists: a tap anywhere on the row plays it ---------- */
+.sour-phone [class*='title-combined-column-module-text-container'] *,
+.sour-phone [class*='title-artist-column-module'] * {
+    pointer-events: none;
+}
+
+.sour-phone [class*='title-combined-column-module-play-button-overlay'] {
+    display: none !important;
+}
+
+.sour-phone [class*='title-combined-column-module-title'],
+.sour-phone [class*='title-artist-column-module-title'] {
+    -webkit-line-clamp: 1;
+    font-size: 15.5px;
+    font-weight: 600;
+}
+
+/* the ... button: a real finger target */
+.sour-phone [class*='item-table-list-module'] .hover-only {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+}
+
+/* parallax headers drift apart on a phone's tall pages: they stay put here */
+.sour-phone [class*='library-header-module-image-section'],
+.sour-phone [class*='library-header-module-metadata-section'] {
+    opacity: 1 !important;
+    transform: none !important;
+}

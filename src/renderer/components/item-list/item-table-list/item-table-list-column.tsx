@@ -64,6 +64,7 @@ import {
     TableItemSize,
 } from '/@/renderer/components/item-list/item-table-list/item-table-list';
 import { useItemTableListColumnResizeLive } from '/@/renderer/components/item-list/item-table-list/item-table-list-context';
+import { isPhoneUi } from '/@/renderer/components/item-list/item-table-list/phone-columns';
 import { ItemControls, ItemListItem } from '/@/renderer/components/item-list/types';
 import { Flex } from '/@/shared/components/flex/flex';
 import { Icon } from '/@/shared/components/icon/icon';
@@ -712,19 +713,25 @@ export const TableColumnTextContainer = (
         );
     }, [isDataRow, props.isDraggedOver, props.rowIndex, props.tableId]);
 
+    const openRow = (event: React.MouseEvent<HTMLDivElement>) => {
+        if (isDataRow && item) {
+            const rowId = props.internalState.extractRowId(item);
+            const index = rowId ? props.internalState.findItemIndex(rowId) : -1;
+            props.controls.onDoubleClick?.({
+                event,
+                index,
+                internalState: props.internalState,
+                item: item as ItemListItem,
+                itemType: props.itemType,
+            });
+        }
+    };
+
     const handleClick = useDoubleClick({
         onDoubleClick: (event: React.MouseEvent<HTMLDivElement>) => {
-            if (isDataRow && item) {
-                const rowId = props.internalState.extractRowId(item);
-                const index = rowId ? props.internalState.findItemIndex(rowId) : -1;
-                props.controls.onDoubleClick?.({
-                    event,
-                    index,
-                    internalState: props.internalState,
-                    item: item as ItemListItem,
-                    itemType: props.itemType,
-                });
-            }
+            // phones: the first tap already played it
+            if (isPhoneUi()) return;
+            openRow(event);
         },
         onSingleClick: (event: React.MouseEvent<HTMLDivElement>) => {
             // Don't trigger row selection if clicking on interactive elements
@@ -734,6 +741,12 @@ export const TableColumnTextContainer = (
             );
 
             if (isInteractiveElement) {
+                return;
+            }
+
+            // phones: a tap plays the song (or opens the album), like any phone music app
+            if (isPhoneUi()) {
+                openRow(event);
                 return;
             }
 
@@ -879,19 +892,25 @@ export const TableColumnContainer = (
         );
     }, [isDataRow, props.isDraggedOver, props.rowIndex, props.tableId]);
 
+    const openRow = (event: React.MouseEvent<HTMLDivElement>) => {
+        if (isDataRow && item) {
+            const rowId = props.internalState.extractRowId(item);
+            const index = rowId ? props.internalState.findItemIndex(rowId) : -1;
+            props.controls.onDoubleClick?.({
+                event,
+                index,
+                internalState: props.internalState,
+                item: item as ItemListItem,
+                itemType: props.itemType,
+            });
+        }
+    };
+
     const handleClick = useDoubleClick({
         onDoubleClick: (event: React.MouseEvent<HTMLDivElement>) => {
-            if (isDataRow && item) {
-                const rowId = props.internalState.extractRowId(item);
-                const index = rowId ? props.internalState.findItemIndex(rowId) : -1;
-                props.controls.onDoubleClick?.({
-                    event,
-                    index,
-                    internalState: props.internalState,
-                    item: item as ItemListItem,
-                    itemType: props.itemType,
-                });
-            }
+            // phones: the first tap already played it
+            if (isPhoneUi()) return;
+            openRow(event);
         },
         onSingleClick: (event: React.MouseEvent<HTMLDivElement>) => {
             // Don't trigger row selection if clicking on interactive elements
@@ -901,6 +920,12 @@ export const TableColumnContainer = (
             );
 
             if (isInteractiveElement) {
+                return;
+            }
+
+            // phones: a tap plays the song (or opens the album), like any phone music app
+            if (isPhoneUi()) {
+                openRow(event);
                 return;
             }
 

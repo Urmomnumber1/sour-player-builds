@@ -65,6 +65,10 @@ import {
     useColumnCellComponents,
 } from '/@/renderer/components/item-list/item-table-list/memoized-cell-router';
 import {
+    PHONE_ROW_HEIGHT,
+    phoneTableColumns,
+} from '/@/renderer/components/item-list/item-table-list/phone-columns';
+import {
     createTableScrollShadowStore,
     type TableScrollShadowStore,
 } from '/@/renderer/components/item-list/item-table-list/table-scroll-shadow-store';
@@ -74,6 +78,7 @@ import {
     ItemTableListColumnConfig,
 } from '/@/renderer/components/item-list/types';
 import { PlayerContext, usePlayer } from '/@/renderer/features/player/context/player-context';
+import { useIsMobile } from '/@/renderer/hooks/use-is-mobile';
 import {
     useAlbumGroupImageSize,
     useAlbumGroupItems,
@@ -841,6 +846,8 @@ interface ItemTableListProps {
     onRangeChanged?: (range: { startIndex: number; stopIndex: number }) => void;
     onScrollEnd?: (offset: number, internalState: ItemListStateActions) => void;
     overrideControls?: Partial<ItemControls>;
+    // phones: 'album' shows track numbers instead of covers (an album's own page)
+    phoneLayout?: 'album';
     ref?: Ref<ItemListHandle>;
     rowHeight?: ((index: number, cellProps: TableItemProps) => number) | number;
     size?: 'compact' | 'default' | 'large';
@@ -1937,6 +1944,34 @@ const BaseItemTableList = ({
     );
 };
 
-export const ItemTableList = memo(BaseItemTableList);
+// phones: one clean row per song (cover, title, artist and a ... button), no header, nothing to drag
+const PhoneAwareItemTableList = (props: ItemTableListProps) => {
+    const phone = useIsMobile();
+    const { columns, itemType, phoneLayout } = props;
+    const phoneColumns = useMemo(
+        () => (phone ? phoneTableColumns(columns, itemType, phoneLayout) : null),
+        [columns, itemType, phone, phoneLayout],
+    );
+
+    if (!phoneColumns) return <BaseItemTableList {...props} />;
+
+    return (
+        <BaseItemTableList
+            {...props}
+            autoFitColumns
+            columns={phoneColumns}
+            enableDrag={false}
+            enableDragScroll={false}
+            enableHeader={false}
+            enableHorizontalBorders={false}
+            enableStickyHeader={false}
+            enableVerticalBorders={false}
+            rowHeight={PHONE_ROW_HEIGHT}
+            size="default"
+        />
+    );
+};
+
+export const ItemTableList = memo(PhoneAwareItemTableList);
 
 ItemTableList.displayName = 'ItemTableList';

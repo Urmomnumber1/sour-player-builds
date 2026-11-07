@@ -30,6 +30,7 @@ import { UiTen } from '/@/renderer/features/sour/components/ui10';
 import { LiquidTint, TenthUpdate } from '/@/renderer/features/sour/components/v10';
 import { applyAppIcon } from '/@/renderer/features/sour/skins/app-icon';
 import { currentHoliday, holidayById } from '/@/renderer/features/sour/skins/holidays';
+import { AmbiencePlayer } from '/@/renderer/features/sour/stage/ambience';
 import { LoopWatcher } from '/@/renderer/features/sour/stage/loop';
 import { SourStage } from '/@/renderer/features/sour/stage/sour-stage';
 import { useSourStore } from '/@/renderer/features/sour/store/sour.store';
@@ -186,6 +187,7 @@ export const SourRoot = () => (
         </SourSafe>
         <SourSafe name="playback tools">
             <PlaybackWatcher />
+            <AmbiencePlayer />
         </SourSafe>
         <SourSafe name="setup guide">
             <SetupGuide />

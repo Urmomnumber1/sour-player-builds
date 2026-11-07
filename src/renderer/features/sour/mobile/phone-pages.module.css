@@ -1,0 +1,325 @@
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 8px 16px 28px;
+}
+
+.header {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 56px;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.me-button {
+    padding: 0;
+    cursor: pointer;
+    background: none;
+    border: 0;
+    border-radius: 50%;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--theme-colors-foreground) 5%, transparent);
+    border-radius: 16px;
+}
+
+.row {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    min-height: 54px;
+    padding: 8px 14px;
+    font: inherit;
+    color: var(--theme-colors-foreground);
+    text-align: left;
+    cursor: pointer;
+    background: none;
+    border: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--theme-colors-foreground) 7%, transparent);
+}
+
+.row:last-child {
+    border-bottom: 0;
+}
+
+.row > svg:last-child {
+    flex-shrink: 0;
+    color: var(--theme-colors-foreground-muted);
+}
+
+.row-icon {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    color: var(--theme-colors-primary);
+    background: color-mix(in srgb, var(--theme-colors-primary) 16%, transparent);
+    border-radius: 10px;
+}
+
+.row-image {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.row-label {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 16px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.row-label small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--theme-colors-foreground-muted);
+}
+
+.badge {
+    min-width: 20px;
+    padding: 0 6px;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 20px;
+    color: #151515;
+    text-align: center;
+    background: #f4d03f;
+    border-radius: 999px;
+}
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.section h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.link {
+    padding: 4px 0;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--theme-colors-primary);
+    cursor: pointer;
+    background: none;
+    border: 0;
+}
+
+.shelf {
+    display: flex;
+    gap: 12px;
+    padding: 0 16px 4px;
+    margin: 0 -16px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+}
+
+.tile {
+    display: flex;
+    flex: 0 0 132px;
+    flex-direction: column;
+    gap: 3px;
+    padding: 0;
+    font: inherit;
+    color: var(--theme-colors-foreground);
+    text-align: left;
+    cursor: pointer;
+    scroll-snap-align: start;
+    background: none;
+    border: 0;
+}
+
+.tile-image {
+    width: 132px;
+    height: 132px;
+    object-fit: cover;
+    border-radius: 12px;
+}
+
+.tile-title,
+.tile-sub {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tile-title {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.tile-sub {
+    font-size: 12.5px;
+    color: var(--theme-colors-foreground-muted);
+}
+
+.search-box {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    height: 48px;
+    padding: 0 14px;
+    color: #151515;
+    background: #f2f2f2;
+    border-radius: 12px;
+}
+
+.search-box input {
+    flex: 1;
+    min-width: 0;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    color: #151515;
+    outline: none;
+    background: none;
+    border: 0;
+}
+
+.search-box input::placeholder {
+    color: #6b6b6b;
+}
+
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.chip {
+    padding: 8px 14px;
+    font: inherit;
+    font-size: 14px;
+    color: var(--theme-colors-foreground);
+    cursor: pointer;
+    background: color-mix(in srgb, var(--theme-colors-foreground) 8%, transparent);
+    border: 0;
+    border-radius: 999px;
+}
+
+.genres {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.genre {
+    position: relative;
+    height: 84px;
+    padding: 12px;
+    overflow: hidden;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 800;
+    color: #fff;
+    text-align: left;
+    cursor: pointer;
+    border: 0;
+    border-radius: 12px;
+}
+
+.card {
+    padding: 14px;
+    background: color-mix(in srgb, var(--theme-colors-foreground) 5%, transparent);
+    border-radius: 16px;
+}
+
+.wide {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    min-height: 50px;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    color: #151515;
+    cursor: pointer;
+    background: var(--theme-colors-primary);
+    border: 0;
+    border-radius: 999px;
+}
+
+.profile {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    padding: 14px;
+    font: inherit;
+    color: var(--theme-colors-foreground);
+    text-align: left;
+    cursor: pointer;
+    background: color-mix(in srgb, var(--theme-colors-primary) 14%, transparent);
+    border: 0;
+    border-radius: 18px;
+}
+
+.profile > svg:last-child {
+    flex-shrink: 0;
+    color: var(--theme-colors-foreground-muted);
+}
+
+.profile-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.profile-text strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 20px;
+    white-space: nowrap;
+}
+
+.profile-text small {
+    font-size: 13px;
+    color: var(--theme-colors-foreground-muted);
+}
+
+.footer {
+    margin: 0;
+    font-size: 12px;
+    color: var(--theme-colors-foreground-muted);
+    text-align: center;
+}

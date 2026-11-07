@@ -1,0 +1,24 @@
+.top-bar {
+    display: flex;
+    grid-area: top;
+    align-items: center;
+    height: 44px;
+    padding: 0 4px;
+    background: var(--theme-colors-background);
+}
+
+.back {
+    display: inline-flex;
+    gap: 2px;
+    align-items: center;
+    height: 40px;
+    padding: 0 10px 0 4px;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--theme-colors-primary);
+    cursor: pointer;
+    background: none;
+    border: 0;
+    border-radius: 10px;
+}

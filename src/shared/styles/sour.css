@@ -173,3 +173,16 @@
 .sour-ios [class*='holiday-layer-module-canvas'] {
     display: none;
 }
+
+/* stylelint-disable selector-class-pattern -- Mantine's own class names */
+
+/* menus, pop-ups, dialogs and notifications over the window's title bar (or a page header, which is
+   draggable too) take their clicks: without this, the window's drag area under them swallowed them */
+.mantine-Popover-dropdown,
+.mantine-Menu-dropdown,
+.mantine-Modal-inner,
+.mantine-Drawer-inner,
+.mantine-Notifications-root,
+[data-radix-popper-content-wrapper] {
+    -webkit-app-region: no-drag;
+}

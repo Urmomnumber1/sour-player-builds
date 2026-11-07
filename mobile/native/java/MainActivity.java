@@ -23,14 +23,24 @@ public class MainActivity extends BridgeActivity {
         WindowInsetsControllerCompat bars = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
         bars.setAppearanceLightStatusBars(false);
         bars.setAppearanceLightNavigationBars(false);
-        // Back goes back a page; on the first page it hides the app instead of closing it, so the
-        // music keeps playing
+        // Back closes what's on top first (a menu, a sheet, Now Playing), then goes back a page, then
+        // to Home; on Home it hides the app instead of closing it, so the music keeps playing
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
                 WebView web = getBridge() == null ? null : getBridge().getWebView();
-                if (web != null && web.canGoBack()) web.goBack();
-                else moveTaskToBack(true);
+                if (web == null) {
+                    moveTaskToBack(true);
+                    return;
+                }
+                web.evaluateJavascript(
+                    "(function(){try{return window.sourBackKey?window.sourBackKey():'history'}catch(e){return 'history'}})()",
+                    value -> {
+                        String v = value == null ? "" : value;
+                        if (v.contains("done")) return;
+                        if (!v.contains("exit") && web.canGoBack()) web.goBack();
+                        else moveTaskToBack(true);
+                    });
             }
         });
     }

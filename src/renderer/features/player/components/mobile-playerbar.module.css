@@ -1,78 +1,105 @@
 .container {
     position: relative;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: var(--theme-spacing-sm);
-    align-items: center;
     width: 100%;
-    height: 90px;
-    padding: 0.5rem 1rem;
+    padding: 6px 8px;
+}
+
+.empty {
+    height: 0;
+    padding: 0;
     overflow: hidden;
 }
 
-.content-wrapper {
-    display: flex;
-    gap: var(--theme-spacing-sm);
-    align-items: center;
-    min-width: 0;
-    overflow: hidden;
-}
-
-.image-wrapper {
+.card {
     position: relative;
     display: flex;
-    flex-shrink: 0;
+    gap: 10px;
     align-items: center;
-    justify-content: center;
-}
-
-.image {
-    position: relative;
-    width: 60px;
     height: 60px;
+    padding: 0 6px 0 8px;
     overflow: hidden;
     cursor: pointer;
-    border-radius: 4px;
+
+    /* the song's colour (the v0.10 look), on the app's own background */
+    background: color-mix(
+        in srgb,
+        var(--liquid-tint, var(--theme-colors-primary)) 28%,
+        var(--theme-colors-background)
+    );
+    border-radius: 14px;
+    box-shadow: 0 6px 20px rgb(0 0 0 / 30%);
+    transition: background 0.8s ease;
 }
 
-.playerbar-image {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.cover {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.cover-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-.metadata-stack {
+.meta {
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;
-    gap: 0;
-    justify-content: center;
+    gap: 1px;
     min-width: 0;
-    max-width: 50%;
-    overflow: hidden;
 }
 
-.line-item {
-    display: inline-block;
-    width: 100%;
+.title,
+.artist {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    cursor: pointer;
 }
 
-.line-item.secondary {
+.title {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.artist {
+    font-size: 12.5px;
     color: var(--theme-colors-foreground-muted);
 }
 
-.controls-wrapper {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    justify-content: center;
+.button {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    color: var(--theme-colors-foreground);
+    cursor: pointer;
+    background: none;
+    border: 0;
+    border-radius: 50%;
+}
+
+.progress {
+    position: absolute;
+    right: 10px;
+    bottom: 0;
+    left: 10px;
+    height: 2px;
+    overflow: hidden;
+    background: rgb(255 255 255 / 15%);
+    border-radius: 2px;
+}
+
+.progress div {
+    width: 100%;
+    height: 100%;
+    background: var(--theme-colors-foreground);
+    transform-origin: left center;
+    transition: transform 0.25s linear;
 }
 
 /* "Listening along with ..." sits just above the player on phones */

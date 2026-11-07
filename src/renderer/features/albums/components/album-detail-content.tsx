@@ -934,6 +934,7 @@ const AlbumDetailSongsTable = ({ songs }: AlbumDetailSongsTableProps) => {
                 onColumnReordered={handleColumnReordered}
                 onColumnResized={handleColumnResized}
                 overrideControls={overrideControls}
+                phoneLayout="album"
                 size={tableConfig.size}
             />
         </Stack>

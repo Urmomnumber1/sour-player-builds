@@ -58,8 +58,9 @@ export interface SourLook {
     homeBackgroundDim: number;
     hoverPreview: boolean;
     iconPack: string;
-    // when the queue runs out, add songs like the last one
-    keepPlaying: boolean;
+    // when the queue runs out, add songs like the last one (0.10.6: off unless you turn it on; the
+    // old keepPlaying key was on for everyone and surprised people with Auto DJ off)
+    keepPlayingOn: boolean;
     lemonLoader: boolean;
     // the Sour Stage's lyrics text size (1 = normal)
     lyricScale: number;
@@ -117,7 +118,7 @@ export const DEFAULT_LOOK: SourLook = {
     homeBackgroundDim: 45,
     hoverPreview: false,
     iconPack: 'classic',
-    keepPlaying: true,
+    keepPlayingOn: false,
     lemonLoader: true,
     lyricScale: 1,
     lyricStyle: 'centered',
@@ -186,6 +187,8 @@ interface SourStore {
     queueSnapshots: { at: number; ids: string[]; name: string }[];
     // quiet hours: no pop-ups from friends between these hours
     quietHours: { from: number; on: boolean; to: number };
+    // phones: the last searches (Search tab)
+    recentSearches: string[];
     repeatNotified: Record<string, string>;
     savedGroups: SavedGroup[];
     savedLines: { artist: string; at: number; song: string; text: string }[];
@@ -240,6 +243,7 @@ export const useSourStore = createWithEqualityFn<SourStore>()(
             privateSession: false,
             queueSnapshots: [],
             quietHours: { from: 23, on: false, to: 8 },
+            recentSearches: [],
             repeatNotified: {},
             savedGroups: [],
             savedLines: [],

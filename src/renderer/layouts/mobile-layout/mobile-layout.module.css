@@ -3,10 +3,11 @@
     display: grid;
     grid-template-areas:
         'window-bar'
+        'top'
         'main-content'
         'player'
         'nav';
-    grid-template-rows: 0 minmax(0, 1fr) 90px auto;
+    grid-template-rows: 0 auto minmax(0, 1fr) auto auto;
     grid-template-columns: 1fr;
     gap: 0;
     width: 100%;
@@ -20,7 +21,7 @@
 
 .windows,
 .macos {
-    grid-template-rows: 30px minmax(0, 1fr) 90px auto;
+    grid-template-rows: 30px auto minmax(0, 1fr) auto auto;
 }
 
 .main-content {
@@ -28,6 +29,7 @@
     grid-area: main-content;
     overflow-x: hidden;
     overflow-y: auto;
+    overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
 }
 

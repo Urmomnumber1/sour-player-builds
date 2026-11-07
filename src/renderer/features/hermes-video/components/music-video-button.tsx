@@ -1,6 +1,7 @@
 import { closeAllModals, openModal } from '@mantine/modals';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type RefObject, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { create } from 'zustand';
 
 import styles from './music-video-button.module.css';
@@ -43,7 +44,11 @@ interface YouTubeMessage {
 }
 
 // Where the Sour Stage shows the song: its cover or its music video ("Video" in the Stage's toolbar)
-export const useVideoView = create<{ view: 'cover' | 'video' }>(() => ({ view: 'cover' }));
+// the Sour Stage: the cover, the video in its place, or the video behind everything (blurred or sharp)
+export const useVideoView = create<{ blur: boolean; view: 'behind' | 'cover' | 'video' }>(() => ({
+    blur: true,
+    view: 'cover',
+}));
 
 // ---------- the sync engine ----------
 // Keeps a muted YouTube video in step with the song, which keeps playing from the music server: it follows
@@ -210,6 +215,32 @@ const useVideoSync = (
 const ytParams = (start: number) =>
     `enablejsapi=1&mute=1&autoplay=1&controls=0&rel=0&playsinline=1&disablekb=1&modestbranding=1&cc_load_policy=0&cc_lang_pref=zxx&iv_load_policy=3&start=${start}`;
 const thumb = (videoId: string) => `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+
+// ---------- the video behind the Sour Stage (muted, in step with the song, no controls) ----------
+export const VideoBackdrop = ({ blur, video }: { blur: boolean; video: MusicVideo }) => {
+    const frame = useRef<HTMLIFrameElement>(null);
+    const offsetRef = useRef(video.offset ?? 0);
+    useEffect(() => {
+        offsetRef.current = video.offset ?? 0;
+    }, [video.offset]);
+    const [start] = useState(() =>
+        Math.max(0, Math.floor(useTimestampStoreBase.getState().timestamp + (video.offset ?? 0))),
+    );
+    useVideoSync(frame, offsetRef);
+    return (
+        <div aria-hidden className={blur ? styles['backdrop-blur'] : styles.backdrop}>
+            <iframe
+                allow="autoplay; encrypted-media"
+                key={video.videoId}
+                ref={frame}
+                referrerPolicy="strict-origin-when-cross-origin"
+                src={`https://www.youtube-nocookie.com/embed/${video.videoId}?${ytParams(start)}`}
+                tabIndex={-1}
+                title="Music video (background)"
+            />
+        </div>
+    );
+};
 
 // ---------- the player ----------
 interface SourVideoProps {
@@ -470,7 +501,9 @@ export const FloatingVideo = () => {
         if (floating && !isFetching && !video) useVideoWindow.setState({ floating: false });
     }, [floating, isFetching, video]);
     if (!floating || !song || !video) return null;
-    return (
+    // a portal: inside the player bar, the v0.9 and v0.10 looks' blurred bar trapped the window in
+    // the bar (a fixed box inside a blurred one is placed and clipped by it), so it never showed
+    return createPortal(
         <div className={styles.floating}>
             <SourVideo
                 artist={song.artistName}
@@ -495,7 +528,8 @@ export const FloatingVideo = () => {
                     variant="subtle"
                 />
             </div>
-        </div>
+        </div>,
+        document.body,
     );
 };
 

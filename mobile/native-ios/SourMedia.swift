@@ -285,5 +285,14 @@ class SourBridgeViewController: CAPBridgeViewController {
 
     override open func capacitorDidLoad() {
         bridge?.registerPluginInstance(SourMediaPlugin())
+        // the app is dark: no white flash behind the page while it loads, and nothing bounces past the edges
+        let dark = UIColor(red: 16 / 255, green: 16 / 255, blue: 16 / 255, alpha: 1)
+        view.backgroundColor = dark
+        if let web = bridge?.webView {
+            web.isOpaque = false
+            web.backgroundColor = dark
+            web.scrollView.backgroundColor = dark
+            web.scrollView.bounces = false
+        }
     }
 }

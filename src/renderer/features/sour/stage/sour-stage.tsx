@@ -12,6 +12,7 @@ import {
     SourVideo,
     useVideoView,
     useVideoWindow,
+    VideoBackdrop,
 } from '/@/renderer/features/hermes-video/components/music-video-button';
 import { useMusicVideo } from '/@/renderer/features/hermes-video/hooks/use-music-video';
 import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-video.store';
@@ -30,6 +31,12 @@ import { favoritesThemeId } from '/@/renderer/features/sour/components/playlist-
 import { hue, ProfileAvatar } from '/@/renderer/features/sour/components/profile-bits';
 import { isNativeApp } from '/@/renderer/features/sour/mobile/android';
 import { usePhoneStore } from '/@/renderer/features/sour/mobile/phone-store';
+import {
+    type Ambience,
+    AMBIENCES,
+    LIGHTNING_EVENT,
+    useAmbience,
+} from '/@/renderer/features/sour/stage/ambience';
 import {
     clearLoop,
     setLoopPoint,
@@ -181,6 +188,31 @@ const StageView = () => {
     const [flipped, setFlipped] = useState(false);
     // phones: the Stage is the full screen player too (its controls, and lyrics that can be hidden)
     const phone = useIsMobile();
+    // Stormy night: a faint flash of lightning now and then (the thunder follows)
+    const ambience = useAmbience((s) => s.kind);
+    const [flash, setFlash] = useState(0);
+    useEffect(() => {
+        const on = () => setFlash((n) => n + 1);
+        window.addEventListener(LIGHTNING_EVENT, on);
+        return () => window.removeEventListener(LIGHTNING_EVENT, on);
+    }, []);
+    // the computer app: the Stage starts under the window's own title bar, so the window can still be
+    // dragged, minimised and closed while it's open (it used to cover the bar)
+    const [barBottom, setBarBottom] = useState(0);
+    useEffect(() => {
+        if (phone) {
+            setBarBottom(0);
+            return undefined;
+        }
+        const measure = () => {
+            const bar = document.querySelector('[class*="window-bar-module-window-bar"]');
+            const bottom = bar ? Math.round(bar.getBoundingClientRect().bottom) : 0;
+            setBarBottom(bottom > 0 && bottom < 80 ? bottom : 0);
+        };
+        measure();
+        window.addEventListener('resize', measure);
+        return () => window.removeEventListener('resize', measure);
+    }, [phone]);
     const [phoneLyrics, setPhoneLyrics] = useState(true);
     const touch = useRef<null | { x: number; y: number }>(null);
     const controls = usePlayer();
@@ -213,13 +245,16 @@ const StageView = () => {
     const [tilt, setTilt] = useState({ x: 0, y: 0 });
     // Cover or Video: the song's music video (from Hermes Music) in place of the cover
     const view = useVideoView((s) => s.view);
+    const videoBlur = useVideoView((s) => s.blur);
     const { data: stageVideo } = useMusicVideo(song?.artistName, song?.name);
     const showVideo = view === 'video' && !!stageVideo && !!song;
+    // "Behind": the music video plays behind the cover and lyrics (blurred or sharp)
+    const behind = view === 'behind' && !!stageVideo && !!song;
     const stageLayout = useCustom().stageLayout;
     // one video at a time: the small window closes while the Stage shows it
     useEffect(() => {
-        if (showVideo) useVideoWindow.setState({ floating: false });
-    }, [showVideo]);
+        if (showVideo || behind) useVideoWindow.setState({ floating: false });
+    }, [behind, showVideo]);
     const coverWrap = useRef<HTMLDivElement>(null);
     const lyricsBox = useRef<HTMLDivElement>(null);
     const playing = status === PlayerStatus.PLAYING;
@@ -366,9 +401,16 @@ const StageView = () => {
                 [styles.phoneNoLyrics]: phone && !phoneLyrics,
             })}
             data-stage-layout={stageLayout}
-            style={{ '--stage-color': color } as CSSProperties}
+            style={
+                {
+                    '--stage-color': color,
+                    ...(barBottom ? { top: barBottom } : {}),
+                } as CSSProperties
+            }
         >
-            {backdrop ? (
+            {behind && stageVideo ? (
+                <VideoBackdrop blur={videoBlur} key={stageVideo.videoId} video={stageVideo} />
+            ) : backdrop ? (
                 <div
                     className={styles.backdrop}
                     style={{
@@ -387,6 +429,7 @@ const StageView = () => {
                 )
             )}
             <Scene className={styles.scene} scene={look.stageScene} />
+            {flash > 0 && ambience === 'storm' && <div className={styles.lightning} key={flash} />}
             <div className={styles.toolbar}>
                 {phone && (
                     <button
@@ -403,11 +446,24 @@ const StageView = () => {
                     data={[
                         { label: 'Cover', value: 'cover' },
                         { disabled: !stageVideo, label: 'Video', value: 'video' },
+                        { disabled: !stageVideo, label: 'Behind', value: 'behind' },
                     ]}
-                    onChange={(v) => useVideoView.setState({ view: v as 'cover' | 'video' })}
+                    onChange={(v) =>
+                        useVideoView.setState({ view: v as 'behind' | 'cover' | 'video' })
+                    }
                     size="xs"
-                    value={showVideo ? 'video' : 'cover'}
+                    value={showVideo ? 'video' : behind ? 'behind' : 'cover'}
                 />
+                {behind && (
+                    <button
+                        className={clsx(styles.tool, { [styles.on]: videoBlur })}
+                        onClick={() => useVideoView.setState({ blur: !videoBlur })}
+                        title="Blur the video behind (or show it sharp)"
+                        type="button"
+                    >
+                        Blur
+                    </button>
+                )}
                 <Select
                     aria-label="Scene"
                     data={SCENES.map((s) => ({ label: s.label, value: s.id }))}
@@ -669,6 +725,12 @@ const StageView = () => {
                             onChange={setSpeedPreset}
                             size="xs"
                             value={speedId}
+                        />
+                        <SegmentedControl
+                            data={AMBIENCES.map((a) => ({ label: a.label, value: a.id }))}
+                            onChange={(v) => useAmbience.setState({ kind: v as Ambience })}
+                            size="xs"
+                            value={ambience}
                         />
                         <button
                             className={clsx(styles.tool, { [styles.on]: loop.a !== null })}

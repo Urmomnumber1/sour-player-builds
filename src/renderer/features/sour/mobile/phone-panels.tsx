@@ -8,7 +8,7 @@ import { api } from '/@/renderer/api';
 import { useItemImageUrl } from '/@/renderer/components/item-image/item-image';
 import { useGroupPlayStore } from '/@/renderer/features/group-play/store/group-play.store';
 import { usePlayer } from '/@/renderer/features/player/context/player-context';
-import { sourMedia } from '/@/renderer/features/sour/mobile/android';
+import { isIosApp, sourMedia } from '/@/renderer/features/sour/mobile/android';
 import {
     clearOffline,
     offlineBytes,
@@ -271,6 +271,26 @@ const PhoneSettingsPanel = () => {
     );
     return (
         <Stack gap="md">
+            {/* the iPhone app runs from your Hermes Music: which one, and a way to pick another */}
+            {isIosApp() && /^https?:$/.test(window.location.protocol) && (
+                <div>
+                    <Text fw={500} size="sm">
+                        Hermes Music address
+                    </Text>
+                    <Text isMuted size="xs">
+                        {window.location.host}. Another address means signing in to your music
+                        server again there.
+                    </Text>
+                    <Button
+                        mt="xs"
+                        onClick={() => sourMedia('setServer', { url: '' }).catch(() => undefined)}
+                        size="xs"
+                        variant="default"
+                    >
+                        Change address
+                    </Button>
+                </div>
+            )}
             {row(
                 'autoResume',
                 'Play when headphones or the car connect',

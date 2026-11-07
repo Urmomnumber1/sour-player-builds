@@ -138,6 +138,15 @@ const ALL_SERVERS = Object.keys(SERVER_TYPES).map((serverType) => {
     };
 });
 
+// Sour Player running from Hermes Music (the iPhone app, the browser version at /app/): the music
+// server (Navidrome) sits on the same Umbrel, at :4533
+const musicServerNextToHermes = (): null | string => {
+    if (typeof window === 'undefined') return null;
+    const { hostname, pathname, protocol } = window.location;
+    if (!hostname || !pathname.startsWith('/app/') || !/^https?:$/.test(protocol)) return null;
+    return `http://${hostname.includes(':') ? `[${hostname}]` : hostname}:4533`;
+};
+
 export const AddServerForm = ({ onCancel }: AddServerFormProps) => {
     const { t } = useTranslation();
     const focusTrapRef = useFocusTrap(true);
@@ -164,7 +173,10 @@ export const AddServerForm = ({ onCancel }: AddServerFormProps) => {
                     ? localSettings.env.SERVER_TYPE
                     : toServerType(window.SERVER_TYPE)) ?? ServerType.NAVIDROME,
             // http:// (Navidrome on an Umbrel only speaks http; the phone apps used to start at https://)
-            url: (localSettings ? localSettings.env.SERVER_URL : window.SERVER_URL) ?? 'http://',
+            url:
+                (localSettings ? localSettings.env.SERVER_URL : window.SERVER_URL) ??
+                musicServerNextToHermes() ??
+                'http://',
             username: '',
         },
     });

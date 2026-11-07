@@ -9,6 +9,7 @@ import CoreImage
 import MediaPlayer
 import Network
 import UserNotifications
+import WebKit
 
 @objc(SourMediaPlugin)
 public class SourMediaPlugin: CAPPlugin, CAPBridgedPlugin {
@@ -32,6 +33,8 @@ public class SourMediaPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "downloadUpdate", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "installUpdate", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setServer", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "savedServer", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "openSettings", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "keepAwake", returnType: CAPPluginReturnPromise),
     ]
 
@@ -228,9 +231,6 @@ public class SourMediaPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func setIcon(_ call: CAPPluginCall) { call.resolve() }
 
-    // Your Hermes Music address: the app then runs Sour Player from it (http on your network or
-    // Tailscale), so iOS doesn't block the music server as "insecure" and the app updates with Hermes.
-    // An empty address goes back to the welcome screen.
     // Sour Player TV: the phone is mirrored to the TV, so it must not lock itself
     @objc func keepAwake(_ call: CAPPluginCall) {
         let on = call.getBool("on", false)
@@ -238,31 +238,124 @@ public class SourMediaPlugin: CAPPlugin, CAPBridgedPlugin {
         call.resolve()
     }
 
+    // ---- your Hermes Music: the app runs Sour Player from its /app/ page (http on your network or
+    // Tailscale), so iOS doesn't block the music server as "insecure" and the app updates with Hermes.
+    // An empty address goes back to the welcome screen.
+
+    static let knownKey = "sourHermesKnown"
+
     @objc func setServer(_ call: CAPPluginCall) {
-        var text = call.getString("url", "").trimmingCharacters(in: .whitespaces)
+        let text = call.getString("url", "").trimmingCharacters(in: .whitespacesAndNewlines)
         if text.isEmpty {
             UserDefaults.standard.removeObject(forKey: SourBridgeViewController.serverKey)
+            SourBridgeViewController.lastFailure = nil
             DispatchQueue.main.async { _ = self.bridge?.webView?.load(URLRequest(url: URL(string: "capacitor://localhost/")!)) }
             call.resolve()
             return
         }
-        if !text.contains("://") { text = "http://" + text }
-        while text.hasSuffix("/") { text.removeLast() }
-        guard let base = URL(string: text), let app = URL(string: text + "/app/") else {
-            call.reject("That doesn't look like an address")
+        let candidates = SourMediaPlugin.hermesCandidates(text)
+        guard let first = candidates.first, let host = URLComponents(string: first)?.host else {
+            call.reject("That doesn't look like an address", "address")
             return
         }
-        var request = URLRequest(url: base.appendingPathComponent("api/status"))
-        request.timeoutInterval = 10
-        URLSession.shared.dataTask(with: request) { _, response, error in
-            guard error == nil, let http = response as? HTTPURLResponse, http.statusCode < 500 else {
-                call.reject("Couldn't reach Hermes Music there. On Tailscale? Make sure it's connected (SideStore's VPN switches it off).")
+        let shown = text.replacingOccurrences(of: "http://", with: "").replacingOccurrences(of: "https://", with: "")
+        probe(candidates, 0, false) { found, notHermes in
+            guard let base = found, let app = URL(string: base + "/app/") else {
+                if notHermes {
+                    call.reject("Something answered at \(shown), but it isn't Hermes Music. Its address ends in :3340, like umbrel.local:3340.", "notHermes")
+                } else if SourMediaPlugin.isTailscale(host) {
+                    call.reject("Couldn't reach Hermes Music at \(shown). Is Tailscale on? SideStore's VPN switches it off: turn Tailscale back on when SideStore is done.", "tailscale")
+                } else if SourMediaPlugin.isLocal(host) {
+                    call.reject("Couldn't reach Hermes Music at \(shown). That address only works on your home Wi-Fi, and Sour Player needs Local Network access (Settings > Privacy & Security > Local Network).", "local")
+                } else {
+                    call.reject("Couldn't reach Hermes Music at \(shown). Check the address, and that the phone is on your home Wi-Fi or Tailscale.", "unreachable")
+                }
                 return
             }
             UserDefaults.standard.set(app.absoluteString, forKey: SourBridgeViewController.serverKey)
+            SourMediaPlugin.remember(base)
+            SourBridgeViewController.lastFailure = nil
             call.resolve(["url": app.absoluteString])
             DispatchQueue.main.async { _ = self.bridge?.webView?.load(URLRequest(url: app)) }
+        }
+    }
+
+    // where the app runs from now, the addresses that worked before, and why it couldn't load (the
+    // welcome screen shows that and keeps trying)
+    @objc func savedServer(_ call: CAPPluginCall) {
+        let saved = UserDefaults.standard.string(forKey: SourBridgeViewController.serverKey) ?? ""
+        call.resolve([
+            "url": saved.hasSuffix("/app/") ? String(saved.dropLast(5)) : saved,
+            "known": UserDefaults.standard.stringArray(forKey: SourMediaPlugin.knownKey) ?? [],
+            "failed": SourBridgeViewController.lastFailure ?? "",
+        ])
+    }
+
+    // Sour Player's page in the Settings app (Local Network, notifications)
+    @objc func openSettings(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
+            call.resolve()
+        }
+    }
+
+    // what was typed -> the addresses to try: http:// when there's none, Hermes Music's port (3340)
+    // first when none was typed. Hermes always sits at the top, so a path (like /app/) is dropped.
+    static func hermesCandidates(_ typed: String) -> [String] {
+        var text = typed
+        if !text.contains("://") { text = "http://" + text }
+        guard let c = URLComponents(string: text), let scheme = c.scheme?.lowercased(), scheme == "http" || scheme == "https",
+              let host = c.host, !host.isEmpty else { return [] }
+        let h = host.contains(":") ? "[\(host)]" : host
+        if let port = c.port { return ["\(scheme)://\(h):\(port)"] }
+        return ["http://\(h):3340", "\(scheme)://\(h)"]
+    }
+
+    // one address after another until Hermes Music answers (its /api/status, not just any web page:
+    // an Umbrel's own dashboard answers without the :3340 too)
+    private func probe(_ list: [String], _ i: Int, _ notHermes: Bool, _ done: @escaping (String?, Bool) -> Void) {
+        guard i < list.count, let url = URL(string: list[i] + "/api/status") else {
+            done(nil, notHermes)
+            return
+        }
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 8
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if error == nil, let http = response as? HTTPURLResponse {
+                if http.statusCode == 200, let data = data,
+                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   json["workers"] != nil || json["library"] != nil {
+                    done(list[i], false)
+                } else {
+                    self.probe(list, i + 1, true, done)
+                }
+                return
+            }
+            self.probe(list, i + 1, notHermes, done)
         }.resume()
+    }
+
+    static func remember(_ base: String) {
+        var known = UserDefaults.standard.stringArray(forKey: knownKey) ?? []
+        known.removeAll { $0 == base }
+        known.insert(base, at: 0)
+        UserDefaults.standard.set(Array(known.prefix(4)), forKey: knownKey)
+    }
+
+    // 100.64.0.0/10 and *.ts.net
+    static func isTailscale(_ host: String) -> Bool {
+        if host.hasSuffix(".ts.net") { return true }
+        let p = host.split(separator: ".").compactMap { Int($0) }
+        return p.count == 4 && p[0] == 100 && (64...127).contains(p[1])
+    }
+
+    // the home network: *.local, a name without dots, 10.x, 172.16-31.x, 192.168.x, 169.254.x
+    static func isLocal(_ host: String) -> Bool {
+        if host.hasSuffix(".local") || !host.contains(".") { return true }
+        let p = host.split(separator: ".").compactMap { Int($0) }
+        guard p.count == 4 else { return false }
+        return p[0] == 10 || (p[0] == 172 && (16...31).contains(p[1])) || (p[0] == 192 && p[1] == 168) || (p[0] == 169 && p[1] == 254)
     }
 
     @objc func downloadUpdate(_ call: CAPPluginCall) { call.reject("TestFlight updates Sour Player on iPhone") }
@@ -273,6 +366,9 @@ public class SourMediaPlugin: CAPPlugin, CAPBridgedPlugin {
 // registers the plugin (the storyboard's view controller is set to this class)
 class SourBridgeViewController: CAPBridgeViewController {
     static let serverKey = "sourHermesApp"
+    // why the Hermes Music page didn't load (shown on the welcome screen)
+    static var lastFailure: String?
+    private var navGuard: SourNavigationGuard?
 
     // start at your Hermes Music's /app/ once it's set (see setServer)
     override open func instanceDescriptor() -> InstanceDescriptor {
@@ -293,6 +389,55 @@ class SourBridgeViewController: CAPBridgeViewController {
             web.backgroundColor = dark
             web.scrollView.backgroundColor = dark
             web.scrollView.bounces = false
+            // a Hermes Music page that can't load (no network, Tailscale off, Hermes restarting) goes
+            // back to the welcome screen instead of staying dark and empty
+            let guardian = SourNavigationGuard(original: web.navigationDelegate) { [weak web] error in
+                if let web = web { SourBridgeViewController.pageFailed(web, error) }
+            }
+            navGuard = guardian
+            web.navigationDelegate = guardian
         }
+    }
+
+    // only real network trouble on the Hermes Music page itself: a cancelled load or an outside page
+    // that fails stays where it is
+    static func pageFailed(_ web: WKWebView, _ error: Error) {
+        let e = error as NSError
+        guard e.domain == NSURLErrorDomain, e.code != NSURLErrorCancelled,
+              let saved = UserDefaults.standard.string(forKey: serverKey).flatMap({ URL(string: $0) }) else { return }
+        if let failing = (e.userInfo[NSURLErrorFailingURLErrorKey] as? URL) ?? web.url,
+           failing.host != saved.host || failing.port != saved.port { return }
+        lastFailure = e.localizedDescription
+        DispatchQueue.main.async { _ = web.load(URLRequest(url: URL(string: "capacitor://localhost/")!)) }
+    }
+}
+
+// Hands every page event to Capacitor's own handler; a page that fails to load also goes to `failed`
+final class SourNavigationGuard: NSObject, WKNavigationDelegate {
+    private let original: WKNavigationDelegate?
+    private let failed: (Error) -> Void
+
+    init(original: WKNavigationDelegate?, failed: @escaping (Error) -> Void) {
+        self.original = original
+        self.failed = failed
+    }
+
+    override func responds(to aSelector: Selector!) -> Bool {
+        super.responds(to: aSelector) || (original?.responds(to: aSelector) ?? false)
+    }
+
+    override func forwardingTarget(for aSelector: Selector!) -> Any? {
+        if let original = original, original.responds(to: aSelector) { return original }
+        return super.forwardingTarget(for: aSelector)
+    }
+
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        original?.webView?(webView, didFailProvisionalNavigation: navigation, withError: error)
+        failed(error)
+    }
+
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        original?.webView?(webView, didFail: navigation, withError: error)
+        failed(error)
     }
 }

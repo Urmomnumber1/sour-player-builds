@@ -3142,7 +3142,7 @@ export const useListSettings = (type: ItemListKey) => {
         shallow,
     ) as ItemListSettings;
     // phones scroll forever instead of showing page buttons
-    const phone = useMediaQuery('(max-width: 768px)');
+    const phone = useMediaQuery('(max-width: 768px), (max-height: 540px) and (pointer: coarse)');
     return useMemo(
         () =>
             phone && settings?.pagination === ListPaginationType.PAGINATED

@@ -8,15 +8,20 @@
         'player'
         'nav';
     grid-template-rows: 0 auto minmax(0, 1fr) auto auto;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 0;
     width: 100%;
+    max-width: 100vw;
 
     /* the screen minus the phone's notch and gesture bar (body is padded by those) */
     height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
     height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
     overflow: hidden;
     background: var(--theme-colors-background);
+}
+
+.layout > * {
+    min-width: 0;
 }
 
 .windows,

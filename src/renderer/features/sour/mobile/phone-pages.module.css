@@ -155,7 +155,13 @@
     flex: 0 0 132px;
     flex-direction: column;
     gap: 3px;
+    align-items: stretch;
+    justify-content: flex-start;
+    width: 132px;
+    min-width: 0;
+    max-width: 132px;
     padding: 0;
+    overflow: hidden;
     font: inherit;
     color: var(--theme-colors-foreground);
     text-align: left;
@@ -172,8 +178,16 @@
     border-radius: 12px;
 }
 
+.tile > div:first-child {
+    flex: 0 0 132px;
+    width: 132px;
+    height: 132px;
+}
+
 .tile-title,
 .tile-sub {
+    display: block;
+    max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

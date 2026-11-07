@@ -679,3 +679,62 @@
         display: none;
     }
 }
+
+/* a phone turned sideways: the cover and the buttons on the left, the lyrics on the right */
+@media (orientation: landscape) and (height <= 540px) {
+    .phone .main {
+        flex-direction: row;
+        gap: 16px;
+        padding: 6px 16px 0;
+    }
+
+    /* a small cover next to the song's name, then the progress and the buttons, then speed and rain */
+    .phone .left {
+        display: grid;
+        flex: 0 0 46%;
+        grid-template-areas:
+            'cover titles'
+            'controls controls'
+            'loop loop';
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 4px 14px;
+        place-content: start stretch;
+        align-items: center;
+        min-width: 0;
+        overflow-y: auto;
+    }
+
+    .phone .left > .cover-wrap,
+    .phone-no-lyrics .left > .cover-wrap {
+        grid-area: cover;
+        width: min(22vh, 18vw);
+    }
+
+    .phone .left > .titles {
+        grid-area: titles;
+        min-width: 0;
+        text-align: left;
+    }
+
+    .phone .left > .phone-controls {
+        grid-area: controls;
+    }
+
+    .phone .left > .loop-row {
+        grid-area: loop;
+    }
+
+    .phone .lyrics-column {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .phone .lyrics {
+        padding: 4vh 0;
+    }
+
+    .phone .viz,
+    .phone .viz-tall {
+        display: none;
+    }
+}

@@ -12,6 +12,19 @@ interface Saved {
 
 const shown = (url: string) => url.replace(/^https?:\/\//, '');
 
+// the home network: *.local, a name without dots, 10.x, 172.16-31.x, 192.168.x
+const isHomeNetwork = (url: string) => {
+    const host = shown(url).split(/[:/]/)[0];
+    const p = host.split('.').map(Number);
+    return (
+        host.endsWith('.local') ||
+        !host.includes('.') ||
+        p[0] === 10 ||
+        (p[0] === 172 && p[1] >= 16 && p[1] <= 31) ||
+        (p[0] === 192 && p[1] === 168)
+    );
+};
+
 // 100.64.0.0/10 or *.ts.net
 const isTailscale = (url: string) => {
     const host = shown(url).split(/[:/]/)[0];
@@ -68,7 +81,9 @@ export const IosWelcome = () => {
         }
     };
 
-    const settingsButton = errorCode === 'local' && (
+    // a home network address also needs iOS's Local Network permission for Sour Player
+    const settingsButton = (errorCode === 'local' ||
+        (!!saved?.url && !changing && isHomeNetwork(saved.url))) && (
         <button
             className={styles.secondary}
             onClick={() => sourMedia('openSettings').catch(() => undefined)}
@@ -90,7 +105,9 @@ export const IosWelcome = () => {
                         <br />
                         {isTailscale(saved.url)
                             ? "Is Tailscale on? SideStore's VPN switches it off."
-                            : 'Is the phone on your home Wi-Fi?'}
+                            : isHomeNetwork(saved.url)
+                              ? 'This address only works on your home Wi-Fi, with Local Network on for Sour Player (Settings).'
+                              : 'Is the phone on your home Wi-Fi or Tailscale?'}
                     </p>
                     <p className={styles.hint}>
                         Sour Player keeps trying and opens by itself as soon as Hermes Music

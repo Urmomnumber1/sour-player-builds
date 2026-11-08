@@ -397,6 +397,27 @@ class SourBridgeViewController: CAPBridgeViewController {
             navGuard = guardian
             web.navigationDelegate = guardian
         }
+        forgetIfNotHermes()
+    }
+
+    // The app before 0.10.9 took any web page for Hermes Music: an address typed without :3340 (the
+    // Umbrel's own dashboard) left it stuck there. If the saved one has no port and something other
+    // than Hermes Music answers, forget it and go back to the welcome screen. (An address with a port
+    // is never dropped, so a hotel Wi-Fi login page can't make the app forget it.)
+    private func forgetIfNotHermes() {
+        guard let saved = UserDefaults.standard.string(forKey: Self.serverKey), saved.hasSuffix("/app/"),
+              let url = URL(string: saved), url.port == nil,
+              let status = URL(string: String(saved.dropLast(5)) + "/api/status") else { return }
+        var request = URLRequest(url: status)
+        request.timeoutInterval = 8
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            guard error == nil, let http = response as? HTTPURLResponse else { return }
+            let json = data.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
+            if http.statusCode == 200, let json = json, json["workers"] != nil || json["library"] != nil { return }
+            UserDefaults.standard.removeObject(forKey: Self.serverKey)
+            Self.lastFailure = nil
+            DispatchQueue.main.async { _ = self?.bridge?.webView?.load(URLRequest(url: URL(string: "capacitor://localhost/")!)) }
+        }.resume()
     }
 
     // only real network trouble on the Hermes Music page itself: a cancelled load or an outside page

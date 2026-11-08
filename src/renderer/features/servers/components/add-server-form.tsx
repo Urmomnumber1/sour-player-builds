@@ -150,9 +150,12 @@ const musicServerNextToHermes = (): null | string => {
 
 export const AddServerForm = ({ onCancel }: AddServerFormProps) => {
     const { t } = useTranslation();
-    // on a phone the first box isn't focused by itself: the keyboard would cover half the form
     const phone = useIsMobile();
-    const focusTrapRef = useFocusTrap(!phone);
+    // on a touch screen the first box isn't focused by itself: the keyboard would cover half the form
+    // (asked right away: the phone check above only settles after the first render)
+    const focusTrapRef = useFocusTrap(
+        !(typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches),
+    );
     const [isLoading, setIsLoading] = useState(false);
     const { addServer, setCurrentServer } = useAuthStoreActions();
     const serverList = useServerList();

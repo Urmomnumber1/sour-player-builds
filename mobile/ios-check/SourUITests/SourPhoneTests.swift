@@ -136,6 +136,23 @@ final class SourPhoneTests: XCTestCase {
         }
     }
 
+    // scrolls the page until the element can be tapped
+    func reveal(_ el: XCUIElement) {
+        for _ in 0..<8 where el.exists && !el.isHittable {
+            app.swipeUp(velocity: .slow)
+            sleep(1)
+        }
+    }
+
+    // the mini player: the lowest thing on the screen that shows the playing song
+    func miniPlayer(_ title: String) -> XCUIElement? {
+        let height = app.windows.firstMatch.frame.height
+        return app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS[c] %@", title))
+            .allElementsBoundByIndex
+            .filter { $0.exists && $0.frame.minY > height * 0.55 && $0.frame.height < 140 }
+            .max { $0.frame.minY < $1.frame.minY }
+    }
+
     // nothing cut off at the sides
     func inside(_ what: String, _ el: XCUIElement) {
         guard el.exists else {
@@ -264,9 +281,13 @@ final class SourPhoneTests: XCTestCase {
         sleep(2)
         shot("album")
         inside("the You tab on the album page", named("You"))
-        tap(any("Song 1"))
+        let song = any("Song 1")
+        reveal(song)
+        shot("album-songs")
+        tap(song)
         sleep(4)
         prompts()
+        check(miniPlayer("Song 1") != nil, "the song plays: the mini player shows")
         shot("playing")
 
         // sideways: still the phone layout, nothing cut off
@@ -279,16 +300,15 @@ final class SourPhoneTests: XCTestCase {
         sleep(3)
         shot("sideways-home")
 
-        // Now Playing (the mini player), sideways and upright
-        if let card = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS[c] 'Song 1'")).allElementsBoundByIndex.last {
-            tap(card)
-        }
+        // Now Playing (tap the mini player), sideways and upright
+        if let card = miniPlayer("Song 1") { tap(card) }
+        let close = named("Close the Sour Stage")
+        check(close.waitForExistence(timeout: 15), "the mini player opens Now Playing")
         sleep(3)
         shot("sideways-now-playing")
         XCUIDevice.shared.orientation = .portrait
         sleep(4)
         shot("now-playing")
-        let close = named("Close the Sour Stage")
         if close.exists { tap(close) }
         sleep(2)
 

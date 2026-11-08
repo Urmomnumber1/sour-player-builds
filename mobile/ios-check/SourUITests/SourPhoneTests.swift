@@ -14,7 +14,7 @@ final class SourPhoneTests: XCTestCase {
     let app = XCUIApplication(bundleIdentifier: "com.anjalo.sourplayer")
     let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
     let env = ProcessInfo.processInfo.environment
-    let name = "hermes.sourcheck.ts.net"
+    let host = "hermes.sourcheck.ts.net"
     let ip = "100.88.1.2"
     var count = 0
     var prefix = "a"
@@ -208,9 +208,9 @@ final class SourPhoneTests: XCTestCase {
         check(!connect("127.0.0.1:3070", "not-hermes") && any("but it isn").exists, "a web page that isn't Hermes Music is turned down")
 
         // a Tailscale-style name over http (blocked by the old network settings)
-        var server = "http://\(name):4533"
-        let byName = connect("\(name):3060", "by-name")
-        check(byName, "connects by a Tailscale-style name (\(name))")
+        var server = "http://\(host):4533"
+        let byName = connect("\(host):3060", "by-name")
+        check(byName, "connects by a Tailscale-style name (\(host))")
         if !byName {
             server = "http://\(ip):4533"
             guard connect("\(ip):3060", "by-ip") else { return }

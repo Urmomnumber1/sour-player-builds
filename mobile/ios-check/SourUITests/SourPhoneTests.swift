@@ -1,16 +1,21 @@
 import XCTest
 
-// Sour Player on a simulated iPhone (run.sh runs this on GitHub's Macs). testIphone connects to the
-// stand-in Hermes Music by a Tailscale-style name (http to a name with dots, which iOS used to block),
-// signs in to the mock music server, checks that typing doesn't zoom the page in, and goes through
-// the tabs, an album and Now Playing upright and sideways. testOffline runs after run.sh stops Hermes
-// Music: the app has to say so and open by itself once it's back.
-// VARIANT=old is the app as friends have it now (the old network settings and web build): the same
-// steps, but only noted, not checked. Screenshots and notes.txt go to $SHOTS.
+// Sour Player on a simulated iPhone (run.sh runs this on GitHub's Macs, with a stand-in Hermes Music
+// and a mock music server reachable at a Tailscale-style name and IP).
+// testIphone: turns down a page that isn't Hermes Music, connects by the name (http to a name with
+// dots, which the old network settings blocked), signs in with the music server filled in, checks
+// that typing doesn't zoom the page in and goes through the tabs, an album and Now Playing upright
+// and sideways; then You > Phone settings > Change address, and connects by the IP.
+// testOffline (after run.sh stops Hermes Music): the app has to say it can't reach it and open by
+// itself once it's back.
+// VARIANT=old is the app as friends have it now (old network settings, the 0.10.8 web build): the
+// same steps, only noted, never failed. Screenshots and notes.txt go to $SHOTS.
 final class SourPhoneTests: XCTestCase {
     let app = XCUIApplication(bundleIdentifier: "com.anjalo.sourplayer")
     let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
     let env = ProcessInfo.processInfo.environment
+    let name = "hermes.sourcheck.ts.net"
+    let ip = "100.88.1.2"
     var count = 0
     var prefix = "a"
 
@@ -43,13 +48,13 @@ final class SourPhoneTests: XCTestCase {
         if variant == "new" { XCTAssertTrue(ok, what) }
     }
 
-    func shot(_ name: String) {
+    func shot(_ label: String) {
         count += 1
         let image = XCUIScreen.main.screenshot()
-        let file = String(format: "%@/%@%02d-%@.png", dir, prefix, count, name)
+        let file = String(format: "%@/%@%02d-%@.png", dir, prefix, count, label)
         try? image.pngRepresentation.write(to: URL(fileURLWithPath: file))
         let attachment = XCTAttachment(screenshot: image)
-        attachment.name = name
+        attachment.name = label
         attachment.lifetime = .keepAlways
         add(attachment)
     }
@@ -67,11 +72,6 @@ final class SourPhoneTests: XCTestCase {
         return XCTWaiter.wait(for: [expectation], timeout: timeout) == .completed
     }
 
-    func textBox(_ hint: String) -> XCUIElement {
-        let p = NSPredicate(format: "label CONTAINS[c] %@ OR placeholderValue CONTAINS[c] %@", hint, hint)
-        return app.textFields.matching(p).firstMatch
-    }
-
     func named(_ label: String) -> XCUIElement {
         let p = NSPredicate(format: "label ==[c] %@", label)
         for query in [app.buttons, app.links, app.radioButtons] {
@@ -79,6 +79,14 @@ final class SourPhoneTests: XCTestCase {
             if el.exists { return el }
         }
         return app.descendants(matching: .any).matching(p).firstMatch
+    }
+
+    func field(_ startsWith: String) -> XCUIElement {
+        app.textFields.matching(NSPredicate(format: "label BEGINSWITH[c] %@", startsWith)).firstMatch
+    }
+
+    var welcomeBox: XCUIElement {
+        app.textFields.matching(NSPredicate(format: "label CONTAINS[c] 'Hermes Music address' OR placeholderValue CONTAINS[c] 'umbrel.local'")).firstMatch
     }
 
     func tap(_ el: XCUIElement) {
@@ -89,8 +97,9 @@ final class SourPhoneTests: XCTestCase {
         }
     }
 
-    func type(_ el: XCUIElement, _ text: String) {
-        tap(el)
+    // whatever is in the box, replaced (tapped at its right end, so the cursor is after the text)
+    func replace(_ el: XCUIElement, _ text: String) {
+        el.coordinate(withNormalizedOffset: CGVector(dx: 0.96, dy: 0.5)).tap()
         sleep(1)
         let current = (el.value as? String) ?? ""
         if !current.isEmpty, current != el.placeholderValue {
@@ -99,25 +108,92 @@ final class SourPhoneTests: XCTestCase {
         el.typeText(text)
     }
 
-    // the system's own questions (notifications, saving the password)
+    // the system's own questions (notifications, saving the password) and the app's first-start guide
     func prompts() {
         for label in ["Allow", "OK"] where springboard.buttons[label].exists {
             springboard.buttons[label].tap()
         }
-        for label in ["Not Now", "Never for This Website"] where app.buttons[label].exists {
-            app.buttons[label].tap()
+        for label in ["Not Now", "Never for This Website", "Skip", "Dismiss"] where named(label).exists {
+            tap(named(label))
+            sleep(1)
         }
     }
 
     // nothing cut off at the sides
-    func inside(_ name: String, _ el: XCUIElement) {
+    func inside(_ what: String, _ el: XCUIElement) {
         guard el.exists else {
-            check(false, "\(name) is on the screen (it isn't there at all)")
+            check(false, "\(what) is on the screen (it isn't there at all)")
             return
         }
         let screen = app.windows.firstMatch.frame
         let f = el.frame
-        check(f.minX >= screen.minX - 1 && f.maxX <= screen.maxX + 1, "\(name) fits on the screen (\(Int(f.minX))-\(Int(f.maxX)) of \(Int(screen.width)))")
+        check(f.minX >= screen.minX - 1 && f.maxX <= screen.maxX + 1,
+              "\(what) fits on the screen (\(Int(f.minX))-\(Int(f.maxX)) of \(Int(screen.width)))")
+    }
+
+    // after Connect: true once Sour Player opened from Hermes Music (the welcome screen stayed gone
+    // for 3 seconds), false when the welcome screen says why not
+    func waitConnected() -> Bool {
+        var goneFor = 0
+        for _ in 0..<50 {
+            if any("but it isn").exists || any("reach Hermes Music").exists || any("look like an address").exists {
+                return false
+            }
+            goneFor = named("Connect").exists || any("Hermes Music address").exists ? 0 : goneFor + 1
+            if goneFor >= 3 { return true }
+            sleep(1)
+        }
+        return false
+    }
+
+    func errorText() -> String {
+        for hint in ["but it isn", "reach Hermes Music", "look like an address"] where any(hint).exists {
+            return any(hint).label
+        }
+        return "no answer"
+    }
+
+    // a fresh start of the app with that address typed on the welcome screen
+    func connect(_ address: String, _ label: String) -> Bool {
+        app.terminate()
+        app.launch()
+        guard welcomeBox.waitForExistence(timeout: 40) else {
+            note("no welcome screen to type \(address) into")
+            return false
+        }
+        tap(welcomeBox)
+        welcomeBox.typeText(address)
+        tap(named("Connect"))
+        let ok = waitConnected()
+        note("\(address): \(ok ? "connected" : "turned down: \(errorText())")")
+        sleep(2)
+        shot(label)
+        return ok
+    }
+
+    func signIn(_ musicServer: String) {
+        sleep(3)
+        prompts()
+        let url = field("URL")
+        check(url.waitForExistence(timeout: 30), "the music server sign-in shows")
+        let filled = (url.value as? String) ?? ""
+        check(filled == musicServer, "the music server address is filled in (\(filled))")
+        if filled != musicServer { replace(url, musicServer) }
+        let subsonic = named("OpenSubsonic")
+        tap(subsonic.exists ? subsonic : any("OpenSubsonic"))
+        let user = field("Username")
+        let widthBefore = user.frame.width
+        tap(user)
+        user.typeText("tester")
+        let pass = app.secureTextFields.firstMatch
+        tap(pass)
+        pass.typeText("lemon-test-1")
+        shot("typing")
+        let widthAfter = user.frame.width
+        check(abs(widthAfter - widthBefore) < 4, "typing doesn't zoom the page in (box \(Int(widthBefore)) -> \(Int(widthAfter)) wide)")
+        tap(named("Add"))
+        sleep(5)
+        prompts()
     }
 
     // ---- the tests
@@ -125,50 +201,22 @@ final class SourPhoneTests: XCTestCase {
     func testIphone() throws {
         prefix = "a"
         app.launch()
-        check(appears("Hermes Music address", 40), "the welcome screen shows")
+        check(welcomeBox.waitForExistence(timeout: 40), "the welcome screen shows")
         shot("welcome")
-        let address = textBox("Hermes Music address").exists ? textBox("Hermes Music address") : textBox("umbrel.local")
 
         // something that isn't Hermes Music (like an Umbrel's dashboard, without the :3340)
-        type(address, "127.0.0.1:3070")
-        tap(named("Connect"))
-        check(appears("but it isn", 30), "a web page that isn't Hermes Music is turned down")
-        shot("not-hermes")
+        check(!connect("127.0.0.1:3070", "not-hermes") && any("but it isn").exists, "a web page that isn't Hermes Music is turned down")
 
-        // a Tailscale-style name over http
-        type(address, "hermes.sourcheck.ts.net:3060")
-        tap(named("Connect"))
-        let urlBox = app.textFields.matching(NSPredicate(format: "label CONTAINS[c] 'URL' AND NOT (label CONTAINS[c] 'Public')")).firstMatch
-        let viaName = urlBox.waitForExistence(timeout: 45) && !any("reach Hermes Music").exists
-        check(viaName, "connects to Hermes Music by a Tailscale-style name (hermes.sourcheck.ts.net)")
-        if !viaName {
-            shot("tailscale-name-blocked")
-            // what the old app can do: an IP address
-            type(address, "127.0.0.1:3060")
-            tap(named("Connect"))
-            note("with an IP address instead: \(urlBox.waitForExistence(timeout: 45) ? "connects" : "doesn't connect either")")
+        // a Tailscale-style name over http (blocked by the old network settings)
+        var server = "http://\(name):4533"
+        let byName = connect("\(name):3060", "by-name")
+        check(byName, "connects by a Tailscale-style name (\(name))")
+        if !byName {
+            server = "http://\(ip):4533"
+            guard connect("\(ip):3060", "by-ip") else { return }
         }
-        prompts()
-        sleep(2)
-        shot("sign-in")
 
-        // the music server: filled in from Hermes Music's address in the new app
-        let filled = (urlBox.value as? String) ?? ""
-        check(filled.contains(":4533"), "the music server address is filled in (\(filled))")
-        if !filled.contains(":4533") { type(urlBox, viaName ? "http://hermes.sourcheck.ts.net:4533" : "http://127.0.0.1:4533") }
-        let subsonic = named("OpenSubsonic")
-        tap(subsonic.exists ? subsonic : any("OpenSubsonic"))
-        let user = textBox("Username")
-        let widthBefore = user.frame.width
-        type(user, "tester")
-        let pass = app.secureTextFields.firstMatch
-        type(pass, "lemon-test-1")
-        shot("typing")
-        let widthAfter = user.frame.width
-        check(abs(widthAfter - widthBefore) < 4, "typing doesn't zoom the page in (box \(Int(widthBefore)) -> \(Int(widthAfter)) wide)")
-        tap(named("Add"))
-        sleep(5)
-        prompts()
+        signIn(server)
         check(named("You").waitForExistence(timeout: 40), "signed in: the phone tabs show")
         sleep(4)
         prompts()
@@ -176,7 +224,7 @@ final class SourPhoneTests: XCTestCase {
         inside("the You tab", named("You"))
         inside("the Home tab", named("Home"))
 
-        // Library > Albums > the first album > its first song
+        // Library > Albums > the first album > its first song (long names, like real soundtracks)
         tap(named("Library"))
         sleep(3)
         shot("library")
@@ -205,25 +253,50 @@ final class SourPhoneTests: XCTestCase {
         sleep(3)
         shot("sideways-home")
 
-        // Now Playing, sideways and upright
-        let card = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS[c] 'Song 1'")).allElementsBoundByIndex.last
-        if let card = card { tap(card) }
+        // Now Playing (the mini player), sideways and upright
+        if let card = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS[c] 'Song 1'")).allElementsBoundByIndex.last {
+            tap(card)
+        }
         sleep(3)
         shot("sideways-now-playing")
         XCUIDevice.shared.orientation = .portrait
         sleep(4)
         shot("now-playing")
+        let close = named("Close the Sour Stage")
+        if close.exists { tap(close) }
+        sleep(2)
+
+        guard variant == "new" else { return }
+        // You > Phone settings > Change address: back to the welcome screen, then the IP works too
+        tap(named("You"))
+        sleep(2)
+        tap(any("Phone settings"))
+        sleep(2)
+        shot("phone-settings")
+        let change = named("Change address")
+        check(change.exists, "Phone settings has Change address")
+        tap(change)
+        check(welcomeBox.waitForExistence(timeout: 20), "Change address goes back to the welcome screen")
+        tap(welcomeBox)
+        welcomeBox.typeText("\(ip):3060")
+        tap(named("Connect"))
+        check(waitConnected(), "connects by a Tailscale-style IP (\(ip))")
+        sleep(3)
+        prompts()
+        shot("by-ip")
+        check(((field("URL").value as? String) ?? "") == "http://\(ip):4533", "the music server is filled in for that address too")
     }
 
     func testOffline() throws {
         prefix = "b"
         app.launch()
         let offline = appears("reach Hermes Music", 60)
+        sleep(2)
         shot("offline")
         check(offline, "with Hermes Music gone, the app says it can't reach it (no dark empty screen)")
         FileManager.default.createFile(atPath: dir + "/offline-seen", contents: nil)
         // run.sh brings Hermes Music back: the app opens Sour Player by itself
-        let back = gone(any("reach Hermes Music"), 150) && named("You").waitForExistence(timeout: 40)
+        let back = gone(any("reach Hermes Music"), 150) && (field("URL").waitForExistence(timeout: 40) || named("You").exists)
         sleep(3)
         shot("back-online")
         check(back, "once Hermes Music is back, the app opens by itself")

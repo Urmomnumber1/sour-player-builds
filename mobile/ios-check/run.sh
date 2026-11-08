@@ -20,8 +20,9 @@ if [ "$VARIANT" = old ]; then
     WEB="$RUNNER_TEMP/oldweb"
 fi
 
-# a Tailscale-style name (with dots) for this Mac
-echo "127.0.0.1 hermes.sourcheck.ts.net" | sudo tee -a /etc/hosts
+# a Tailscale-style IP (100.64.0.0/10, not a home network address) and name (with dots) for this Mac
+sudo ifconfig lo0 alias 100.88.1.2 up
+echo "100.88.1.2 hermes.sourcheck.ts.net" | sudo tee -a /etc/hosts
 sudo dscacheutil -flushcache
 sudo killall -HUP mDNSResponder || true
 
@@ -33,7 +34,8 @@ PORT=3070 IMPOSTOR=1 node "$HERE/fake-hermes.mjs" > "$SHOTS/impostor.log" 2>&1 &
 sleep 2
 curl -s -m 5 http://hermes.sourcheck.ts.net:3060/api/status
 echo
-curl -s -m 5 -o /dev/null -w "app page %{http_code}\n" http://hermes.sourcheck.ts.net:3060/app/
+curl -s -m 5 -o /dev/null -w "app page by IP %{http_code}\n" http://100.88.1.2:3060/app/
+curl -s -m 5 -o /dev/null -w "music server by name %{http_code}\n" "http://hermes.sourcheck.ts.net:4533/rest/ping.view?u=tester&p=lemon-test-1&v=1.16.1&c=check&f=json"
 
 # the newest iPhone (base model, with the Dynamic Island) on the newest iOS, on-screen keyboard
 defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool false

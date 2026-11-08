@@ -108,8 +108,25 @@ final class SourPhoneTests: XCTestCase {
         el.typeText(text)
     }
 
+    // the keyboard's Done (so the next box isn't under the keyboard)
+    func keyboardDone() {
+        let done = app.buttons["Done"]
+        if done.exists, done.isHittable {
+            done.tap()
+            sleep(1)
+        }
+    }
+
+    func fill(_ el: XCUIElement, _ text: String) {
+        tap(el)
+        sleep(1)
+        el.typeText(text)
+        keyboardDone()
+    }
+
     // the system's own questions (notifications, saving the password) and the app's first-start guide
     func prompts() {
+        keyboardDone()
         for label in ["Allow", "OK"] where springboard.buttons[label].exists {
             springboard.buttons[label].tap()
         }
@@ -161,8 +178,14 @@ final class SourPhoneTests: XCTestCase {
             note("no welcome screen to type \(address) into")
             return false
         }
+        // laid out (a box tapped before the styles load moves away from under the finger)
+        for _ in 0..<10 where welcomeBox.frame.height < 30 { sleep(1) }
+        sleep(1)
+        check(!app.keyboards.firstMatch.exists, "no keyboard pops up by itself on the welcome screen")
         tap(welcomeBox)
+        sleep(1)
         welcomeBox.typeText(address)
+        keyboardDone()
         tap(named("Connect"))
         let ok = waitConnected()
         note("\(address): \(ok ? "connected" : "turned down: \(errorText())")")
@@ -172,23 +195,26 @@ final class SourPhoneTests: XCTestCase {
     }
 
     func signIn(_ musicServer: String) {
-        sleep(3)
-        prompts()
         let url = field("URL")
         check(url.waitForExistence(timeout: 30), "the music server sign-in shows")
+        sleep(3)
+        check(!app.keyboards.firstMatch.exists, "no keyboard pops up by itself on the sign-in page")
+        check(!any("Welcome to Sour Player").exists, "no setup guide over the sign-in page")
+        shot("sign-in")
+        prompts()
         let filled = (url.value as? String) ?? ""
         check(filled == musicServer, "the music server address is filled in (\(filled))")
-        if filled != musicServer { replace(url, musicServer) }
+        if filled != musicServer {
+            replace(url, musicServer)
+            keyboardDone()
+        }
         let subsonic = named("OpenSubsonic")
         tap(subsonic.exists ? subsonic : any("OpenSubsonic"))
         let user = field("Username")
         let widthBefore = user.frame.width
-        tap(user)
-        user.typeText("tester")
-        let pass = app.secureTextFields.firstMatch
-        tap(pass)
-        pass.typeText("lemon-test-1")
-        shot("typing")
+        fill(user, "tester")
+        fill(app.secureTextFields.firstMatch, "lemon-test-1")
+        shot("typed")
         let widthAfter = user.frame.width
         check(abs(widthAfter - widthBefore) < 4, "typing doesn't zoom the page in (box \(Int(widthBefore)) -> \(Int(widthAfter)) wide)")
         tap(named("Add"))
@@ -277,8 +303,13 @@ final class SourPhoneTests: XCTestCase {
         check(change.exists, "Phone settings has Change address")
         tap(change)
         check(welcomeBox.waitForExistence(timeout: 20), "Change address goes back to the welcome screen")
+        for _ in 0..<10 where welcomeBox.frame.height < 30 { sleep(1) }
+        sleep(1)
+        shot("changed")
         tap(welcomeBox)
+        sleep(1)
         welcomeBox.typeText("\(ip):3060")
+        keyboardDone()
         tap(named("Connect"))
         check(waitConnected(), "connects by a Tailscale-style IP (\(ip))")
         sleep(3)
@@ -291,9 +322,11 @@ final class SourPhoneTests: XCTestCase {
         prefix = "b"
         app.launch()
         let offline = appears("reach Hermes Music", 60)
-        sleep(2)
+        sleep(3)
         shot("offline")
         check(offline, "with Hermes Music gone, the app says it can't reach it (no dark empty screen)")
+        check(!app.keyboards.firstMatch.exists, "no keyboard over the can't-reach screen")
+        check(named("Try again").exists && named("Use a different address").exists, "Try again and Use a different address are there")
         FileManager.default.createFile(atPath: dir + "/offline-seen", contents: nil)
         // run.sh brings Hermes Music back: the app opens Sour Player by itself
         let back = gone(any("reach Hermes Music"), 150) && (field("URL").waitForExistence(timeout: 40) || named("You").exists)

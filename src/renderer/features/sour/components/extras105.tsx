@@ -17,6 +17,7 @@ import {
     useSourProfiles,
     useSourStore,
 } from '/@/renderer/features/sour/store/sour.store';
+import { useIsMobile } from '/@/renderer/hooks/use-is-mobile';
 import { useCurrentServer } from '/@/renderer/store';
 import { Button } from '/@/shared/components/button/button';
 import { ContextMenu } from '/@/shared/components/context-menu/context-menu';
@@ -512,7 +513,10 @@ export const SetupGuide = () => {
     const [addr, setAddr] = useState(url || '');
     const ui = useSourStore((s) => s.look.ui ?? 'liquid');
     const navigate = useNavigate();
-    if (done || (me && url)) return null;
+    // not on a phone: the apps come with Hermes Music's address, the looks are for computers, and
+    // the sign-in it would point to is already on the screen (the guide only covered it)
+    const phone = useIsMobile();
+    if (done || (me && url) || phone) return null;
     const finish = () => useSourStore.getState().set({ setupDone: true });
     return (
         <div

@@ -19,6 +19,7 @@ import {
     JellyfinSignInMethodPicker,
 } from '/@/renderer/features/servers/components/jellyfin-sign-in-method-picker';
 import { useJellyfinQuickConnect } from '/@/renderer/features/servers/hooks/use-jellyfin-quick-connect';
+import { useIsMobile } from '/@/renderer/hooks/use-is-mobile';
 import { useAuthStoreActions, useServerList } from '/@/renderer/store';
 import { normalizeServerUrl } from '/@/renderer/utils/normalize-server-url';
 import { Checkbox } from '/@/shared/components/checkbox/checkbox';
@@ -149,7 +150,9 @@ const musicServerNextToHermes = (): null | string => {
 
 export const AddServerForm = ({ onCancel }: AddServerFormProps) => {
     const { t } = useTranslation();
-    const focusTrapRef = useFocusTrap(true);
+    // on a phone the first box isn't focused by itself: the keyboard would cover half the form
+    const phone = useIsMobile();
+    const focusTrapRef = useFocusTrap(!phone);
     const [isLoading, setIsLoading] = useState(false);
     const { addServer, setCurrentServer } = useAuthStoreActions();
     const serverList = useServerList();
@@ -357,6 +360,29 @@ export const AddServerForm = ({ onCancel }: AddServerFormProps) => {
         return setIsLoading(false);
     });
 
+    const nameInput = (
+        <TextInput
+            data-autofocus
+            disabled={serverLock}
+            label={t('form.addServer.input', {
+                context: 'name',
+            })}
+            required
+            {...form.getInputProps('name')}
+        />
+    );
+    const urlInput = (
+        <TextInput
+            disabled={serverLock}
+            inputMode="url"
+            label={t('form.addServer.input', {
+                context: 'url',
+            })}
+            required
+            {...form.getInputProps('url')}
+        />
+    );
+
     return (
         <>
             <Stack>
@@ -390,38 +416,34 @@ export const AddServerForm = ({ onCancel }: AddServerFormProps) => {
                         value={form.values.type}
                         withItemsBorders={false}
                     />
-                    <Group grow>
+                    {/* a phone: the address first, the whole width (it's the one that matters) */}
+                    {phone ? (
+                        <>
+                            {urlInput}
+                            {nameInput}
+                        </>
+                    ) : (
+                        <Group grow>
+                            {nameInput}
+                            {urlInput}
+                        </Group>
+                    )}
+                    {/* the public address is for shared links: not something to fill in on a phone */}
+                    {(!phone || !!form.values.remoteUrl) && (
                         <TextInput
-                            data-autofocus
+                            description={t('form.addServer.input', {
+                                context: 'remoteUrlDescription',
+                            })}
                             disabled={serverLock}
                             label={t('form.addServer.input', {
-                                context: 'name',
+                                context: 'remoteUrl',
                             })}
-                            required
-                            {...form.getInputProps('name')}
-                        />
-                        <TextInput
-                            disabled={serverLock}
-                            label={t('form.addServer.input', {
-                                context: 'url',
+                            placeholder={t('form.addServer.input', {
+                                context: 'remoteUrlPlaceholder',
                             })}
-                            required
-                            {...form.getInputProps('url')}
+                            {...form.getInputProps('remoteUrl')}
                         />
-                    </Group>
-                    <TextInput
-                        description={t('form.addServer.input', {
-                            context: 'remoteUrlDescription',
-                        })}
-                        disabled={serverLock}
-                        label={t('form.addServer.input', {
-                            context: 'remoteUrl',
-                        })}
-                        placeholder={t('form.addServer.input', {
-                            context: 'remoteUrlPlaceholder',
-                        })}
-                        {...form.getInputProps('remoteUrl')}
-                    />
+                    )}
                     {form.values.remoteUrl && (
                         <Checkbox
                             label={t('form.addServer.input', {

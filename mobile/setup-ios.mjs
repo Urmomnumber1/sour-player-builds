@@ -40,8 +40,10 @@ edit(path.join(app, 'Base.lproj', 'Main.storyboard'), (s) =>
     s.replace(/customClass="CAPBridgeViewController" customModule="Capacitor"/, 'customClass="SourBridgeViewController" customModule="App" customModuleProvider="target"'),
 );
 
-// Info.plist: plays in the background, can reach a music server on the home network over http,
-// the name under the icon
+// Info.plist: plays in the background, can reach a music server over http anywhere (home network,
+// Tailscale IP or Tailscale name), the name under the icon. Only NSAllowsArbitraryLoads: with
+// NSAllowsLocalNetworking next to it, iOS ignores it and blocks http to any name with a dot in it
+// (like umbrel.tail1234.ts.net).
 const extra = `
 	<key>UIBackgroundModes</key>
 	<array>
@@ -50,8 +52,6 @@ const extra = `
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
-		<true/>
-		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
 	<key>NSLocalNetworkUsageDescription</key>

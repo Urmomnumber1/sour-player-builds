@@ -17,6 +17,7 @@ import {
     useSourProfiles,
     useSourStore,
 } from '/@/renderer/features/sour/store/sour.store';
+import { useIsMobile } from '/@/renderer/hooks/use-is-mobile';
 import { useCurrentServer } from '/@/renderer/store';
 import { Button } from '/@/shared/components/button/button';
 import { ContextMenu } from '/@/shared/components/context-menu/context-menu';
@@ -512,7 +513,11 @@ export const SetupGuide = () => {
     const [addr, setAddr] = useState(url || '');
     const ui = useSourStore((s) => s.look.ui ?? 'liquid');
     const navigate = useNavigate();
-    if (done || (me && url)) return null;
+    // not on a phone that already has Hermes Music's address (the iPhone app and the browser version
+    // run from it): the looks are for computers and the sign-in it points to is already on the
+    // screen, so the guide only covered it. The Android app still asks for the address here.
+    const phone = useIsMobile();
+    if (done || (me && url) || (phone && url)) return null;
     const finish = () => useSourStore.getState().set({ setupDone: true });
     return (
         <div

@@ -1,0 +1,66 @@
+# Sour Player on a simulated iPhone: builds the app, then mobile/ios-check/run.sh connects it to a
+# stand-in Hermes Music, signs in to a mock music server and takes screenshots upright and sideways.
+# "old" is the app as friends have it now (old network settings, the 0.10.8 web build), to compare.
+# Runs on a push to the ios-check branch, or by hand. Screenshots: the run's ios-check-* artifacts.
+name: iPhone simulator check
+
+on:
+    workflow_dispatch:
+    push:
+        branches: [ios-check]
+
+jobs:
+    check:
+        runs-on: macos-15
+        timeout-minutes: 60
+        strategy:
+            fail-fast: false
+            matrix:
+                variant: [new, old]
+        env:
+            NODE_OPTIONS: --max-old-space-size=4096
+        steps:
+            - name: Checkout git repo
+              uses: actions/checkout@v6
+
+            - name: Install Node and PNPM
+              uses: pnpm/action-setup@v4
+
+            - name: Install dependencies
+              run: pnpm install
+
+            - name: Build the web app
+              run: SOUR_MOBILE=1 pnpm run build:web && rm -f out/web/assets/*.map
+
+            - name: Make the Xcode project
+              working-directory: mobile
+              run: |
+                  npm install --no-audit --no-fund
+                  npm install --no-audit --no-fund @capacitor/ios@7.4.3
+                  npx cap add ios
+                  node setup-ios.mjs
+                  npx cap sync ios
+                  node setup-ios.mjs --after-sync
+                  if [ "${{ matrix.variant }}" = old ]; then
+                      /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity:NSAllowsLocalNetworking bool true" ios/App/App/Info.plist
+                  fi
+                  /usr/libexec/PlistBuddy -c "Print :NSAppTransportSecurity" ios/App/App/Info.plist
+
+            - name: Build for the simulator
+              working-directory: mobile/ios/App
+              run: |
+                  if [ -d App.xcworkspace ]; then T="-workspace App.xcworkspace"; else T="-project App.xcodeproj"; fi
+                  set -o pipefail
+                  xcodebuild $T -scheme App -configuration Release -sdk iphonesimulator \
+                      -destination 'generic/platform=iOS Simulator' -derivedDataPath "$RUNNER_TEMP/dd" \
+                      CODE_SIGNING_ALLOWED=NO build | tail -15
+
+            - name: Run the check
+              run: bash mobile/ios-check/run.sh ${{ matrix.variant }}
+
+            - name: Keep the screenshots
+              if: always()
+              uses: actions/upload-artifact@v7
+              with:
+                  name: ios-check-${{ matrix.variant }}
+                  path: ${{ runner.temp }}/shots

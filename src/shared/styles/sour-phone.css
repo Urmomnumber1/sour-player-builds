@@ -41,6 +41,15 @@
     font-size: 16px !important;
 }
 
+/* the same on the sign-in page, which shows before the phone layout (and .sour-phone) is on */
+@media (pointer: coarse) and (width <= 768px), (pointer: coarse) and (height <= 540px) {
+    input,
+    textarea,
+    select {
+        font-size: 16px !important;
+    }
+}
+
 /* things that only make sense with a mouse */
 .sour-phone .mantine-Tooltip-tooltip,
 .sour-phone [class*='resize-handle'],

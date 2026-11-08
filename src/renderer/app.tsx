@@ -102,6 +102,10 @@ const AppShell = memo(function AppShell() {
         [phone],
     );
 
+    // the iPhone app's own page (before it moves to your Hermes Music, or when it can't reach it):
+    // only the welcome screen. The app behind it popped its sign-in keyboard up over it.
+    if (isIosApp() && window.location.protocol === 'capacitor:') return <IosWelcome />;
+
     return (
         <>
             <AppEffects />
@@ -115,7 +119,6 @@ const AppShell = memo(function AppShell() {
                 <PlayerProvider>
                     <AudioPlayers />
                     <AppRouter />
-                    {isIosApp() && window.location.protocol === 'capacitor:' && <IosWelcome />}
                 </PlayerProvider>
             </WebAudioContext.Provider>
             <ReleaseNotesModal />

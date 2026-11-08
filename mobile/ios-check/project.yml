@@ -1,0 +1,40 @@
+# The iPhone simulator check's test project (XcodeGen makes SourCheck.xcodeproj from this; see run.sh)
+name: SourCheck
+options:
+    deploymentTarget:
+        iOS: '16.0'
+settings:
+    base:
+        CODE_SIGN_IDENTITY: '-'
+        CODE_SIGN_STYLE: Manual
+        DEVELOPMENT_TEAM: ''
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: '5.0'
+targets:
+    SourCheckHost:
+        type: application
+        platform: iOS
+        sources: [Host]
+        settings:
+            base:
+                INFOPLIST_KEY_UILaunchScreen_Generation: YES
+                PRODUCT_BUNDLE_IDENTIFIER: com.anjalo.sourcheck.host
+    SourCheckUITests:
+        type: bundle.ui-testing
+        platform: iOS
+        sources: [SourUITests]
+        dependencies:
+            - target: SourCheckHost
+        settings:
+            base:
+                PRODUCT_BUNDLE_IDENTIFIER: com.anjalo.sourcheck.uitests
+                TEST_TARGET_NAME: SourCheckHost
+schemes:
+    SourCheck:
+        build:
+            targets:
+                SourCheckHost: all
+                SourCheckUITests: [test]
+        test:
+            targets:
+                - SourCheckUITests

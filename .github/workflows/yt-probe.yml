@@ -1,0 +1,61 @@
+# Tries yt-dlp commands the way Hermes Music's container runs them (same Node image, same yt-dlp build and
+# config) and prints what comes back and how long each took. Used to check a search or download command on
+# real YouTube before it goes into Hermes Music.
+name: yt-dlp probe
+
+on:
+    workflow_dispatch:
+        inputs:
+            query:
+                description: artist and title to look for
+                required: true
+                default: The Weeknd Blinding Lights
+
+jobs:
+    probe:
+        runs-on: ubuntu-latest
+        container: node:22-bookworm-slim
+        steps:
+            - name: Tools
+              run: |
+                  apt-get update > /dev/null
+                  apt-get install -y --no-install-recommends ca-certificates curl ffmpeg > /dev/null
+                  curl -fsSL -o /usr/local/bin/yt-dlp https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux
+                  chmod +x /usr/local/bin/yt-dlp
+                  mkdir -p "$HOME/.config/yt-dlp"
+                  printf '%s\n' '--js-runtimes node' '--remote-components ejs:github' > "$HOME/.config/yt-dlp/config"
+                  yt-dlp --version
+
+            - name: Probe
+              env:
+                  Q: ${{ inputs.query }}
+              run: |
+                  cat > /tmp/probe.js <<'JS'
+                  const { spawnSync } = require('child_process');
+                  const q = process.env.Q;
+                  const go = (label, args) => {
+                    const t = Date.now();
+                    const r = spawnSync('yt-dlp', args, { encoding: 'utf8', timeout: 180000 });
+                    console.log(`\n=== ${label} (${((Date.now() - t) / 1000).toFixed(1)} s, exit ${r.status})`);
+                    console.log((r.stdout || '').split('\n').slice(0, 12).map((l) => l.slice(0, 600)).join('\n'));
+                    if ((r.stderr || '').trim()) console.log('stderr:', r.stderr.trim().split('\n').slice(-4).join('\n').slice(0, 800));
+                    return r;
+                  };
+                  const F = '%(.{id,title,channel,duration})j';
+                  go('search, full (today)', [`ytsearch8:${q}`, '--skip-download', '--no-warnings', '--ignore-errors', '--print', F]);
+                  go('search, flat', [`ytsearch8:${q}`, '--flat-playlist', '--no-warnings', '--ignore-errors', '--print', F]);
+                  go('search, flat, all fields of the first', [`ytsearch1:${q}`, '--flat-playlist', '--no-warnings', '-J']);
+                  go('YouTube Music songs, flat', [`https://music.youtube.com/search?q=${encodeURIComponent(q)}#songs`, '--flat-playlist', '--playlist-end', '8', '--no-warnings', '--ignore-errors', '--print', '%(.{id,title,channel,duration,artist,album,uploader})j']);
+                  go('YouTube Music songs, flat, all fields', [`https://music.youtube.com/search?q=${encodeURIComponent(q)}#songs`, '--flat-playlist', '--playlist-end', '2', '--no-warnings', '-J']);
+                  go('topic tags, full x5 (today)', [`ytsearch5:${q}`, '--skip-download', '--no-warnings', '--ignore-errors', '--print', '%(.{id,title,channel,track,artist,album,release_year,duration})j']);
+                  const first = go('one video, full', [`ytsearch1:${q} topic`, '--skip-download', '--no-warnings', '--ignore-errors', '--print', '%(.{id,title,channel,track,artist,album,release_year,duration})j']);
+                  let id = '';
+                  try { id = JSON.parse(first.stdout.split('\n')[0]).id; } catch {}
+                  if (id) {
+                    go('download, as today', ['--no-playlist', '--no-warnings', '-x', '--audio-format', 'mp3', '--audio-quality', '0', '-o', '/tmp/a/song.%(ext)s', `https://www.youtube.com/watch?v=${id}`]);
+                    go('download, 4 pieces at a time', ['--no-playlist', '--no-warnings', '-N', '4', '-x', '--audio-format', 'mp3', '--audio-quality', '0', '-o', '/tmp/b/song.%(ext)s', `https://www.youtube.com/watch?v=${id}`]);
+                    go('download, opus kept as it is (no re-encode)', ['--no-playlist', '--no-warnings', '-N', '4', '-f', 'bestaudio', '-o', '/tmp/c/song.%(ext)s', `https://www.youtube.com/watch?v=${id}`]);
+                    console.log(spawnSync('sh', ['-c', 'ls -la /tmp/a /tmp/b /tmp/c 2>&1'], { encoding: 'utf8' }).stdout);
+                  }
+                  JS
+                  node /tmp/probe.js

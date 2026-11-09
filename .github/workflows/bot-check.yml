@@ -1,0 +1,58 @@
+# Hermes Music's Discord bot on Linux (the Umbrel's Node image): installs its Discord libraries the way
+# Hermes does, then asks the bot which encoders it found, pushes a test tone through ffmpeg, the mix and the
+# Opus encoder into a Discord audio resource, and logs in with a made-up token (it must say so).
+name: Discord bot check
+
+on:
+    workflow_dispatch:
+        inputs:
+            ref:
+                description: hermes-umbrel-store branch or tag
+                required: true
+                default: main
+
+jobs:
+    check:
+        runs-on: ubuntu-latest
+        container: node:22-bookworm-slim
+        steps:
+            - name: Get the bot and its libraries
+              run: |
+                  apt-get update > /dev/null
+                  apt-get install -y --no-install-recommends ca-certificates curl ffmpeg > /dev/null
+                  mkdir -p /bot /deps
+                  curl -fsSL -o /bot/discord-bot.js "https://raw.githubusercontent.com/Urmomnumber1/hermes-umbrel-store/${{ inputs.ref }}/anjalo-hermes/requests-app/discord-bot.js"
+                  cd /deps
+                  echo '{"name":"hermes-discord-bot","private":true,"dependencies":{"discord.js":"14.28.1","@discordjs/voice":"0.19.2","opusscript":"0.1.1","libsodium-wrappers":"0.8.4"}}' > package.json
+                  npm install --omit=dev --no-audit --no-fund --no-package-lock
+                  ffmpeg -v error -f lavfi -i "sine=frequency=440:duration=3" /tmp/tone.mp3
+
+            - name: Run it
+              run: |
+                  cat > /bot/drive.js <<'EOF'
+                  const { fork } = require('child_process');
+                  const p = fork('/bot/discord-bot.js', [], { env: { ...process.env, BOT_DEPS: '/deps', BOT_DATA: '/tmp/botdata' } });
+                  let n = 0;
+                  const pending = new Map();
+                  p.on('message', (m) => {
+                    if (m.type === 'log') console.log('bot log:', m.text);
+                    if (m.id && pending.has(m.id)) { pending.get(m.id)(m); pending.delete(m.id); }
+                  });
+                  const call = (cmd, args = {}) => new Promise((ok) => { const id = ++n; pending.set(id, ok); p.send({ id, cmd, args }); });
+                  (async () => {
+                    let bad = 0;
+                    const report = await call('report');
+                    console.log(report.result || report.error);
+                    const quiet = await call('selftest');
+                    console.log('selftest, silence:', JSON.stringify(quiet.result || quiet.error));
+                    const tone = await call('selftest', { file: '/tmp/tone.mp3' });
+                    console.log('selftest, a 440 Hz tone:', JSON.stringify(tone.result || tone.error));
+                    if (!tone.ok || !(tone.result.packets >= 90) || !(tone.result.bytes > quiet.result.bytes * 10)) { console.log('FAIL: no sound came through'); bad++; }
+                    const login = await call('login', { token: 'MTAwMDAwMDAwMDAwMDAwMDAw.Abcdef.abcdefghijklmnopqrstuvwxyz0123' });
+                    console.log('login with a made-up token:', JSON.stringify({ ok: login.ok, error: login.error }));
+                    if (login.ok || !/token/i.test(login.error || '')) { console.log('FAIL: a bad token should be refused'); bad++; }
+                    p.kill();
+                    process.exit(bad ? 1 : 0);
+                  })();
+                  EOF
+                  node /bot/drive.js

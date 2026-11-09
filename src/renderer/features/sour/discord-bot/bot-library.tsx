@@ -427,7 +427,15 @@ const Playlists = ({ bot }: { bot: Bot }) => {
 };
 
 // ---------- small windows: add sounds, rename, delete, playlists ----------
-const AddSounds = ({ start }: { start: BotKind }) => {
+const SEARCH_HINT: Record<BotKind, string> = {
+    ambience: 'What to search for (rain, tavern, campfire...) or a YouTube link',
+    music: 'A song and artist, or a YouTube or Spotify song link',
+    sfx: 'What to search for (sword clash, door creak, thunder...) or a YouTube link',
+};
+
+// adding to the bot: a link or words (Hermes Music gets it from YouTube), or files from this device.
+// `embedded`: inside the request window, which stays open (the Discord Bot tab's own window closes)
+const AddSounds = ({ embedded, start }: { embedded?: boolean; start: BotKind }) => {
     const bot = useBot(false);
     const [kind, setKind] = useState<BotKind>(start);
     const [link, setLink] = useState('');
@@ -446,8 +454,10 @@ const AddSounds = ({ start }: { start: BotKind }) => {
         }
         setBusy('');
         if (done) {
-            toast.success({ message: `Added ${done} to ${KIND_LABEL[kind]}` });
-            closeAllModals();
+            toast.success({
+                message: `Added ${done} to the bot's ${KIND_LABEL[kind].toLowerCase()}`,
+            });
+            if (!embedded) closeAllModals();
         }
     };
     const fromYouTube = async () => {
@@ -456,9 +466,11 @@ const AddSounds = ({ start }: { start: BotKind }) => {
         try {
             await bot.lib('youtube', { kind, title: name.trim(), url: link.trim() });
             toast.info({
-                message: "Downloading from YouTube: it shows up in the list when it's ready.",
+                message: `Getting it for the bot's ${KIND_LABEL[kind].toLowerCase()}: it shows up in the Discord Bot tab when it's ready.`,
             });
-            closeAllModals();
+            setLink('');
+            setName('');
+            if (!embedded) closeAllModals();
         } catch {
             // the error is shown
         } finally {
@@ -481,9 +493,30 @@ const AddSounds = ({ start }: { start: BotKind }) => {
                       : 'Short sounds played once on top of everything (a door, swords, thunder...).'}
             </Text>
             <Stack gap={6}>
-                <Text fw={600} size="sm">
-                    From this device
-                </Text>
+                <Group gap="xs" wrap="nowrap">
+                    <TextInput
+                        flex={1}
+                        onChange={(e) => setLink(e.currentTarget.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && fromYouTube()}
+                        placeholder={SEARCH_HINT[kind]}
+                        value={link}
+                    />
+                    <Button
+                        disabled={!!busy || !link.trim()}
+                        onClick={fromYouTube}
+                        variant="filled"
+                    >
+                        {embedded ? 'Get it' : 'Download'}
+                    </Button>
+                </Group>
+                <TextInput
+                    onChange={(e) => setName(e.currentTarget.value)}
+                    placeholder="Name it (optional)"
+                    size="xs"
+                    value={name}
+                />
+            </Stack>
+            <Group gap="xs">
                 <FileButton
                     accept="audio/*,.mp3,.m4a,.aac,.ogg,.oga,.opus,.wav,.flac,.webm,.weba"
                     multiple
@@ -494,38 +527,14 @@ const AddSounds = ({ start }: { start: BotKind }) => {
                             {...props}
                             disabled={!!busy}
                             leftSection={<Icon icon="upload" />}
+                            size="compact-sm"
                             variant="default"
                         >
-                            Choose sound files
+                            Or upload sound files
                         </Button>
                     )}
                 </FileButton>
-            </Stack>
-            <Stack gap={6}>
-                <Text fw={600} size="sm">
-                    From YouTube
-                </Text>
-                <TextInput
-                    onChange={(e) => setLink(e.currentTarget.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && fromYouTube()}
-                    placeholder="A YouTube link, or what to search for (tavern ambience, sword clash...)"
-                    value={link}
-                />
-                <TextInput
-                    onChange={(e) => setName(e.currentTarget.value)}
-                    placeholder="Name (optional)"
-                    value={name}
-                />
-                <Group justify="flex-end">
-                    <Button
-                        disabled={!!busy || !link.trim()}
-                        onClick={fromYouTube}
-                        variant="filled"
-                    >
-                        Download
-                    </Button>
-                </Group>
-            </Stack>
+            </Group>
             {busy && (
                 <Text isMuted size="sm">
                     {busy}
@@ -534,6 +543,52 @@ const AddSounds = ({ start }: { start: BotKind }) => {
         </Stack>
     );
 };
+
+// the request window's Discord bot side: what was asked lately and how it's going
+const BotRecent = () => {
+    const bot = useBot();
+    const recent = [...(bot.library?.items ?? [])].sort((a, b) => b.added - a.added).slice(0, 8);
+    if (!recent.length) return null;
+    return (
+        <Stack gap={4}>
+            <Text fw={700} size="sm">
+                Lately for the bot
+            </Text>
+            <div className={styles.list}>
+                {recent.map((it) => (
+                    <div className={styles.item} key={it.id}>
+                        <div className={styles.itemText}>
+                            <span className={styles.ellipsis}>{it.title}</span>
+                            <span className={styles.muted}>
+                                {KIND_LABEL[it.kind]}
+                                {it.by ? ` - by ${it.by}` : ''}
+                            </span>
+                        </div>
+                        <span className={it.status === 'failed' ? styles.failed : styles.muted}>
+                            {it.status === 'downloading'
+                                ? 'getting it...'
+                                : it.status === 'failed'
+                                  ? `failed: ${it.note}`
+                                  : 'ready'}
+                        </span>
+                    </div>
+                ))}
+            </div>
+        </Stack>
+    );
+};
+
+// Request music > Discord bot: everything here goes only to the bot, never to the library
+export const BotRequest = () => (
+    <Stack gap="md">
+        <Text isMuted size="xs">
+            For the Discord bot only: it lands in the Discord Bot tab and never in the library, so
+            ambience and sound effects stay out of the rest of Sour Player.
+        </Text>
+        <AddSounds embedded start="music" />
+        <BotRecent />
+    </Stack>
+);
 
 const openAddSounds = (kind: BotKind) =>
     openModal({ children: <AddSounds start={kind} />, title: 'Add sounds to the Discord bot' });

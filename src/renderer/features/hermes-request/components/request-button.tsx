@@ -16,6 +16,8 @@ import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-vid
 import { requestApi, type RequestGuess } from '/@/renderer/features/sour/api/sour-api';
 import { FindSong } from '/@/renderer/features/sour/components/extras10';
 import { RequestQuestion } from '/@/renderer/features/sour/components/request-question';
+import { useBotAccess } from '/@/renderer/features/sour/discord-bot/bot-api';
+import { BotRequest } from '/@/renderer/features/sour/discord-bot/bot-library';
 import { isIphone } from '/@/renderer/features/sour/mobile/ios-look';
 import { useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import { playSound } from '/@/renderer/features/sour/utils/sounds';
@@ -241,6 +243,10 @@ const RequestPanel = () => {
     const [log, setLog] = useState<{ kind: string; text: string }[]>([]);
     const [query, setQuery] = useState('');
     const [busy, setBusy] = useState(false);
+    // admins and the people they allow: requests can go to the Discord bot instead of the library
+    const botAllowed = useBotAccess();
+    const [dest, setDest] = useState<'bot' | 'library'>('library');
+    const forBot = botAllowed && dest === 'bot';
 
     const requests = useQuery({
         enabled: !!url,
@@ -372,115 +378,138 @@ const RequestPanel = () => {
                 : 'Artist name, e.g. the killers';
 
     return (
-        <Stack gap="md" onPaste={onPaste}>
-            <SegmentedControl
-                data={[
-                    { label: 'Song', value: 'song' },
-                    { label: 'Album', value: 'album' },
-                    { label: 'Artist', value: 'artist' },
-                    { label: 'Karaoke', value: 'karaoke' },
-                ]}
-                onChange={(value) => setType(value as RequestType)}
-                value={type}
-            />
-            <Group gap="xs" wrap="nowrap">
-                <TextInput
-                    autoFocus
-                    flex={1}
-                    onChange={(e) => setQuery(e.currentTarget.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter') send();
-                    }}
-                    placeholder={placeholder}
-                    value={query}
+        <Stack gap="md" onPaste={forBot ? undefined : onPaste}>
+            {botAllowed && (
+                <SegmentedControl
+                    data={[
+                        { label: 'Library', value: 'library' },
+                        { label: 'Discord bot', value: 'bot' },
+                    ]}
+                    onChange={(value) => setDest(value as 'bot' | 'library')}
+                    value={dest}
                 />
-                <Button disabled={busy || query.trim().length < 2} onClick={send} variant="filled">
-                    Request
-                </Button>
-            </Group>
-            <Text isMuted size="xs">
-                You can also paste a Spotify, YouTube or YouTube Music link (song, album or
-                playlist), a Spotify profile or YouTube channel link (all its public playlists), or
-                a screenshot of a playlist{isIphone() ? '' : ' (Ctrl+V)'}. Hermes Music&#39;s
-                commands work here too: type /help. Downloaded songs show up after Navidrome&#39;s
-                next scan.
-            </Text>
-            {log.length > 0 && (
-                <div className={styles.log}>
-                    {log.map((line, i) => (
-                        <div
-                            className={
-                                styles[`log${line.kind[0].toUpperCase()}${line.kind.slice(1)}`] ||
-                                styles.logLine
-                            }
-                            key={i}
-                        >
-                            {line.kind === 'echo' ? `> ${line.text}` : line.text}
-                        </div>
-                    ))}
-                </div>
             )}
-            <Button onClick={openVideoWall} size="xs" variant="default" w="fit-content">
-                Video wall
-            </Button>
-            <MusicVideoTools />
-            <Stack gap={4}>
-                <Text fw={700} size="sm">
-                    Recent requests
-                </Text>
-                <div className={styles.list}>
-                    {(requests.data ?? []).slice(0, 20).map((r) => (
-                        <div className={styles.row} key={r.id}>
-                            <span className={styles.type}>{r.type}</span>
-                            <div className={styles.text}>
-                                <Text fw={600} size="sm" truncate>
-                                    {r.title || r.query}
-                                </Text>
-                                <Text isMuted size="xs" truncate>
-                                    {[r.artist, r.by && `asked by ${r.by}`, r.note]
-                                        .filter(Boolean)
-                                        .join(' - ')}
-                                </Text>
-                            </div>
-                            <span className={styles[r.status] || styles.status}>
-                                {statusText(r)}
-                            </span>
-                            {r.status === 'pending' && me && (
-                                <button
+            {forBot ? (
+                <BotRequest />
+            ) : (
+                <>
+                    <SegmentedControl
+                        data={[
+                            { label: 'Song', value: 'song' },
+                            { label: 'Album', value: 'album' },
+                            { label: 'Artist', value: 'artist' },
+                            { label: 'Karaoke', value: 'karaoke' },
+                        ]}
+                        onChange={(value) => setType(value as RequestType)}
+                        value={type}
+                    />
+                    <Group gap="xs" wrap="nowrap">
+                        <TextInput
+                            autoFocus
+                            flex={1}
+                            onChange={(e) => setQuery(e.currentTarget.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') send();
+                            }}
+                            placeholder={placeholder}
+                            value={query}
+                        />
+                        <Button
+                            disabled={busy || query.trim().length < 2}
+                            onClick={send}
+                            variant="filled"
+                        >
+                            Request
+                        </Button>
+                    </Group>
+                    <Text isMuted size="xs">
+                        You can also paste a Spotify, YouTube or YouTube Music link (song, album or
+                        playlist), a Spotify profile or YouTube channel link (all its public
+                        playlists), or a screenshot of a playlist{isIphone() ? '' : ' (Ctrl+V)'}.
+                        Hermes Music&#39;s commands work here too: type /help. Downloaded songs show
+                        up after Navidrome&#39;s next scan.
+                    </Text>
+                    {log.length > 0 && (
+                        <div className={styles.log}>
+                            {log.map((line, i) => (
+                                <div
                                     className={
-                                        r.voters?.includes(me.id) ? styles.voted : styles.vote
+                                        styles[
+                                            `log${line.kind[0].toUpperCase()}${line.kind.slice(1)}`
+                                        ] || styles.logLine
                                     }
-                                    onClick={() => vote(r)}
-                                    title="Upvote: most-wanted downloads first"
-                                    type="button"
+                                    key={i}
                                 >
-                                    &#9650; {r.votes ?? 0}
-                                </button>
-                            )}
-                            {r.status === 'ask' && r.ask && (
-                                <div className={styles.ask}>
-                                    <RequestQuestion ask={r.ask} id={r.id} />
+                                    {line.kind === 'echo' ? `> ${line.text}` : line.text}
                                 </div>
-                            )}
-                            {r.status === 'pending' && !!r.pos && r.pos > 1 && (
-                                <ActionIcon
-                                    icon="arrowUpToLine"
-                                    onClick={() => bump(r)}
-                                    size="sm"
-                                    tooltip={{ label: 'Move to the front' }}
-                                    variant="subtle"
-                                />
+                            ))}
+                        </div>
+                    )}
+                    <Button onClick={openVideoWall} size="xs" variant="default" w="fit-content">
+                        Video wall
+                    </Button>
+                    <MusicVideoTools />
+                    <Stack gap={4}>
+                        <Text fw={700} size="sm">
+                            Recent requests
+                        </Text>
+                        <div className={styles.list}>
+                            {(requests.data ?? []).slice(0, 20).map((r) => (
+                                <div className={styles.row} key={r.id}>
+                                    <span className={styles.type}>{r.type}</span>
+                                    <div className={styles.text}>
+                                        <Text fw={600} size="sm" truncate>
+                                            {r.title || r.query}
+                                        </Text>
+                                        <Text isMuted size="xs" truncate>
+                                            {[r.artist, r.by && `asked by ${r.by}`, r.note]
+                                                .filter(Boolean)
+                                                .join(' - ')}
+                                        </Text>
+                                    </div>
+                                    <span className={styles[r.status] || styles.status}>
+                                        {statusText(r)}
+                                    </span>
+                                    {r.status === 'pending' && me && (
+                                        <button
+                                            className={
+                                                r.voters?.includes(me.id)
+                                                    ? styles.voted
+                                                    : styles.vote
+                                            }
+                                            onClick={() => vote(r)}
+                                            title="Upvote: most-wanted downloads first"
+                                            type="button"
+                                        >
+                                            &#9650; {r.votes ?? 0}
+                                        </button>
+                                    )}
+                                    {r.status === 'ask' && r.ask && (
+                                        <div className={styles.ask}>
+                                            <RequestQuestion ask={r.ask} id={r.id} />
+                                        </div>
+                                    )}
+                                    {r.status === 'pending' && !!r.pos && r.pos > 1 && (
+                                        <ActionIcon
+                                            icon="arrowUpToLine"
+                                            onClick={() => bump(r)}
+                                            size="sm"
+                                            tooltip={{ label: 'Move to the front' }}
+                                            variant="subtle"
+                                        />
+                                    )}
+                                </div>
+                            ))}
+                            {requests.isError && (
+                                <Text isMuted p="sm" size="sm">
+                                    Couldn&#39;t reach Hermes Music.
+                                </Text>
                             )}
                         </div>
-                    ))}
-                    {requests.isError && (
-                        <Text isMuted p="sm" size="sm">
-                            Couldn&#39;t reach Hermes Music.
-                        </Text>
-                    )}
-                </div>
-            </Stack>
-            <FindSong />
+                    </Stack>
+                    <FindSong />
+                </>
+            )}
         </Stack>
     );
 };

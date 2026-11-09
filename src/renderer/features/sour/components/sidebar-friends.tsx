@@ -9,6 +9,7 @@ import { openProfile, ProfileAvatar, SongCover } from '/@/renderer/features/sour
 import { nameColor } from '/@/renderer/features/sour/components/profile-bits';
 import { ProfileHover } from '/@/renderer/features/sour/components/profile-extras';
 import { openSourStudio } from '/@/renderer/features/sour/components/sour-studio';
+import { useBotAccess } from '/@/renderer/features/sour/discord-bot/bot-api';
 import { toggleStage } from '/@/renderer/features/sour/stage/sour-stage';
 import { useSourProfiles, useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import { AppRoute } from '/@/renderer/router/routes';
@@ -102,6 +103,7 @@ export const SidebarFriends = () => {
 // the Albums page and the player bar). All four are the same kind of row, so the icons line up.
 export const SidebarSour = () => {
     const navigate = useNavigate();
+    const bot = useBotAccess();
     const row = (icon: string, label: string, onClick: () => void) => (
         <button className={styles.link} onClick={onClick} type="button">
             <Icon icon={icon as 'grid'} size="lg" />
@@ -120,6 +122,33 @@ export const SidebarSour = () => {
                 {row('grid', 'Sour Library', () => navigate(AppRoute.SOUR_LIBRARY))}
                 {row('sparkles', 'Sour Stage', () => toggleStage(true))}
                 {row('palette', 'Sour Studio', () => window.setTimeout(openSourStudio, 320))}
+                {bot && row('bot', 'Discord Bot', () => navigate(AppRoute.SOUR_DISCORD_BOT))}
+            </Accordion.Panel>
+        </Accordion.Item>
+    );
+};
+
+// The v0.10 look (and Simple mode) have no Sour section: the Discord Bot gets a small one of its own, only
+// for the people allowed to use it
+export const SidebarBotOnly = () => {
+    const navigate = useNavigate();
+    if (!useBotAccess()) return null;
+    return (
+        <Accordion.Item value="sour">
+            <Accordion.Control>
+                <Text fw={500} variant="secondary">
+                    Sour
+                </Text>
+            </Accordion.Control>
+            <Accordion.Panel>
+                <button
+                    className={styles.link}
+                    onClick={() => navigate(AppRoute.SOUR_DISCORD_BOT)}
+                    type="button"
+                >
+                    <Icon icon="bot" size="lg" />
+                    Discord Bot
+                </button>
             </Accordion.Panel>
         </Accordion.Item>
     );

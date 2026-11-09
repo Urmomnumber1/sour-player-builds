@@ -25,6 +25,7 @@ import {
     WhoElseLikesAction,
 } from '/@/renderer/features/sour/components/song-actions';
 import { RemoveSongAction, WrongSongAction } from '/@/renderer/features/sour/components/song-fix';
+import { CopyToBotAction } from '/@/renderer/features/sour/discord-bot/bot-library';
 import { useSimpleMode } from '/@/renderer/features/sour/store/sour.store';
 import { ContextMenu } from '/@/shared/components/context-menu/context-menu';
 import { LibraryItem, Song } from '/@/shared/types/domain-types';
@@ -74,6 +75,7 @@ export const SongContextMenu = ({ items, type }: SongContextMenuProps) => {
             <ShowInFileExplorerAction items={items} />
             <ContextMenu.Divider />
             {!simple && <EditMetadataAction songs={items} />}
+            {!simple && <CopyToBotAction songs={items} />}
             {!simple && <WrongSongAction songs={items} />}
             {!simple && <RemoveSongAction songs={items} />}
             <GetInfoAction disabled={items.length === 0} items={items} />

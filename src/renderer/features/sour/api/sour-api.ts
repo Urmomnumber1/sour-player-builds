@@ -129,6 +129,8 @@ export interface SourProfile {
     custom: ProfileCustom;
     // avatar decoration: 'party-hat' for accounts made before Sour Player 0.10, or one from the shop
     decoration?: null | string;
+    // may use the Discord bot (admins, and whoever they allow in Hermes Music > Config); only in your own profile
+    discordBot?: boolean;
     favorites: GroupSong[];
     // Gavin (orange name, the Skyrim font and the lightning visualizer)
     gavin?: boolean;

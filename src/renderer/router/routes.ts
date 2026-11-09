@@ -36,6 +36,7 @@ export enum AppRoute {
     SEARCH = '/search/:itemType',
     SERVERS = '/servers',
     SETTINGS = '/settings',
+    SOUR_DISCORD_BOT = '/sour/discord-bot',
     SOUR_HUB = '/sour/hub',
     SOUR_LIBRARY = '/sour/library',
 }

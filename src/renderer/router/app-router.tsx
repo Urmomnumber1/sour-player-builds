@@ -90,6 +90,10 @@ const SourHubRoute = lazy(() => import('/@/renderer/features/sour/routes/sour-hu
 
 const SourLibraryRoute = lazy(() => import('/@/renderer/features/sour/routes/sour-library-route'));
 
+const DiscordBotRoute = lazy(
+    () => import('/@/renderer/features/sour/discord-bot/discord-bot-route'),
+);
+
 // phones: the Library, Search and You tabs
 const PhoneLibraryRoute = lazy(() =>
     import('/@/renderer/features/sour/mobile/phone-pages').then((m) => ({
@@ -264,6 +268,10 @@ export const AppRouter = () => {
                                         <Route
                                             element={<SourLibraryRoute />}
                                             path={AppRoute.SOUR_LIBRARY}
+                                        />
+                                        <Route
+                                            element={<DiscordBotRoute />}
+                                            path={AppRoute.SOUR_DISCORD_BOT}
                                         />
                                         <Route
                                             element={<PhoneLibraryRoute />}

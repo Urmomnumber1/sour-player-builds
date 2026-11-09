@@ -22,7 +22,11 @@ import {
     useSidebarPlaylistAddDragMonitor,
 } from '/@/renderer/features/sidebar/components/sidebar-playlist-list';
 import { SidebarPins } from '/@/renderer/features/sour/components/look';
-import { SidebarFriends, SidebarSour } from '/@/renderer/features/sour/components/sidebar-friends';
+import {
+    SidebarBotOnly,
+    SidebarFriends,
+    SidebarSour,
+} from '/@/renderer/features/sour/components/sidebar-friends';
 import { useSimpleMode } from '/@/renderer/features/sour/store/sour.store';
 import { useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import {
@@ -163,6 +167,7 @@ export const Sidebar = () => {
                 >
                     {!simple && <SidebarPins />}
                     {!simple && ui !== 'liquid' && <SidebarSour />}
+                    {(simple || ui === 'liquid') && <SidebarBotOnly />}
                     <Accordion.Item value="library">
                         <Accordion.Control>
                             <Text fw={500} variant="secondary">

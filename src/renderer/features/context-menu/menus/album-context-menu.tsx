@@ -23,6 +23,7 @@ import {
     AddAlbumToProfileAction,
     PinAction,
 } from '/@/renderer/features/sour/components/song-actions';
+import { CopyToBotAction } from '/@/renderer/features/sour/discord-bot/bot-library';
 import { ContextMenu } from '/@/shared/components/context-menu/context-menu';
 import { Album, LibraryItem } from '/@/shared/types/domain-types';
 
@@ -50,6 +51,7 @@ export const AlbumContextMenu = ({ items, type }: AlbumContextMenuProps) => {
             <FindVideosAction ids={ids} itemType={LibraryItem.ALBUM} />
             <CompleteAlbumAction ids={ids} />
             <LinerNotesAction ids={ids} />
+            <CopyToBotAction albumIds={ids} />
             <AddAlbumToProfileAction albums={items} />
             <PinAction item={items[0]} kind="album" />
             <ContextMenu.Divider />

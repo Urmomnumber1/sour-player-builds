@@ -23,6 +23,15 @@
       },
       "versions": [
         {
+          "version": "0.10.9",
+          "buildVersion": "5",
+          "date": "2026-11-07",
+          "localizedDescription": "Connects away from home: iOS was blocking plain-http Tailscale addresses (the 100.x address and the Tailscale name) because of a setting in the app. Can't reach Hermes Music? It says so, keeps trying and opens by itself. You > Phone settings > Hermes Music address switches addresses. The music server address is filled in at sign-in.",
+          "downloadURL": "https://github.com/Urmomnumber1/feishin/releases/download/ios-v0.10.9/Sour-Player-0.10.9.ipa",
+          "size": 29077666,
+          "minOSVersion": "15.0"
+        },
+        {
           "version": "0.10.6",
           "buildVersion": "4",
           "date": "2026-11-07",

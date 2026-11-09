@@ -20,6 +20,7 @@ import { openPeople, openProfile } from '/@/renderer/features/sour/components/pe
 import { ProfileAvatar } from '/@/renderer/features/sour/components/profile-bits';
 import { openInbox, useInbox } from '/@/renderer/features/sour/components/social10';
 import { openSourStudio } from '/@/renderer/features/sour/components/sour-studio';
+import { useBotAccess } from '/@/renderer/features/sour/discord-bot/bot-api';
 import { isNativeApp } from '/@/renderer/features/sour/mobile/android';
 import { offlineAvailable } from '/@/renderer/features/sour/mobile/offline';
 import { openDriving } from '/@/renderer/features/sour/mobile/phone-features';
@@ -368,6 +369,7 @@ export const PhoneMe = () => {
     const server = useCurrentServer();
     const unread = (useInbox().data ?? []).filter((m) => !m.read).length;
     const native = isNativeApp();
+    const bot = useBotAccess();
     return (
         <PhonePage title="You">
             {mine ? (
@@ -431,6 +433,14 @@ export const PhoneMe = () => {
                 {native && <Row icon="microphone" label="What's playing?" onClick={whatsPlaying} />}
                 {native && (
                     <Row icon="settings" label="Phone settings" onClick={openPhoneSettings} />
+                )}
+                {bot && (
+                    <Row
+                        icon="bot"
+                        label="Discord Bot"
+                        note="Music, ambience and sound effects in a Discord call"
+                        onClick={() => navigate(AppRoute.SOUR_DISCORD_BOT)}
+                    />
                 )}
             </div>
             <div className={styles.list}>

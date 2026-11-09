@@ -16,6 +16,7 @@ import { ShowInFileExplorerAction } from '/@/renderer/features/context-menu/acti
 import { ShuffleItemsAction } from '/@/renderer/features/context-menu/actions/shuffle-items-action';
 import { ContextMenuPreview } from '/@/renderer/features/context-menu/components/context-menu-preview';
 import { RemoveSongAction, WrongSongAction } from '/@/renderer/features/sour/components/song-fix';
+import { CopyToBotAction } from '/@/renderer/features/sour/discord-bot/bot-library';
 import { ContextMenu } from '/@/shared/components/context-menu/context-menu';
 import { LibraryItem, QueueSong } from '/@/shared/types/domain-types';
 
@@ -53,6 +54,7 @@ export const QueueContextMenu = ({ items }: QueueContextMenuProps) => {
             <ShowInFileExplorerAction items={items} />
             <ContextMenu.Divider />
             <EditMetadataAction songs={items} />
+            <CopyToBotAction songs={items} />
             <WrongSongAction songs={items} />
             <RemoveSongAction songs={items} />
             <GetInfoAction disabled={items.length === 0} items={items} />

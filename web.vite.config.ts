@@ -47,7 +47,8 @@ export default defineConfig({
                 sourcemapExcludeSources: false,
             },
         },
-        sourcemap: true,
+        // no source maps: the phone apps and Hermes Music's /app/ copy stay small
+        sourcemap: false,
     },
     css: {
         modules: {

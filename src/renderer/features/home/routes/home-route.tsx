@@ -19,6 +19,7 @@ import {
     SOUR_HOME_ITEMS,
     SourHomeSection,
 } from '/@/renderer/features/sour/components/home-sections';
+import { PhoneHomeTop } from '/@/renderer/features/sour/mobile/phone-tabs';
 import { useSimpleMode } from '/@/renderer/features/sour/store/sour.store';
 import { useIsMobile } from '/@/renderer/hooks/use-is-mobile';
 import {
@@ -137,6 +138,7 @@ const HomeRoute = () => {
                         px={phone ? '1rem' : '2rem'}
                         ref={containerQuery.ref}
                     >
+                        {phone && <PhoneHomeTop />}
                         {!phone && homeFeature && homeFeatureStyle === HomeFeatureStyle.SINGLE && (
                             <AlbumInfiniteSingleFeatureCarousel />
                         )}

@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 
 import { toGroupSong } from '/@/renderer/features/group-play/api/group-play-api';
 import { useGroupPlayStore } from '/@/renderer/features/group-play/store/group-play.store';
+import { dropHeard, pendingHeard } from '/@/renderer/features/hermes-plays/heard';
 import { usePlayCountStore } from '/@/renderer/features/hermes-plays/store/play-count.store';
 import { useVideoView } from '/@/renderer/features/hermes-video/components/music-video-button';
 import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-video.store';
@@ -149,12 +150,15 @@ export const SourPresence = () => {
             const song = player.getCurrentSong();
             const shown = song && !hidden.includes(song.id) ? song : null;
             const group = useGroupPlayStore.getState().state;
+            // songs heard past halfway since the last report (Sour Shop points), kept until Hermes has them
+            const heard = pendingHeard();
             sourApi
                 .presence(url, me, {
                     // who you're listening along with (they see you riding along)
                     alongWith: useSourStore.getState().listenAlong,
                     device: deviceId(),
                     group: group && !group.ended ? { code: group.code, name: group.name } : null,
+                    heard,
                     // listen along copies these (a sped up song used to drift and stutter for friends)
                     karaoke:
                         useStage.getState().open &&
@@ -171,6 +175,9 @@ export const SourPresence = () => {
                     tz: new Date().getTimezoneOffset(),
                     // watching the video in the Stage (friends listening along see it too)
                     video: useStage.getState().open && useVideoView.getState().view === 'video',
+                })
+                .then(() => {
+                    if (heard.length) dropHeard(heard);
                 })
                 .catch((error: Error) => {
                     // Hermes Music was reset or this is a different one: sign in again (unless this

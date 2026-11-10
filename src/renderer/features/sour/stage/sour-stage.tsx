@@ -17,6 +17,7 @@ import {
 import { useMusicVideo } from '/@/renderer/features/hermes-video/hooks/use-music-video';
 import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-video.store';
 import { lyricsQueries } from '/@/renderer/features/lyrics/api/lyrics-api';
+import { useWordLyrics, wordCuesFor } from '/@/renderer/features/lyrics/api/word-lyrics';
 import { MobileFullscreenPlayerBottomControls } from '/@/renderer/features/player/components/mobile-fullscreen-player-bottom-controls';
 import { MobileFullscreenPlayerControls } from '/@/renderer/features/player/components/mobile-fullscreen-player-controls';
 import { MobileFullscreenPlayerProgress } from '/@/renderer/features/player/components/mobile-fullscreen-player-progress';
@@ -31,6 +32,7 @@ import { favoritesThemeId } from '/@/renderer/features/sour/components/playlist-
 import { hue, ProfileAvatar } from '/@/renderer/features/sour/components/profile-bits';
 import { isNativeApp } from '/@/renderer/features/sour/mobile/android';
 import { usePhoneStore } from '/@/renderer/features/sour/mobile/phone-store';
+import { PhoneVolume } from '/@/renderer/features/sour/mobile/phone-tabs';
 import {
     type Ambience,
     AMBIENCES,
@@ -294,7 +296,29 @@ const StageView = () => {
         retry: false,
     }).data;
     const selected = data?.selected as null | undefined | { lyrics?: unknown };
-    const { lines, synced } = useMemo(() => toLines(selected?.lyrics), [selected]);
+    // word-by-word timing from Hermes Music (its timed lines when the song has none of its own)
+    const wordLines = useWordLyrics(song).data;
+    const { lines, synced } = useMemo(() => {
+        const base = toLines(selected?.lyrics);
+        if (!wordLines) return base;
+        if (!base.synced) {
+            return {
+                lines: wordLines.map((w) => ({
+                    cues: w.words.map(([startMs, endMs, text]) => ({ endMs, startMs, text })),
+                    startMs: w.start,
+                    text: w.text,
+                })),
+                synced: true,
+            };
+        }
+        if (base.lines.some((l) => l.cues?.length)) return base;
+        const cues = wordCuesFor(base.lines, wordLines);
+        if (!cues) return base;
+        return {
+            lines: base.lines.map((l, i) => (cues[i]?.length ? { ...l, cues: cues[i] } : l)),
+            synced: true,
+        };
+    }, [selected, wordLines]);
     // the lyrics' own offset plus the fix saved for this song on Hermes Music
     const sharedOffset = useSharedLyricOffset(song ?? undefined);
     const offset = (data?.selectedOffsetMs ?? 0) + sharedOffset;
@@ -717,6 +741,7 @@ const StageView = () => {
                         <div className={styles.phoneControls}>
                             <MobileFullscreenPlayerProgress currentSong={song} />
                             <MobileFullscreenPlayerControls currentSong={song} />
+                            <PhoneVolume />
                         </div>
                     )}
                     <div className={styles.loopRow}>

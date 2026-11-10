@@ -1,0 +1,388 @@
+/* The phone tabs in the 0.11 look (after Substreamer): calm dark surfaces, rounded cards, one accent colour */
+.page {
+    --surface: color-mix(in srgb, var(--theme-colors-foreground) 6%, transparent);
+    --surface-strong: color-mix(in srgb, var(--theme-colors-foreground) 11%, transparent);
+    --accent: var(--theme-colors-primary, #3b82f6);
+
+    min-height: 100%;
+    padding: 0.25rem 1rem 6rem;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 0 0.5rem;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 1.9rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.icon-button {
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    color: inherit;
+    background: var(--surface);
+    border: 0;
+    border-radius: 999px;
+}
+
+.search-bar {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    color: var(--theme-colors-foreground-muted);
+    text-align: left;
+    background: var(--surface, color-mix(in srgb, var(--theme-colors-foreground) 7%, transparent));
+    border: 0;
+    border-radius: 14px;
+}
+
+.home-top {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.chips {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.75rem 0 0.25rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.home-top .chips {
+    padding-top: 0;
+}
+
+.chip {
+    display: inline-flex;
+    flex: none;
+    gap: 0.35rem;
+    align-items: center;
+    padding: 0.45rem 0.85rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: inherit;
+    white-space: nowrap;
+    background: color-mix(in srgb, var(--theme-colors-foreground) 8%, transparent);
+    border: 0;
+    border-radius: 999px;
+}
+
+.segments {
+    display: grid;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    margin: 0.75rem 0 1rem;
+    background: var(--surface);
+    border-radius: 12px;
+}
+
+.segment,
+.segment-on {
+    padding: 0.55rem 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--theme-colors-foreground-muted);
+    background: transparent;
+    border: 0;
+    border-radius: 9px;
+}
+
+.segment-on {
+    color: var(--theme-colors-foreground);
+    background: var(--surface-strong);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem 0.85rem;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    min-width: 0;
+    padding: 0;
+    color: inherit;
+    text-align: left;
+    background: none;
+    border: 0;
+}
+
+.card-image,
+.card-round {
+    width: 100%;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 12px;
+}
+
+.card-round {
+    border-radius: 50%;
+}
+
+.card-text,
+.row-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.92rem;
+    font-weight: 600;
+    line-height: 1.3;
+    white-space: nowrap;
+}
+
+.card-text small,
+.row-text small {
+    display: block;
+    padding-bottom: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.8rem;
+    font-weight: 400;
+    line-height: 1.4;
+    color: var(--theme-colors-foreground-muted);
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.song-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    min-width: 0;
+    padding: 0.4rem 0.25rem;
+    color: inherit;
+    text-align: left;
+    background: none;
+    border: 0;
+    border-radius: 10px;
+}
+
+.song-row:active,
+.card:active {
+    opacity: 0.7;
+}
+
+.row-image {
+    flex: none;
+    width: 52px;
+    height: 52px;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.more {
+    padding: 1.5rem 0;
+    font-size: 0.85rem;
+    color: var(--theme-colors-foreground-muted);
+    text-align: center;
+}
+
+.section {
+    margin-top: 1.5rem;
+}
+
+.section h2 {
+    margin: 0 0 0.6rem;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.note {
+    margin: 0.25rem 0 0.75rem;
+    font-size: 0.88rem;
+    color: var(--theme-colors-foreground-muted);
+}
+
+.card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    padding: 1rem;
+    background: var(--surface);
+    border-radius: 14px;
+}
+
+.storage {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 1rem;
+    background: var(--surface);
+    border-radius: 14px;
+}
+
+.storage small {
+    color: var(--theme-colors-foreground-muted);
+}
+
+.storage-bar {
+    height: 8px;
+    overflow: hidden;
+    background: var(--surface-strong);
+    border-radius: 999px;
+}
+
+.storage-bar span {
+    display: block;
+    height: 100%;
+    background: var(--accent);
+    border-radius: inherit;
+}
+
+.actions {
+    display: flex;
+    gap: 0.6rem;
+    margin-top: 0.85rem;
+}
+
+.primary,
+.secondary,
+.danger {
+    display: inline-flex;
+    flex: 1;
+    gap: 0.4rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: inherit;
+    border: 0;
+    border-radius: 999px;
+}
+
+.primary {
+    color: var(--theme-colors-primary-contrast, #fff);
+    background: var(--accent);
+}
+
+.secondary {
+    background: var(--surface-strong);
+}
+
+.danger {
+    color: #f87171;
+    background: var(--surface);
+}
+
+.primary:disabled,
+.secondary:disabled {
+    opacity: 0.5;
+}
+
+.limit {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.9rem;
+}
+
+.limit select {
+    padding: 0.35rem 0.5rem;
+    color: inherit;
+    background: var(--surface-strong);
+    border: 0;
+    border-radius: 8px;
+}
+
+/* volume in the phone's full screen player */
+.volume {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    width: 100%;
+}
+
+.volume button {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    color: inherit;
+    background: none;
+    border: 0;
+    opacity: 0.8;
+}
+
+.volume input {
+    flex: 1;
+    height: 6px;
+    appearance: none;
+    accent-color: currentcolor;
+    background: linear-gradient(to right, currentcolor var(--level), color-mix(in srgb, currentcolor 25%, transparent) var(--level));
+    border-radius: 999px;
+}
+
+.volume input::-webkit-slider-thumb {
+    width: 18px;
+    height: 18px;
+    appearance: none;
+    background: currentcolor;
+    border-radius: 50%;
+}
+
+/* TV party: the Hermes Music party page fills the screen */
+.tv {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    display: flex;
+    flex-direction: column;
+    padding-top: env(safe-area-inset-top);
+    background: #0b0b0f;
+}
+
+.tv-bar {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+    color: rgb(255 255 255 / 70%);
+}
+
+.back {
+    display: inline-flex;
+    gap: 0.2rem;
+    align-items: center;
+    padding: 0.35rem 0.75rem 0.35rem 0.45rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #fff;
+    background: rgb(255 255 255 / 12%);
+    border: 0;
+    border-radius: 999px;
+}
+
+.tv-frame {
+    flex: 1;
+    width: 100%;
+    border: 0;
+}

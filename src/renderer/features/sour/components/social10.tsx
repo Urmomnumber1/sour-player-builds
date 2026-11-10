@@ -734,7 +734,7 @@ export const DailyGuessCard = () => {
                         </Button>
                     </>
                 )}
-                {!!today?.results.length && (
+                {!!today?.results?.length && (
                     <Text isMuted size="xs">
                         Today:{' '}
                         {today.results

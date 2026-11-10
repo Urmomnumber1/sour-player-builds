@@ -22,6 +22,11 @@ import {
     getOverlayLayerKey,
     lyricsHasWordCues,
 } from '/@/renderer/features/lyrics/api/lyrics-utils';
+import {
+    useWordLyrics,
+    withWordCues,
+    wordLinesAsLyrics,
+} from '/@/renderer/features/lyrics/api/word-lyrics';
 import { openLyricsExportModal } from '/@/renderer/features/lyrics/components/lyrics-export-form';
 import {
     useFuriganaLyrics,
@@ -155,10 +160,25 @@ export const Lyrics = ({ fadeOutNoLyricsMessage = true, settingsKey = 'default' 
         if (data != null) setIndexState(data.selectedStructuredIndex);
     }, [data]);
 
-    const { selected: lyrics, selectedSynced: synced } = useMemo(() => {
+    const { selected: baseLyrics, selectedSynced: baseSynced } = useMemo(() => {
         if (!data) return { selected: null, selectedSynced: false };
         return computeSelectedFromResult(data, preferLocalLyrics, indexToUse);
     }, [data, indexToUse, preferLocalLyrics]);
+
+    // word-by-word timing from Hermes Music: laid onto timed lyrics, or the lyrics when these have no times
+    const wordLines = useWordLyrics(isLyricsDisabled ? null : currentSong).data;
+    const { lyrics, synced } = useMemo(() => {
+        if (!wordLines || !baseLyrics || !('lyrics' in baseLyrics)) {
+            return { lyrics: baseLyrics, synced: baseSynced };
+        }
+        if (baseSynced && Array.isArray(baseLyrics.lyrics)) {
+            return {
+                lyrics: { ...baseLyrics, lyrics: withWordCues(baseLyrics.lyrics, wordLines) },
+                synced: true,
+            };
+        }
+        return { lyrics: { ...baseLyrics, lyrics: wordLinesAsLyrics(wordLines) }, synced: true };
+    }, [baseLyrics, baseSynced, wordLines]);
 
     const { data: furiganaConvertedLyrics } = useFuriganaLyrics(lyrics?.lyrics, !!enableFurigana);
     const { data: romajiConvertedLyrics, isFetching: isFetchingRomaji } = useRomajiLyrics(

@@ -71,6 +71,109 @@ public class SourMediaPlugin extends Plugin {
     public void load() {
         instance = this;
         watchAudioDevices();
+        watchVolume();
+        watchDisplays();
+    }
+
+    // ---------- the phone's media volume (the side buttons move it too): the slider in the app's player ----------
+    private AudioManager audio() {
+        return (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+    }
+
+    private double mediaVolume() {
+        AudioManager am = audio();
+        int max = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        return max > 0 ? am.getStreamVolume(AudioManager.STREAM_MUSIC) / (double) max : 0;
+    }
+
+    @PluginMethod
+    public void volume(PluginCall call) {
+        JSObject r = new JSObject();
+        r.put("value", mediaVolume());
+        call.resolve(r);
+    }
+
+    @PluginMethod
+    public void setVolume(PluginCall call) {
+        AudioManager am = audio();
+        int max = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        double v = Math.max(0, Math.min(1, call.getDouble("value", 1.0)));
+        am.setStreamVolume(AudioManager.STREAM_MUSIC, (int) Math.round(v * max), 0);
+        call.resolve();
+    }
+
+    private void watchVolume() {
+        getContext().getContentResolver().registerContentObserver(Settings.System.CONTENT_URI, true,
+            new android.database.ContentObserver(new android.os.Handler(android.os.Looper.getMainLooper())) {
+                @Override
+                public void onChange(boolean selfChange) {
+                    JSObject d = new JSObject();
+                    d.put("value", mediaVolume());
+                    notifyListeners("volume", d);
+                }
+            });
+    }
+
+    // ---------- Sour Player TV (part of the app since 0.11): a TV connected as a second screen (a cable or
+    // wireless display) shows the party big, without buttons; the phone keeps the controls ----------
+    private android.app.Presentation tv;
+    private android.webkit.WebView tvWeb;
+    private String tvUrl;
+
+    private android.view.Display[] tvDisplays() {
+        android.hardware.display.DisplayManager dm =
+            (android.hardware.display.DisplayManager) getContext().getSystemService(Context.DISPLAY_SERVICE);
+        return dm.getDisplays(android.hardware.display.DisplayManager.DISPLAY_CATEGORY_PRESENTATION);
+    }
+
+    @PluginMethod
+    public void tvShow(PluginCall call) {
+        tvUrl = call.getString("url");
+        getActivity().runOnUiThread(this::updateTv);
+        JSObject r = new JSObject();
+        r.put("screens", tvDisplays().length);
+        call.resolve(r);
+    }
+
+    private void updateTv() {
+        android.view.Display[] ds = tvDisplays();
+        if (tvUrl == null || ds.length == 0) {
+            if (tv != null) tv.dismiss();
+            tv = null;
+            tvWeb = null;
+            return;
+        }
+        if (tv == null || tv.getDisplay().getDisplayId() != ds[0].getDisplayId()) {
+            if (tv != null) tv.dismiss();
+            tv = new android.app.Presentation(getActivity(), ds[0]);
+            tvWeb = new android.webkit.WebView(tv.getContext());
+            tvWeb.setBackgroundColor(Color.rgb(11, 11, 15));
+            android.webkit.WebSettings s = tvWeb.getSettings();
+            s.setJavaScriptEnabled(true);
+            s.setDomStorageEnabled(true);
+            s.setMediaPlaybackRequiresUserGesture(false);
+            s.setMixedContentMode(android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+            tv.setContentView(tvWeb);
+            tv.show();
+        }
+        if (!tvUrl.equals(tvWeb.getUrl())) tvWeb.loadUrl(tvUrl);
+    }
+
+    private void watchDisplays() {
+        android.hardware.display.DisplayManager dm =
+            (android.hardware.display.DisplayManager) getContext().getSystemService(Context.DISPLAY_SERVICE);
+        dm.registerDisplayListener(new android.hardware.display.DisplayManager.DisplayListener() {
+            @Override public void onDisplayAdded(int id) { tvChanged(); }
+            @Override public void onDisplayRemoved(int id) { tvChanged(); }
+            @Override public void onDisplayChanged(int id) {}
+        }, new android.os.Handler(android.os.Looper.getMainLooper()));
+    }
+
+    private void tvChanged() {
+        updateTv();
+        JSObject d = new JSObject();
+        d.put("screens", tvDisplays().length);
+        notifyListeners("tv", d);
     }
 
     // the notification, lock screen, headset, widget, tile or car asked for something

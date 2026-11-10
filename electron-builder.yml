@@ -11,7 +11,11 @@ directories:
     buildResources: assets
 files:
     - 'out/**/*'
+    - '!out/**/*.map'
     - 'package.json'
+# one language pack instead of 55 (the app has its own translations); smaller download
+electronLanguages:
+    - en-US
 extraResources:
     - assets/**
 asarUnpack:

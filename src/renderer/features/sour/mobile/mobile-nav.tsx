@@ -15,12 +15,13 @@ export const PHONE_TABS: {
     match: (path: string) => boolean;
     to: string;
 }[] = [
-    { icon: 'house', label: 'Home', match: (p) => p === '/' || p === '', to: AppRoute.HOME },
+    // Search lives in the search bar at the top of Home and Library (0.11, after Substreamer)
     {
-        icon: 'search',
-        label: 'Search',
-        match: (p) => p.startsWith(AppRoute.PHONE_SEARCH) || p.startsWith('/search'),
-        to: AppRoute.PHONE_SEARCH,
+        icon: 'house',
+        label: 'Home',
+        match: (p) =>
+            p === '/' || p === '' || p.startsWith(AppRoute.PHONE_SEARCH) || p.startsWith('/search'),
+        to: AppRoute.HOME,
     },
     {
         icon: 'library',
@@ -33,6 +34,12 @@ export const PHONE_TABS: {
             p.startsWith('/radio') ||
             p.startsWith(AppRoute.SOUR_LIBRARY),
         to: AppRoute.PHONE_LIBRARY,
+    },
+    {
+        icon: 'download',
+        label: 'Offline',
+        match: (p) => p.startsWith(AppRoute.PHONE_OFFLINE),
+        to: AppRoute.PHONE_OFFLINE,
     },
     {
         icon: 'group',

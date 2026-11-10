@@ -36,6 +36,9 @@ public class SourMediaPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "savedServer", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "openSettings", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "keepAwake", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "volume", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setVolume", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "tvShow", returnType: CAPPluginReturnPromise),
     ]
 
     private let monitor = NWPathMonitor()
@@ -54,6 +57,10 @@ public class SourMediaPlugin: CAPPlugin, CAPBridgedPlugin {
         let session = AVAudioSession.sharedInstance()
         try? session.setCategory(.playback, mode: .default)
         try? session.setActive(true)
+        volumeWatch = session.observe(\.outputVolume, options: [.new]) { [weak self] s, _ in
+            self?.notifyListeners("volume", data: ["value": s.outputVolume])
+        }
+        watchScreens()
 
         let cc = MPRemoteCommandCenter.shared()
         cc.playCommand.addTarget { [weak self] _ in self?.send("play"); return .success }
@@ -87,6 +94,93 @@ public class SourMediaPlugin: CAPPlugin, CAPBridgedPlugin {
             if reason == .oldDeviceUnavailable { self?.send("noisy") }
             if reason == .newDeviceAvailable {
                 self?.notifyListeners("device", data: ["connected": true, "bluetooth": bluetooth, "name": output?.portName ?? ""])
+            }
+        }
+    }
+
+    // ---------- the phone's volume (the side buttons move it too): the slider in the app's player. iOS only
+    // lets apps move it through its own volume slider, so one sits out of sight ----------
+    private let volumeView = MPVolumeView(frame: CGRect(x: -2000, y: -2000, width: 10, height: 10))
+    private var volumeWatch: NSKeyValueObservation?
+
+    @objc func volume(_ call: CAPPluginCall) {
+        call.resolve(["value": AVAudioSession.sharedInstance().outputVolume])
+    }
+
+    @objc func setVolume(_ call: CAPPluginCall) {
+        let value = Float(max(0, min(1, call.getDouble("value") ?? 1)))
+        DispatchQueue.main.async {
+            if self.volumeView.superview == nil { self.bridge?.viewController?.view.addSubview(self.volumeView) }
+            if let slider = self.volumeView.subviews.compactMap({ $0 as? UISlider }).first {
+                slider.setValue(value, animated: false)
+                slider.sendActions(for: .valueChanged)
+            }
+            call.resolve()
+        }
+    }
+
+    // ---------- Sour Player TV (part of the app since 0.11): while Screen Mirroring, AirPlay or a cable is on,
+    // the TV shows the party big and without buttons; the phone keeps the controls ----------
+    private var tvWindow: UIWindow?
+    private var tvWeb: WKWebView?
+    private var tvPulse: Timer?
+    private var tvAddress: String?
+
+    @objc func tvShow(_ call: CAPPluginCall) {
+        tvAddress = call.getString("url")
+        DispatchQueue.main.async {
+            self.updateTV()
+            call.resolve(["screens": UIScreen.screens.count - 1])
+        }
+    }
+
+    private func updateTV() {
+        guard UIScreen.screens.count > 1, let address = tvAddress, let url = URL(string: address) else {
+            closeTV()
+            return
+        }
+        let screen = UIScreen.screens[1]
+        if tvWindow == nil || tvWindow?.screen != screen {
+            closeTV()
+            let window = UIWindow(frame: screen.bounds)
+            window.screen = screen
+            let controller = UIViewController()
+            controller.view.backgroundColor = UIColor(red: 0.043, green: 0.043, blue: 0.059, alpha: 1)
+            let config = WKWebViewConfiguration()
+            config.allowsInlineMediaPlayback = true
+            config.mediaTypesRequiringUserActionForPlayback = []
+            let web = WKWebView(frame: controller.view.bounds, configuration: config)
+            web.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            web.isOpaque = false
+            web.backgroundColor = controller.view.backgroundColor
+            web.scrollView.isScrollEnabled = false
+            web.scrollView.contentInsetAdjustmentBehavior = .never
+            controller.view.addSubview(web)
+            window.rootViewController = controller
+            window.isHidden = false
+            tvWindow = window
+            tvWeb = web
+            // iOS treats the TV's page like a background page (slow timers): nudge it every second
+            tvPulse = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+                self?.tvWeb?.evaluateJavaScript("window.tvPulse && window.tvPulse()", completionHandler: nil)
+            }
+        }
+        if tvWeb?.url?.absoluteString != address { tvWeb?.load(URLRequest(url: url)) }
+    }
+
+    private func closeTV() {
+        tvPulse?.invalidate()
+        tvPulse = nil
+        tvWeb = nil
+        tvWindow?.isHidden = true
+        tvWindow = nil
+    }
+
+    private func watchScreens() {
+        for name in [UIScreen.didConnectNotification, UIScreen.didDisconnectNotification] {
+            NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                self?.updateTV()
+                self?.notifyListeners("tv", data: ["screens": UIScreen.screens.count - 1])
             }
         }
     }

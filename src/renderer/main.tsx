@@ -4,6 +4,7 @@ import {
     PersistQueryClientProvider,
 } from '@tanstack/react-query-persist-client';
 import { del, get, set } from 'idb-keyval';
+import isElectron from 'is-electron';
 import { createRoot } from 'react-dom/client';
 
 import { App } from '/@/renderer/app';
@@ -40,6 +41,10 @@ window.addEventListener('vite:preloadError', (event) => {
     window.location.reload();
 });
 
+// The desktop app behaves like an app, not a web page: the interface isn't selectable text, buttons keep the
+// arrow pointer, pictures can't be dragged out (sour-desktop.css)
+if (isElectron()) document.documentElement.classList.add('sour-desktop-app');
+
 createRoot(document.getElementById('root')!).render(
     <PersistQueryClientProvider
         client={queryClient}
@@ -53,7 +58,10 @@ createRoot(document.getElementById('root')!).render(
                         query.queryKey.includes('lyrics') &&
                         query.queryKey.includes('select');
 
-                    return isSuccess && isLyricsQueryKey;
+                    // only lyrics from the last 30 days: the whole set is written again on every change, and
+                    // after months of listening that was megabytes each time
+                    const recent = query.state.dataUpdatedAt > Date.now() - 30 * 86400000;
+                    return isSuccess && isLyricsQueryKey && recent;
                 },
             },
             hydrateOptions: {

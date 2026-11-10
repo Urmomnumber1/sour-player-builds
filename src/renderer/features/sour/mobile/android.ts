@@ -31,7 +31,7 @@ export const sourMedia = (method: string, options: Record<string, unknown> = {})
 };
 
 export const onSourMedia = (
-    eventName: 'action' | 'device' | 'intent' | 'update',
+    eventName: 'action' | 'device' | 'intent' | 'tv' | 'update' | 'volume',
     listener: Listener,
 ): (() => void) => {
     const c = cap();

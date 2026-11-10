@@ -96,9 +96,17 @@ const DiscordBotRoute = lazy(
 
 // phones: the Library, Search and You tabs
 const PhoneLibraryRoute = lazy(() =>
-    import('/@/renderer/features/sour/mobile/phone-pages').then((m) => ({
-        default: m.PhoneLibrary,
+    import('/@/renderer/features/sour/mobile/phone-tabs').then((m) => ({
+        default: m.PhoneLibraryTab,
     })),
+);
+const PhoneOfflineRoute = lazy(() =>
+    import('/@/renderer/features/sour/mobile/phone-tabs').then((m) => ({
+        default: m.PhoneOffline,
+    })),
+);
+const PhoneTVRoute = lazy(() =>
+    import('/@/renderer/features/sour/mobile/phone-tabs').then((m) => ({ default: m.PhoneTV })),
 );
 const PhoneSearchRoute = lazy(() =>
     import('/@/renderer/features/sour/mobile/phone-pages').then((m) => ({
@@ -284,6 +292,14 @@ export const AppRouter = () => {
                                         <Route
                                             element={<PhoneMeRoute />}
                                             path={AppRoute.PHONE_ME}
+                                        />
+                                        <Route
+                                            element={<PhoneOfflineRoute />}
+                                            path={AppRoute.PHONE_OFFLINE}
+                                        />
+                                        <Route
+                                            element={<PhoneTVRoute />}
+                                            path={AppRoute.PHONE_TV}
                                         />
                                         <Route
                                             element={<NowPlayingRoute />}

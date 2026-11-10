@@ -28,7 +28,9 @@ export enum AppRoute {
     // phones: the Library, Search and You tabs
     PHONE_LIBRARY = '/your-library',
     PHONE_ME = '/me',
+    PHONE_OFFLINE = '/offline',
     PHONE_SEARCH = '/find',
+    PHONE_TV = '/sour/tv',
     PLAYING = '/playing',
     PLAYLISTS = '/playlists',
     PLAYLISTS_DETAIL_SONGS = '/playlists/:playlistId/songs',

@@ -1,0 +1,23 @@
+/* Sour Player 0.11: the desktop app behaves like an app, not a web page (html.sour-desktop-app, set in main.tsx) */
+html.sour-desktop-app body {
+    user-select: none;
+}
+
+/* what people type, and the words worth copying, stay selectable */
+html.sour-desktop-app :is(input, textarea, [contenteditable='true'], pre, code, [data-selectable]) {
+    user-select: text;
+}
+
+html.sour-desktop-app :is(img, a, svg) {
+    -webkit-user-drag: none;
+}
+
+/* apps keep the arrow pointer on their buttons; only real links get the hand */
+html.sour-desktop-app :is(button, [role='button'], [role='tab'], [role='menuitem'], [role='option'], [role='switch'], label, summary, select) {
+    cursor: default;
+}
+
+/* focus rings for the keyboard only, not after every click */
+html.sour-desktop-app :focus:not(:focus-visible) {
+    outline: none;
+}

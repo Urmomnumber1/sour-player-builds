@@ -216,27 +216,152 @@ const ytParams = (start: number) =>
     `enablejsapi=1&mute=1&autoplay=1&controls=0&rel=0&playsinline=1&disablekb=1&modestbranding=1&cc_load_policy=0&cc_lang_pref=zxx&iv_load_policy=3&start=${start}`;
 const thumb = (videoId: string) => `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
 
+// ---------- Hermes Music's own copy of the video (Hermes 3.13+) ----------
+// A plain <video> is far lighter and smoother than YouTube's player: no YouTube buttons, any speed, exact
+// seeking. Hermes makes the copy the first time a video is watched; until then YouTube's player stands in.
+type VideoFileState = { error?: string; status: 'failed' | 'preparing' | 'ready' };
+export const useVideoFile = (videoId?: string) => {
+    const url = useHermesUrl();
+    return useQuery({
+        enabled: !!url && /^[\w-]{11}$/.test(videoId || ''),
+        queryFn: async ({ signal }) => {
+            const res = await fetch(`${url}/api/videos/file/status?id=${videoId}`, { signal });
+            if (!res.ok) return { status: 'failed' } as VideoFileState; // an older Hermes Music
+            return (await res.json()) as VideoFileState;
+        },
+        queryKey: ['hermes-video-file', url, videoId],
+        refetchInterval: (query) => (query.state.data?.status === 'preparing' ? 4000 : false),
+        retry: false,
+        staleTime: 10 * 60 * 1000,
+    });
+};
+
+// keeps a muted <video> in step with the song: small differences are evened out by its speed, big ones seek
+const SyncedVideo = ({
+    offsetRef,
+    onFail,
+    src,
+}: {
+    offsetRef: RefObject<number>;
+    onFail: () => void;
+    src: string;
+}) => {
+    const ref = useRef<HTMLVideoElement>(null);
+    useEffect(() => {
+        const v = ref.current;
+        if (!v) return undefined;
+        v.muted = true;
+        v.setAttribute('muted', '');
+        let raw = useTimestampStoreBase.getState().timestamp;
+        let at = performance.now();
+        const unsubscribe = useTimestampStoreBase.subscribe((state) => {
+            raw = state.timestamp;
+            at = performance.now();
+        });
+        const tick = () => {
+            if (!v.duration || Number.isNaN(v.duration)) return;
+            const { speed, status } = usePlayerStoreBase.getState().player;
+            const rate = speed > 0 ? speed : 1;
+            const playing = status === PlayerStatus.PLAYING;
+            const target =
+                raw +
+                (playing ? ((performance.now() - at) / 1000) * rate : 0) +
+                (offsetRef.current ?? 0);
+            const want = Math.min(Math.max(0, target), v.duration - 0.05);
+            const drift = v.currentTime - want;
+            if (!playing || target < 0 || target >= v.duration) {
+                if (!v.paused) v.pause();
+                if (Math.abs(drift) > 0.15) v.currentTime = want;
+                return;
+            }
+            if (Math.abs(drift) > 0.6) {
+                v.currentTime = want;
+                v.playbackRate = rate;
+            } else {
+                v.playbackRate =
+                    Math.abs(drift) > 0.04 ? rate * Math.min(1.1, Math.max(0.9, 1 - drift)) : rate;
+            }
+            if (v.paused) v.play().catch(() => {});
+        };
+        const timer = setInterval(tick, 250);
+        v.addEventListener('loadedmetadata', tick);
+        return () => {
+            clearInterval(timer);
+            v.removeEventListener('loadedmetadata', tick);
+            unsubscribe();
+        };
+    }, [offsetRef, src]);
+    return <video muted onError={onFail} playsInline preload="auto" ref={ref} src={src} />;
+};
+
+// YouTube's player, kept in step by the sync engine (while Hermes Music makes its copy, or if it can't)
+const YouTubeFrame = ({
+    offsetRef,
+    title,
+    videoId,
+}: {
+    offsetRef: RefObject<number>;
+    title: string;
+    videoId: string;
+}) => {
+    const frame = useRef<HTMLIFrameElement>(null);
+    // start where the song already is, so it doesn't open with a big jump
+    const [start] = useState(() =>
+        Math.max(
+            0,
+            Math.floor(useTimestampStoreBase.getState().timestamp + (offsetRef.current ?? 0)),
+        ),
+    );
+    useVideoSync(frame, offsetRef);
+    return (
+        <iframe
+            allow="autoplay; encrypted-media"
+            ref={frame}
+            referrerPolicy="strict-origin-when-cross-origin"
+            src={`https://www.youtube-nocookie.com/embed/${videoId}?${ytParams(start)}`}
+            tabIndex={-1}
+            title={title}
+        />
+    );
+};
+
+// the picture: Hermes Music's copy when it has one, else YouTube's player
+const VideoSurface = ({
+    offsetRef,
+    title,
+    videoId,
+}: {
+    offsetRef: RefObject<number>;
+    title: string;
+    videoId: string;
+}) => {
+    const url = useHermesUrl();
+    const file = useVideoFile(videoId).data;
+    const [broken, setBroken] = useState(false);
+    if (file?.status === 'ready' && !broken) {
+        return (
+            <SyncedVideo
+                offsetRef={offsetRef}
+                onFail={() => setBroken(true)}
+                src={`${url}/api/videos/file?id=${videoId}`}
+            />
+        );
+    }
+    return <YouTubeFrame key={videoId} offsetRef={offsetRef} title={title} videoId={videoId} />;
+};
+
 // ---------- the video behind the Sour Stage (muted, in step with the song, no controls) ----------
 export const VideoBackdrop = ({ blur, video }: { blur: boolean; video: MusicVideo }) => {
-    const frame = useRef<HTMLIFrameElement>(null);
     const offsetRef = useRef(video.offset ?? 0);
     useEffect(() => {
         offsetRef.current = video.offset ?? 0;
     }, [video.offset]);
-    const [start] = useState(() =>
-        Math.max(0, Math.floor(useTimestampStoreBase.getState().timestamp + (video.offset ?? 0))),
-    );
-    useVideoSync(frame, offsetRef);
     return (
         <div aria-hidden className={blur ? styles['backdrop-blur'] : styles.backdrop}>
-            <iframe
-                allow="autoplay; encrypted-media"
-                key={video.videoId}
-                ref={frame}
-                referrerPolicy="strict-origin-when-cross-origin"
-                src={`https://www.youtube-nocookie.com/embed/${video.videoId}?${ytParams(start)}`}
-                tabIndex={-1}
+            <VideoSurface
+                offsetRef={offsetRef}
                 title="Music video (background)"
+                videoId={video.videoId}
             />
         </div>
     );
@@ -258,19 +383,13 @@ export const SourVideo = ({ artist, subtitle, title, variant, video: saved }: So
     const video: MusicVideo = live ? { ...saved, offset: 0, videoId: live.videoId } : saved;
     const url = useHermesUrl();
     const queryClient = useQueryClient();
-    const frame = useRef<HTMLIFrameElement>(null);
     const [nudge, setNudge] = useState(0);
     const [saving, setSaving] = useState(false);
     const offset = (video.offset ?? 0) + nudge;
     const offsetRef = useRef(offset);
-    // start the video where the song already is, so it doesn't open with a big jump
-    const [start] = useState(() =>
-        Math.max(0, Math.floor(useTimestampStoreBase.getState().timestamp + (saved.offset ?? 0))),
-    );
     useEffect(() => {
         offsetRef.current = offset;
     }, [offset]);
-    useVideoSync(frame, offsetRef);
 
     const saveTiming = async () => {
         if (!url) return;
@@ -318,14 +437,11 @@ export const SourVideo = ({ artist, subtitle, title, variant, video: saved }: So
                 style={{ backgroundImage: `url("${thumb(video.videoId)}")` }}
             />
             <div className={styles.frame}>
-                <iframe
-                    allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-                    allowFullScreen
+                <VideoSurface
                     key={video.videoId}
-                    ref={frame}
-                    referrerPolicy="strict-origin-when-cross-origin"
-                    src={`https://www.youtube-nocookie.com/embed/${video.videoId}?${ytParams(start)}`}
+                    offsetRef={offsetRef}
                     title={video.title || 'Video'}
+                    videoId={video.videoId}
                 />
                 {/* clicks go to Sour Player, not to YouTube (its controls would fight the sync) */}
                 <div className={styles.shield} />
@@ -542,6 +658,24 @@ export const AutoVideo = () => {
         if (auto && video && useVideoView.getState().view !== 'video')
             useVideoWindow.setState({ floating: true, watch: null });
     }, [auto, video]);
+    // while videos are being watched, Hermes Music gets the next song's video ready as well
+    const url = useHermesUrl();
+    const floating = useVideoWindow((state) => state.floating);
+    const view = useVideoView((state) => state.view);
+    useEffect(() => {
+        if (!url || !song?.id || (!floating && view === 'cover')) return;
+        const next = usePlayerStoreBase.getState().getPlayerData().nextSong;
+        if (!next?.name) return;
+        const params = new URLSearchParams({ artist: next.artistName || '', title: next.name });
+        fetch(`${url}/api/videos/lookup?${params}`)
+            .then((r) => (r.ok ? r.json() : null))
+            .then((v: null | { videoId?: string }) => {
+                if (v?.videoId && /^[\w-]{11}$/.test(v.videoId))
+                    return fetch(`${url}/api/videos/file/status?id=${v.videoId}`);
+                return undefined;
+            })
+            .catch(() => {});
+    }, [floating, song?.id, url, view]);
     return null;
 };
 

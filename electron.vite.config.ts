@@ -8,7 +8,8 @@ import { kuromojiDictionaryPlugin } from './vite.kuromoji-plugin';
 import { createReactPlugin } from './vite.react-plugin';
 
 const currentOSEnv = process.platform;
-const electronRendererTarget = 'chrome87';
+// Electron 43 ships Chrome 146: modern code as written (smaller and faster to start than chrome87 output)
+const electronRendererTarget = 'chrome130';
 
 const createConfig = (isDevelopment: boolean): UserConfig => ({
     main: {
@@ -55,7 +56,8 @@ const createConfig = (isDevelopment: boolean): UserConfig => ({
             modulePreload: {
                 polyfill: false,
             },
-            sourcemap: true,
+            // no source maps in the app (they were 36 MB of the download)
+            sourcemap: isDevelopment,
             target: electronRendererTarget,
         },
         css: {

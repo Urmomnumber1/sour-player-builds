@@ -691,6 +691,8 @@ async function createWindow(first = true): Promise<void> {
     // Create the browser window.
     mainWindow = new BrowserWindow({
         autoHideMenuBar: true,
+        // the app's own dark background while it starts (a web page flashes white)
+        backgroundColor: '#0b0b0f',
         frame: false,
         icon: isWindows() ? getAssetPath('icons/icon.ico') : getAssetPath('icons/icon.png'),
         minHeight: 120,
@@ -704,6 +706,9 @@ async function createWindow(first = true): Promise<void> {
             nodeIntegration: false,
             preload: join(__dirname, '../preload/index.js'),
             sandbox: true,
+            spellcheck: false,
+            // keep the compiled code between starts: the app opens faster from the second start on
+            v8CacheOptions: 'bypassHeatCheck',
             webSecurity: !store.get('ignore_cors'),
         },
         ...(nativeFrame && isLinux() && nativeFrameConfig.linux),
@@ -969,6 +974,8 @@ if (isLinux()) {
 if (shouldDisableMediaFeatures) {
     chromiumDisabledFeatures.push('HardwareMediaKeyHandling', 'MediaSessionService');
 }
+// one window, one page: no spare renderer process kept warm (about 30-50 MB of memory)
+chromiumDisabledFeatures.push('SpareRendererForSitePerProcess');
 
 if (chromiumDisabledFeatures.length > 0) {
     app.commandLine.appendSwitch('disable-features', chromiumDisabledFeatures.join(','));

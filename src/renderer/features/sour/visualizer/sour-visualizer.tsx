@@ -113,6 +113,7 @@ export const SourVisualizer = ({ className, colors, coverUrl, people, soulPlay, 
         let flash = 0;
         let last = 0;
         let drawn = 0;
+        let tick = 0;
         let spin = 0;
         let visible = true;
         const soul = makeSoul();
@@ -138,6 +139,9 @@ export const SourVisualizer = ({ className, colors, coverUrl, people, soulPlay, 
         const draw = (now: number) => {
             frame = requestAnimationFrame(draw);
             if (document.hidden || !visible) return;
+            // 30 drawings a second look the same here and are half the work (the screen asks for 60 or more)
+            if (now - tick < 31) return;
+            tick = now;
             const {
                 colors: cols,
                 coverUrl: src,

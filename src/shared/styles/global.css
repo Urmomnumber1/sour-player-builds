@@ -350,15 +350,31 @@ button {
     animation-duration: 0.001ms !important;
 }
 
+/* The animated background: a gradient twice the size of the page that slides along. Moving a whole layer is
+   done by the graphics card; animating background-position made the app repaint (and re-blur) the whole
+   window 60 times a second, which kept a CPU core busy. */
 .sour-animated-bg #main-content {
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.sour-animated-bg #main-content::before {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: -1;
+    width: 200%;
+    height: 200%;
+    pointer-events: none;
+    content: '';
     background: linear-gradient(
         135deg,
         var(--sour-album-color, var(--theme-colors-primary)) 0%,
         var(--theme-colors-background) 45%,
         var(--theme-colors-background) 100%
     );
-    background-size: 200% 200%;
     animation: sour-drift 18s ease-in-out infinite alternate;
+    will-change: transform;
 }
 
 body.sour-shake {
@@ -377,11 +393,11 @@ body.sour-disco {
 
 @keyframes sour-drift {
     0% {
-        background-position: 0% 0%;
+        transform: translate3d(0, 0, 0);
     }
 
     100% {
-        background-position: 100% 100%;
+        transform: translate3d(-50%, -50%, 0);
     }
 }
 

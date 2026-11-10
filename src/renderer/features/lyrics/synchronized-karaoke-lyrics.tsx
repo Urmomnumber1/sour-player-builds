@@ -183,11 +183,18 @@ export const SynchronizedKaraokeLyrics = ({
     const startRaf = useCallback(() => {
         stopRaf();
 
-        const runTick = () => {
+        let lastSync = 0;
+        const runTick = (now: number) => {
             if (statusRef.current !== PlayerStatus.PLAYING) {
                 stopRaf();
                 return;
             }
+            // 30 updates a second keep the words filling smoothly at half the work of every frame
+            if (now - lastSync < 31) {
+                rafRef.current = requestAnimationFrame(runTick);
+                return;
+            }
+            lastSync = now;
 
             const anchor = playbackAnchorRef.current;
             const timeInMs = anchor.timeMs + delayMsRef.current;

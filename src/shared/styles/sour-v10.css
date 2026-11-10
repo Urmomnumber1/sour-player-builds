@@ -15,9 +15,31 @@
     --v8-glow: color-mix(in srgb, var(--liquid) 30%, transparent);
 }
 
-/* the backdrop: two soft pools of the song's colour that slowly drift */
-.sour-v10:not(.sour-ios) body,
+/* the backdrop: two soft pools of the song's colour that slowly drift. They are painted once on a layer bigger
+   than the window, and the layer slides: the graphics card moves it. (Animating background-position made the
+   app repaint the whole window, and re-blur every frosted panel, 60 times a second.) */
+.sour-v10:not(.sour-ios) body {
+    background: var(--theme-colors-background);
+    transition: background-color 1.2s ease;
+}
+
+/* see-through, so the layer below shows; the window's colour comes from body. No stacking context here
+   (the layer sits under everything by z-index -1), so panels, menus and the Stage keep their order. */
 .sour-v10:not(.sour-ios) #default-layout {
+    position: relative;
+    overflow: hidden;
+    background: transparent;
+}
+
+.sour-v10:not(.sour-ios) #default-layout::before {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: -1;
+    width: 160%;
+    height: 160%;
+    pointer-events: none;
+    content: '';
     background:
         radial-gradient(
             1100px 700px at var(--liquid-x, 15%) var(--liquid-y, -5%),
@@ -28,20 +50,18 @@
             1000px 600px at 95% 105%,
             color-mix(in srgb, var(--liquid) 18%, transparent),
             transparent 60%
-        ),
-        var(--theme-colors-background);
-    background-size: 160% 160%;
-    transition: background-color 1.2s ease;
+        );
     animation: liquid-drift 40s ease-in-out infinite alternate;
+    will-change: transform;
 }
 
 @keyframes liquid-drift {
     from {
-        background-position: 0% 0%;
+        transform: translate3d(0, 0, 0);
     }
 
     to {
-        background-position: 100% 60%;
+        transform: translate3d(-37.5%, -22.5%, 0);
     }
 }
 

@@ -23,6 +23,15 @@
       },
       "versions": [
         {
+          "version": "0.11.0",
+          "buildVersion": "6",
+          "date": "2026-11-09",
+          "localizedDescription": "Volume slider in the player, Sour Player TV inside the app (Home > TV party), and with Hermes Music 3.13: new look, word-by-word lyrics, new video player.",
+          "downloadURL": "https://github.com/Urmomnumber1/feishin/releases/download/ios-v0.11.0/Sour-Player-0.11.0.ipa",
+          "size": 29105470,
+          "minOSVersion": "15.0"
+        },
+        {
           "version": "0.10.9",
           "buildVersion": "5",
           "date": "2026-11-07",

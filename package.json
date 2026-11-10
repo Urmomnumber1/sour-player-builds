@@ -1,6 +1,6 @@
 {
     "name": "sour-player",
-    "version": "0.11.0",
+    "version": "0.11.1",
     "description": "Sour Player: a music player for Hermes Music, built on Feishin.",
     "keywords": [
         "subsonic",

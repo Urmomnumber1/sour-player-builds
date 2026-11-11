@@ -1,0 +1,411 @@
+/* stylelint-disable selector-class-pattern, no-descending-specificity */
+
+/*
+ * Sour Player 0.12 layouts (Magazine, Hi-Fi, Pop): what the three share. Loaded only when one of them is
+ * picked, and everything sits under html.sour-x, so the older looks never see it. No blur and no
+ * animation that runs forever: the frame is flat colour, painted once.
+ */
+
+.sour-x body {
+    background: var(--x-bg);
+}
+
+.sour-x .x-shell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    color: var(--x-ink);
+    background: var(--x-bg);
+}
+
+.sour-x .x-shell > [class*='window-bar-module-window-bar'] {
+    flex: none;
+}
+
+/* my own buttons start plain (page buttons keep their own styles) */
+.sour-x
+    :where(
+        .x-nav-item,
+        .x-icon-btn,
+        .x-act,
+        .x-btn,
+        .x-cover,
+        .x-now-title,
+        .x-now-artist,
+        .x-now-album,
+        .x-me,
+        .x-points,
+        .x-search,
+        .x-logo,
+        .x-link,
+        .x-big-btn,
+        .x-friend-name,
+        .x-friend-ava,
+        .x-more-btn,
+        .x-key-btn,
+        .x-preset,
+        .x-mood,
+        .x-moods button,
+        .x-np-full
+    ) {
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    color: inherit;
+    text-align: inherit;
+    text-transform: inherit;
+    letter-spacing: inherit;
+    cursor: pointer;
+    background: none;
+    border: 0;
+}
+
+.sour-x :where(.x-shell) :focus-visible {
+    outline: 2px solid var(--x-focus, var(--x-ink));
+    outline-offset: 2px;
+}
+
+.sour-x .x-grow {
+    flex: 1;
+}
+
+.sour-x .x-empty {
+    margin: 6px 0;
+    font-size: 12.5px;
+    color: var(--x-mute);
+}
+
+.sour-x .x-muted {
+    color: var(--x-mute);
+}
+
+/* the page in the middle */
+.sour-x .x-page {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* the older looks' moving background layer doesn't belong in these layouts */
+.sour-x .x-page::before,
+.sour-x #default-layout::before {
+    content: none !important;
+    animation: none !important;
+}
+
+/* ---------- covers ---------- */
+.sour-x .x-cover,
+.sour-x .x-big-cover {
+    position: relative;
+    display: block;
+    flex: none;
+    aspect-ratio: 1;
+    overflow: hidden;
+    background: var(--x-bg2);
+}
+
+.sour-x .x-cover-img,
+.sour-x .x-cover img,
+.sour-x .x-big-cover img {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+}
+
+.sour-x .x-cover-empty {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    font-size: 32px;
+    color: var(--x-mute);
+}
+
+.sour-x .x-now-title,
+.sour-x .x-now-artist,
+.sour-x .x-now-album {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ---------- nav ---------- */
+.sour-x .x-nav-item {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.sour-x .x-nav-icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+}
+
+.sour-x .x-icon-btn {
+    position: relative;
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    font-size: 19px;
+}
+
+.sour-x .x-bell .x-dot {
+    position: absolute;
+    top: 5px;
+    right: 6px;
+    width: 8px;
+    height: 8px;
+    background: var(--x-red, #e4432b);
+    border-radius: 50%;
+}
+
+.sour-x .x-points {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.sour-x .x-me {
+    display: grid;
+    flex: none;
+    place-items: center;
+    border-radius: 50%;
+}
+
+.sour-x .x-search {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.sour-x .x-search kbd {
+    margin-left: auto;
+    font-family: inherit;
+}
+
+.sour-x .x-subnav {
+    display: flex;
+    flex: none;
+    gap: 4px;
+    align-items: center;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.sour-x .x-pins:empty,
+.sour-x .x-pins:not(:has(*)) {
+    display: none;
+}
+
+/* ---------- the player's keys ---------- */
+.sour-x .x-tools {
+    display: flex;
+    gap: 6px;
+}
+
+.sour-x .x-tool {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    align-items: center;
+    min-width: 0;
+}
+
+/* a key whose button has nothing to offer here (no cast devices, no Hermes...) */
+.sour-x .x-tool:has(> .x-tool-btn:empty) {
+    display: none;
+}
+
+.sour-x .x-tool-btn {
+    display: grid;
+    place-items: center;
+}
+
+.sour-x .x-tool-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+}
+
+.sour-x .x-more {
+    position: relative;
+}
+
+.sour-x .x-more-panel {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 8px);
+    z-index: 300;
+    padding: 10px;
+    color: var(--x-ink);
+    background: var(--x-bg);
+    border: 1px solid var(--x-line);
+    box-shadow: 0 10px 30px rgb(0 0 0 / 25%);
+}
+
+.sour-x .x-more-panel[hidden] {
+    display: none !important;
+}
+
+.sour-x .x-more-panel .x-tools {
+    display: grid;
+    grid-template-columns: repeat(4, 64px);
+    gap: 10px 4px;
+}
+
+/* the little live notes (listening along, up next, friends on the same song, update ready) */
+.sour-x .x-status {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    min-width: 0;
+}
+
+.sour-x .x-status:not(:has(*)) {
+    display: none;
+}
+
+/* ---------- lists ---------- */
+.sour-x .x-sec-h {
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
+}
+
+.sour-x .x-sec-h > span {
+    margin-left: auto;
+    white-space: nowrap;
+}
+
+.sour-x .x-upnext {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.sour-x .x-upnext li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+    min-height: 36px;
+}
+
+.sour-x .x-upnext-t {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sour-x .x-upnext-t b {
+    font-weight: 600;
+}
+
+.sour-x .x-upnext-t span {
+    color: var(--x-mute);
+}
+
+.sour-x .x-friend {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    gap: 10px;
+    align-items: center;
+}
+
+.sour-x .x-friend-text {
+    min-width: 0;
+    font-size: 12.5px;
+    line-height: 1.35;
+}
+
+.sour-x .x-friend-text > div {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sour-x .x-friend-name {
+    font-weight: 650;
+}
+
+.sour-x .x-friend.x-offline {
+    opacity: 0.6;
+}
+
+.sour-x .x-act {
+    white-space: nowrap;
+}
+
+.sour-x .x-bar {
+    position: relative;
+    height: 5px;
+    background: var(--x-line);
+}
+
+.sour-x .x-bar i {
+    position: absolute;
+    inset: 0 auto 0 0;
+    background: var(--x-ink);
+}
+
+/* ---------- Home top ---------- */
+.sour-x .x-home {
+    display: flex;
+    flex-direction: column;
+}
+
+.sour-x .x-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.sour-x .x-btn {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    white-space: nowrap;
+}
+
+/* ---------- focus mode (Ctrl+Shift+F): only the page and the player ---------- */
+.sour-x.sour-focus .x-rack,
+.sour-x.sour-focus .x-side,
+.sour-x.sour-focus .x-pals,
+.sour-x.sour-focus .x-rail,
+.sour-x.sour-focus .x-dateline,
+.sour-x.sour-focus .x-subnav,
+.sour-x.sour-focus .x-np-next {
+    display: none !important;
+}
+
+/* phones: the 0.12 layouts restyle the phone app (its own tab bar, mini player and pages) */
+.sour-x .x-phone-home {
+    gap: 18px;
+}
+
+/* Auto DJ's own button already says "Auto DJ" */
+.sour-x .x-tool-autodj .x-tool-label {
+    display: none;
+}
+
+.sour-x .x-tool-autodj .x-tool-btn button {
+    font-size: 10px;
+    letter-spacing: 0.06em;
+}

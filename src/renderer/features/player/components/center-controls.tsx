@@ -25,6 +25,40 @@ import { Stack } from '/@/shared/components/stack/stack';
 import { Text } from '/@/shared/components/text/text';
 import { PlayerRepeat, PlayerShuffle, PlayerStatus } from '/@/shared/types/types';
 
+// the buttons on their own: the 0.12 layouts put the seek bar somewhere else
+export const TransportButtons = () => {
+    const skip = useSkipButtons();
+    const isRadioActive = useIsRadioActive();
+    if (isRadioActive) {
+        return (
+            <div className={styles.buttonsContainer}>
+                <RadioStopButton />
+                <ShuffleButton disabled />
+                <PreviousButton disabled />
+                {skip?.enabled && <SkipBackwardButton disabled />}
+                <RadioCenterPlayButton />
+                {skip?.enabled && <SkipForwardButton disabled />}
+                <NextButton disabled />
+                <RepeatButton disabled />
+                <ShuffleAllButton disabled />
+            </div>
+        );
+    }
+    return (
+        <div className={styles.buttonsContainer}>
+            <StopButton />
+            <ShuffleButton />
+            <PreviousButton />
+            {skip?.enabled && <SkipBackwardButton />}
+            <CenterPlayButton />
+            {skip?.enabled && <SkipForwardButton />}
+            <NextButton />
+            <RepeatButton />
+            <ShuffleAllButton />
+        </div>
+    );
+};
+
 export const CenterControls = () => {
     const skip = useSkipButtons();
 

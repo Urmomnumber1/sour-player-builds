@@ -28,6 +28,13 @@ import { SourSafe } from '/@/renderer/features/sour/components/sour-safe';
 import { TvInvite } from '/@/renderer/features/sour/components/sour-tv';
 import { UiTen } from '/@/renderer/features/sour/components/ui10';
 import { LiquidTint, TenthUpdate } from '/@/renderer/features/sour/components/v10';
+import { LayoutsIntro } from '/@/renderer/features/sour/layouts/app-look-picker';
+import {
+    isNewLayout,
+    layoutIsDark,
+    loadLookStyles,
+    NEW_LAYOUTS,
+} from '/@/renderer/features/sour/layouts/layout-kind';
 import { applyAppIcon } from '/@/renderer/features/sour/skins/app-icon';
 import { currentHoliday, holidayById } from '/@/renderer/features/sour/skins/holidays';
 import { AmbiencePlayer } from '/@/renderer/features/sour/stage/ambience';
@@ -86,8 +93,15 @@ const LookSwitches = () => {
         root.classList.toggle('sour-sidebar-right', look.sidebarRight);
         root.classList.toggle('sour-fade-covers', look.fadeCovers && !look.reducedMotion);
         root.classList.toggle('sour-lemon-loader', look.lemonLoader && !simple);
-        root.classList.toggle('sour-v8', look.ui !== 'classic');
-        root.classList.toggle('sour-v10', (look.ui ?? 'liquid') === 'liquid');
+        const ui = look.ui ?? 'liquid';
+        const layout = isNewLayout(ui) ? ui : null;
+        root.classList.toggle('sour-v8', ui === 'new' || ui === 'liquid');
+        root.classList.toggle('sour-v10', ui === 'liquid');
+        // 0.12: Magazine, Hi-Fi and Pop (their styles load the first time they're picked)
+        root.classList.toggle('sour-x', !!layout);
+        for (const kind of NEW_LAYOUTS) root.classList.toggle(`sour-x-${kind}`, layout === kind);
+        root.classList.toggle('sour-x-dark', !!layout && layoutIsDark(look));
+        loadLookStyles(ui);
     }, [look]);
 
     useEffect(() => {
@@ -191,6 +205,7 @@ export const SourRoot = () => (
         </SourSafe>
         <SourSafe name="setup guide">
             <SetupGuide />
+            <LayoutsIntro />
         </SourSafe>
         <SourSafe name="desktop extras">
             <DesktopBits />

@@ -101,7 +101,7 @@ const SongRow = ({ extra, song }: { extra?: string; song: GroupSong }) => {
 };
 
 // join a group or station from Home and open the Group Play panel
-const useJoin = () => {
+export const useJoin = () => {
     const url = useHermesUrl();
     const me = useSourStore((state) => state.me);
     return async (code: string) => {

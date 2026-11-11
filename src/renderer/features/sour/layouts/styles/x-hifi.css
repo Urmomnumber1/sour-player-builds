@@ -1,0 +1,1280 @@
+/* stylelint-disable selector-class-pattern, no-descending-specificity, font-family-no-missing-generic-family-keyword */
+
+/*
+ * Hi-Fi (0.12): the app as a piece of audio gear. Graphite panels, a green display, keys with lamps and
+ * a volume knob. Always dark. Loaded only when picked.
+ */
+
+:root.sour-x-hifi[data-mantine-color-scheme] {
+    --x-bg: #0d0e10;
+    --x-bg2: #1a1d21;
+    --x-chassis: #16181b;
+    --x-key: #262a30;
+    --x-ink: #e7e9ec;
+    --x-mute: #8a909a;
+    --x-line: #2d3138;
+    --x-hi: #3d424b;
+    --x-lo: #050607;
+    --x-lcd: #0a1208;
+    --x-off: #1b2a10;
+    --x-mid: #6c9c28;
+    --x-lime: #baf53c;
+    --x-amber: #ffb224;
+    --x-red: #ff4d3d;
+    --x-focus: var(--x-lime);
+    --x-head: 'Sour Oswald', oswald, 'Arial Narrow', sans-serif;
+    --x-mono: 'Sour IBM Plex Mono', ui-monospace, consolas, monospace;
+    --x-dot: 'Sour VT323', vt323, ui-monospace, monospace;
+    --theme-colors-background: var(--x-bg);
+    --theme-colors-background-alternate: #0a0b0c;
+    --theme-colors-foreground: var(--x-ink);
+    --theme-colors-foreground-muted: var(--x-mute);
+    --theme-colors-surface: var(--x-bg2);
+    --theme-colors-surface-foreground: var(--x-ink);
+    --theme-colors-border: var(--x-line);
+    --theme-colors-primary: var(--x-lime) !important;
+    --theme-colors-primary-filled: var(--x-lime);
+    --theme-colors-primary-contrast: #0d1405;
+    --theme-content-font-family: inter, sans-serif;
+    --theme-radius-xs: 3px;
+    --theme-radius-sm: 4px;
+    --theme-radius-md: 6px;
+    --theme-radius-lg: 8px;
+    --theme-radius-xl: 10px;
+    --mantine-radius-default: 6px;
+    --mantine-color-body: var(--x-bg);
+    --mantine-color-text: var(--x-ink);
+    --mantine-color-dimmed: var(--x-mute);
+    --mantine-color-default: var(--x-key);
+    --mantine-color-default-hover: #2f343b;
+    --mantine-color-default-color: var(--x-ink);
+    --mantine-color-default-border: var(--x-lo);
+    --mantine-color-placeholder: var(--x-mute);
+    --mantine-primary-color-filled: var(--x-lime);
+    --mantine-primary-color-filled-hover: #cdff5f;
+    --mantine-primary-color-contrast: #0d1405;
+    --mantine-primary-color-light: rgb(186 245 60 / 14%);
+    --mantine-primary-color-light-hover: rgb(186 245 60 / 22%);
+    --mantine-primary-color-light-color: var(--x-lime);
+}
+
+/* ---------- a key ---------- */
+.sour-x-hifi :is(.x-keys button, .x-fkeys .x-tool, .x-key-btn, .x-preset, .x-more-btn) {
+    color: #cfd3d8;
+    background: var(--x-key);
+    border: 1px solid var(--x-lo);
+    border-top-color: var(--x-hi);
+    border-radius: 6px;
+    box-shadow: 0 2px 0 var(--x-lo);
+}
+
+.sour-x-hifi :is(.x-keys button, .x-fkeys .x-tool, .x-key-btn, .x-preset, .x-more-btn):active {
+    box-shadow: 0 0 0 var(--x-lo);
+    transform: translateY(2px);
+}
+
+/* ---------- the deck ---------- */
+.sour-x-hifi .x-deck {
+    position: relative;
+    display: grid;
+    flex: none;
+    grid-template-columns: 124px minmax(280px, 1fr) auto 92px auto;
+    gap: 16px;
+    align-items: center;
+    height: 156px;
+    padding: 16px 22px;
+    background: var(--x-chassis);
+    border-bottom: 1px solid var(--x-lo);
+    box-shadow: inset 0 -2px 0 #1f2226;
+}
+
+.sour-x-hifi .x-deck > .x-cover {
+    width: 124px;
+    border: 1px solid var(--x-lo);
+    border-radius: 4px;
+}
+
+/* the display */
+.sour-x-hifi .x-lcd {
+    position: relative;
+    display: grid;
+    grid-template-rows: 13px 1fr 13px 10px;
+    gap: 6px;
+    height: 124px;
+    padding: 10px 14px 9px;
+    overflow: hidden;
+    color: var(--x-lime);
+    background: var(--x-lcd);
+    border: 1px solid #000;
+    border-radius: 6px;
+    box-shadow: inset 0 0 0 1px #162010;
+
+    --theme-colors-foreground: var(--x-lime);
+    --theme-colors-foreground-muted: var(--x-mid);
+}
+
+.sour-x-hifi .x-lcd::after {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    content: '';
+    background-image: radial-gradient(rgb(0 0 0 / 45%) 0.55px, transparent 0.7px);
+    background-size: 3px 3px;
+}
+
+.sour-x-hifi .x-lcd-flags {
+    display: flex;
+    gap: 14px;
+    overflow: hidden;
+    font: 400 10.5px/1 var(--x-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+}
+
+.sour-x-hifi .x-flag {
+    color: var(--x-off);
+}
+
+.sour-x-hifi .x-flag.x-on {
+    color: var(--x-lime);
+}
+
+.sour-x-hifi .x-lcd-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 96px auto;
+    gap: 14px;
+    align-items: end;
+    min-height: 0;
+}
+
+.sour-x-hifi .x-lcd-title {
+    min-width: 0;
+    font: 400 40px/0.86 var(--x-dot);
+    text-transform: uppercase;
+}
+
+.sour-x-hifi .x-lcd-viz {
+    height: 44px;
+    overflow: hidden;
+}
+
+.sour-x-hifi .x-lcd-viz > * {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.sour-x-hifi .x-lcd-time {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    font-family: var(--x-dot);
+    line-height: 0.85;
+}
+
+.sour-x-hifi .x-lcd-time b {
+    font-size: 40px;
+    font-weight: 400;
+}
+
+.sour-x-hifi .x-lcd-time span {
+    font-size: 15px;
+    color: var(--x-mid);
+}
+
+.sour-x-hifi .x-lcd-time.x-paused b {
+    animation: x-blink 1.2s steps(2, jump-none) 4;
+}
+
+@keyframes x-blink {
+    50% {
+        opacity: 0.25;
+    }
+}
+
+.sour-x-hifi .x-lcd-sub {
+    display: flex;
+    gap: 12px;
+    min-width: 0;
+    font: 400 10.5px/1.2 var(--x-mono);
+    color: var(--x-mid);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.sour-x-hifi .x-lcd-sub .x-now-album::before {
+    content: '- ';
+}
+
+.sour-x-hifi .x-lcd-seek [class*='playerbar-slider-module-slider-value-wrapper'] {
+    display: none;
+}
+
+.sour-x-hifi .x-lcd-seek [class*='playerbar-slider-module-slider-container'],
+.sour-x-hifi .x-lcd-seek [class*='playerbar-slider-module-slider-wrapper'] {
+    width: 100%;
+    height: 10px;
+}
+
+.sour-x-hifi .x-lcd .mantine-Slider-root {
+    height: 10px;
+    padding: 0;
+}
+
+.sour-x-hifi .x-lcd .mantine-Slider-track {
+    height: 8px;
+}
+
+.sour-x-hifi .x-lcd .mantine-Slider-track::before {
+    background: repeating-linear-gradient(90deg, var(--x-off) 0 4px, transparent 4px 6px);
+    border-radius: 0;
+}
+
+.sour-x-hifi .x-lcd .mantine-Slider-bar {
+    background: repeating-linear-gradient(90deg, var(--x-lime) 0 4px, transparent 4px 6px);
+    border-radius: 0;
+}
+
+.sour-x-hifi .x-lcd .mantine-Slider-thumb {
+    width: 3px;
+    height: 12px;
+    background: var(--x-lime);
+    border: 0;
+    border-radius: 0;
+}
+
+/* transport keys */
+.sour-x-hifi .x-keys [class*='center-controls-module-buttons-container'] {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.sour-x-hifi .x-keys button {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 54px;
+}
+
+.sour-x-hifi .x-keys [class*='player-button-module-main'] {
+    position: relative;
+    width: 58px;
+    color: var(--x-lime);
+    background: var(--x-key) !important;
+    border-radius: 6px;
+}
+
+.sour-x-hifi .x-keys [class*='player-button-module-main']::before {
+    position: absolute;
+    top: 7px;
+    left: 8px;
+    width: 6px;
+    height: 6px;
+    content: '';
+    background: var(--x-lime);
+    border-radius: 50%;
+    box-shadow: 0 0 6px var(--x-lime);
+}
+
+.sour-x-hifi .x-keys [class*='player-button-module-main'] svg {
+    color: var(--x-lime);
+    fill: var(--x-lime);
+}
+
+/* the knob */
+.sour-x-hifi .x-knob {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+}
+
+.sour-x-hifi .x-knob-dial {
+    width: 84px;
+    height: 84px;
+    touch-action: none;
+    cursor: ns-resize;
+    border-radius: 50%;
+}
+
+.sour-x-hifi .x-knob-dial svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.sour-x-hifi .x-tick {
+    stroke: #3a3f47;
+    stroke-width: 2;
+    stroke-linecap: round;
+}
+
+.sour-x-hifi .x-tick.x-on {
+    stroke: var(--x-lime);
+}
+
+.sour-x-hifi .x-knob-shadow {
+    fill: #050607;
+}
+
+.sour-x-hifi .x-knob-body {
+    fill: #2a2e34;
+    stroke: #050607;
+}
+
+.sour-x-hifi .x-knob-cap {
+    fill: #22262b;
+    stroke: #1a1d21;
+}
+
+.sour-x-hifi .x-knob-mark {
+    stroke: var(--x-lime);
+    stroke-width: 3.2;
+    stroke-linecap: round;
+}
+
+.sour-x-hifi .x-knob-foot {
+    display: flex;
+    gap: 2px;
+    align-items: center;
+    font: 400 10.5px/1 var(--x-mono);
+    color: var(--x-lime);
+    text-transform: uppercase;
+}
+
+.sour-x-hifi .x-knob-foot [class*='playerbar-slider-module'],
+.sour-x-hifi .x-knob-foot .mantine-Slider-root {
+    display: none !important;
+}
+
+/* function keys with lamps */
+.sour-x-hifi .x-fkeys {
+    display: flex;
+    gap: 6px;
+    align-items: stretch;
+    height: 124px;
+}
+
+.sour-x-hifi .x-fkeys > .x-tools {
+    display: grid;
+    grid-template-rows: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 74px);
+    grid-auto-flow: column;
+    gap: 6px;
+}
+
+.sour-x-hifi .x-fkeys .x-tool,
+.sour-x-hifi .x-fkeys .x-more-btn {
+    position: relative;
+    flex-direction: row;
+    gap: 0;
+    justify-content: flex-start;
+    height: auto;
+    min-height: 0;
+    padding: 0 8px 0 18px;
+}
+
+.sour-x-hifi .x-fkeys .x-more {
+    display: flex;
+}
+
+.sour-x-hifi .x-fkeys .x-more-btn {
+    width: 74px;
+}
+
+.sour-x-hifi .x-fkeys .x-tool::before,
+.sour-x-hifi .x-fkeys .x-more-btn::before {
+    position: absolute;
+    top: 50%;
+    left: 8px;
+    width: 5px;
+    height: 5px;
+    margin-top: -2.5px;
+    content: '';
+    background: #3a3f47;
+    border-radius: 50%;
+}
+
+.sour-x-hifi .x-fkeys .x-tool.x-on::before {
+    background: var(--x-lime);
+    box-shadow: 0 0 6px var(--x-lime);
+}
+
+.sour-x-hifi .x-fkeys .x-tool.x-on .x-tool-label {
+    color: var(--x-lime);
+}
+
+/* the whole key presses the button underneath it */
+.sour-x-hifi .x-fkeys .x-tool-btn {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+}
+
+.sour-x-hifi .x-fkeys .x-tool-btn :is(button, .mantine-ActionIcon-root) {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.sour-x-hifi .x-fkeys .x-more-btn .x-tool-btn {
+    display: none;
+}
+
+.sour-x-hifi .x-fkeys .x-tool-label,
+.sour-x-hifi .x-more-btn .x-tool-label {
+    font: 400 10.5px/1 var(--x-head);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    pointer-events: none;
+}
+
+.sour-x-hifi .x-more-panel {
+    top: calc(100% + 8px);
+    bottom: auto;
+    background: var(--x-chassis);
+    border: 1px solid var(--x-lo);
+    border-radius: 8px;
+}
+
+.sour-x-hifi .x-more-panel .x-tools {
+    grid-template-columns: repeat(4, 64px);
+}
+
+.sour-x-hifi .x-more-panel .x-tool-label {
+    font: 400 9.5px/1 var(--x-head);
+    letter-spacing: 0.08em;
+}
+
+/* ---------- under the deck: rack, page, side ---------- */
+.sour-x-hifi .x-hifi-under {
+    display: grid;
+    flex: 1;
+    grid-template-columns: 224px minmax(0, 1fr) 330px;
+    min-height: 0;
+}
+
+.sour-x-hifi .x-rack {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-height: 0;
+    padding: 14px 12px 12px;
+    overflow: hidden auto;
+    scrollbar-width: none;
+    background: var(--x-chassis);
+    border-right: 1px solid var(--x-lo);
+}
+
+.sour-x-hifi .x-rack .x-search {
+    height: 38px;
+    padding: 0 11px;
+    margin-bottom: 4px;
+    font: 400 11px/1 var(--x-mono);
+    color: var(--x-mid);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: var(--x-lcd);
+    border: 1px solid #000;
+    border-radius: 6px;
+}
+
+.sour-x-hifi .x-rack .x-search kbd {
+    color: var(--x-off);
+}
+
+.sour-x-hifi .x-rack-h {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    height: 30px;
+    padding: 8px 6px 0;
+    font: 400 10.5px/1 var(--x-mono);
+    color: var(--x-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.sour-x-hifi .x-rack-h::after {
+    flex: 1;
+    height: 1px;
+    content: '';
+    background: var(--x-line);
+}
+
+.sour-x-hifi .x-rack .x-nav-item {
+    position: relative;
+    flex: none;
+    height: 31px;
+    padding: 0 8px 0 24px;
+    font: 400 13px/1 var(--x-head);
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    border-radius: 5px;
+}
+
+.sour-x-hifi .x-rack .x-nav-item::before {
+    position: absolute;
+    left: 9px;
+    width: 6px;
+    height: 6px;
+    content: '';
+    background: #3a3f47;
+    border-radius: 50%;
+}
+
+.sour-x-hifi .x-rack .x-nav-icon {
+    display: none;
+}
+
+.sour-x-hifi .x-rack .x-nav-item:hover {
+    background: #1d2024;
+}
+
+.sour-x-hifi .x-rack .x-nav-item.x-on {
+    color: var(--x-lime);
+    background: #22262b;
+    box-shadow: inset 0 0 0 1px var(--x-line);
+}
+
+.sour-x-hifi .x-rack .x-nav-item.x-on::before {
+    background: var(--x-lime);
+    box-shadow: 0 0 6px var(--x-lime);
+}
+
+.sour-x-hifi .x-rack .x-pins {
+    padding: 8px 2px 0;
+}
+
+.sour-x-hifi .x-rack-me {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 10px 2px 0;
+    margin-top: auto;
+    border-top: 1px solid var(--x-line);
+}
+
+.sour-x-hifi .x-rack-me-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.sour-x-hifi .x-rack-me-text b {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font: 400 13px/1 var(--x-head);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+}
+
+.sour-x-hifi .x-points {
+    font: 400 10.5px/1 var(--x-mono);
+    color: var(--x-mute);
+}
+
+.sour-x-hifi .x-points svg {
+    color: var(--x-lime);
+}
+
+.sour-x-hifi .x-icon-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+    color: #cfd3d8;
+    background: var(--x-key);
+    border: 1px solid var(--x-lo);
+    border-top-color: var(--x-hi);
+    border-radius: 6px;
+}
+
+/* the side column */
+.sour-x-hifi .x-side {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+    padding: 16px 18px 16px 0;
+    overflow: hidden auto;
+    scrollbar-width: none;
+}
+
+.sour-x-hifi .x-mod {
+    flex: none;
+    min-width: 0;
+    background: var(--x-bg2);
+    border: 1px solid var(--x-line);
+    border-radius: 8px;
+}
+
+.sour-x-hifi .x-mod-h {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    height: 31px;
+    padding: 0 12px;
+    border-bottom: 1px solid var(--x-line);
+}
+
+.sour-x-hifi .x-mod-idx,
+.sour-x-hifi .x-mod-right {
+    font: 400 10.5px/1 var(--x-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.sour-x-hifi .x-mod-idx {
+    color: var(--x-lime);
+}
+
+.sour-x-hifi .x-mod-title {
+    font: 400 12px/1 var(--x-head);
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+}
+
+.sour-x-hifi .x-mod-right {
+    margin-left: auto;
+    color: var(--x-mute);
+    white-space: nowrap;
+}
+
+.sour-x-hifi .x-mod-b {
+    padding: 10px 12px 12px;
+}
+
+.sour-x-hifi .x-q-now {
+    display: flex;
+    gap: 9px;
+    align-items: center;
+    height: 40px;
+    padding: 0 10px;
+    margin-bottom: 4px;
+    overflow: hidden;
+    font-size: 13px;
+    color: var(--x-lime);
+    white-space: nowrap;
+    background: var(--x-lcd);
+    border: 1px solid #000;
+    border-radius: 5px;
+}
+
+.sour-x-hifi .x-q-now b {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 600;
+}
+
+.sour-x-hifi .x-q-play {
+    font-size: 10px;
+}
+
+.sour-x-hifi .x-upnext li {
+    min-height: 36px;
+    font-size: 12.5px;
+    border-bottom: 1px solid #22252a;
+}
+
+.sour-x-hifi .x-upnext li:last-child {
+    border-bottom: 0;
+}
+
+.sour-x-hifi .x-upnext-n,
+.sour-x-hifi .x-upnext-d {
+    font: 400 10.5px/1 var(--x-mono);
+    color: var(--x-mute);
+}
+
+.sour-x-hifi .x-rq {
+    padding: 6px 0 9px;
+    border-bottom: 1px solid #22252a;
+}
+
+.sour-x-hifi .x-rq-top {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    margin-bottom: 7px;
+    font-size: 12.5px;
+}
+
+.sour-x-hifi .x-rq-top b {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.sour-x-hifi .x-rq-top span {
+    font: 400 10.5px/1 var(--x-mono);
+    color: var(--x-amber);
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.sour-x-hifi .x-segs {
+    height: 5px;
+    background:
+        linear-gradient(90deg, transparent var(--pct), #262a30 var(--pct)),
+        repeating-linear-gradient(90deg, var(--x-amber) 0 5px, transparent 5px 7px);
+    mask: repeating-linear-gradient(90deg, #000 0 5px, transparent 5px 7px);
+}
+
+.sour-x-hifi .x-key-btn {
+    width: 100%;
+    height: 32px;
+    margin-top: 10px;
+    font: 400 11.5px/1 var(--x-head);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.sour-x-hifi .x-side .x-status {
+    flex-wrap: wrap;
+}
+
+/* ---------- Home top ---------- */
+.sour-x-hifi .x-home-hifi {
+    gap: 12px;
+}
+
+.sour-x-hifi .x-home-h {
+    display: flex;
+    gap: 14px;
+    align-items: baseline;
+}
+
+.sour-x-hifi .x-home-h h1 {
+    margin: 0;
+    font: 400 27px/1 var(--x-head);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.sour-x-hifi .x-home-h > span {
+    font: 400 10.5px/1 var(--x-mono);
+    color: var(--x-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.sour-x-hifi .x-home-h .x-home-date {
+    margin-left: auto;
+}
+
+.sour-x-hifi .x-chs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 10px;
+}
+
+.sour-x-hifi .x-ch {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    padding: 10px;
+    background: #14161a;
+    border: 1px solid var(--x-line);
+    border-radius: 6px;
+}
+
+.sour-x-hifi .x-ch-h {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.sour-x-hifi .x-ch-h b {
+    font: 400 13px/1 var(--x-head);
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+}
+
+.sour-x-hifi .x-ch-h span {
+    margin-left: auto;
+    font: 400 10.5px/1 var(--x-mono);
+    color: var(--x-mute);
+    text-transform: uppercase;
+}
+
+.sour-x-hifi .x-led {
+    display: inline-block;
+    flex: none;
+    width: 6px;
+    height: 6px;
+    background: #3a3f47;
+    border-radius: 50%;
+}
+
+.sour-x-hifi .x-led.x-on {
+    background: var(--x-lime);
+    box-shadow: 0 0 6px var(--x-lime);
+}
+
+.sour-x-hifi .x-led.x-amber {
+    background: var(--x-amber);
+    box-shadow: 0 0 6px var(--x-amber);
+}
+
+.sour-x-hifi .x-ch-b {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    min-width: 0;
+}
+
+.sour-x-hifi .x-ch-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    font-size: 12.5px;
+}
+
+.sour-x-hifi .x-ch-text b,
+.sour-x-hifi .x-ch-text span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sour-x-hifi .x-ch-text b {
+    font-weight: 600;
+}
+
+.sour-x-hifi .x-ch-text span {
+    color: var(--x-mute);
+}
+
+.sour-x-hifi .x-act {
+    height: 30px;
+    font: 400 11.5px/1 var(--x-head);
+    color: #cfd3d8;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    background: var(--x-key);
+    border: 1px solid var(--x-lo);
+    border-top-color: var(--x-hi);
+    border-radius: 6px;
+    box-shadow: 0 2px 0 var(--x-lo);
+}
+
+.sour-x-hifi .x-duo {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px;
+}
+
+.sour-x-hifi .x-sotd {
+    display: flex;
+    gap: 14px;
+}
+
+.sour-x-hifi .x-sotd .x-big-cover {
+    width: 122px;
+    border: 1px solid var(--x-lo);
+    border-radius: 4px;
+}
+
+.sour-x-hifi .x-sotd-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.sour-x-hifi .x-sotd-text h2 {
+    margin: 4px 0 0;
+    font: 400 24px/1.1 var(--x-head);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.sour-x-hifi .x-label {
+    font: 400 10.5px/1.2 var(--x-mono);
+    color: var(--x-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.sour-x-hifi .x-btns {
+    margin-top: auto;
+}
+
+.sour-x-hifi .x-btn {
+    height: 34px;
+    padding: 0 12px;
+    font: 400 11.5px/1 var(--x-head);
+    color: #cfd3d8;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    background: var(--x-key);
+    border: 1px solid var(--x-lo);
+    border-top-color: var(--x-hi);
+    border-radius: 6px;
+    box-shadow: 0 2px 0 var(--x-lo);
+}
+
+.sour-x-hifi .x-btn-fill {
+    color: #0d1405;
+    background: var(--x-lime);
+    border-top-color: #e4ff9c;
+}
+
+.sour-x-hifi .x-presets {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.sour-x-hifi .x-preset {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    height: 54px;
+    padding: 0 11px;
+    font: 400 12.5px/1 var(--x-head);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.sour-x-hifi .x-preset span {
+    font: 400 10.5px/1 var(--x-mono);
+    color: var(--x-lime);
+}
+
+/* ---------- the pages ---------- */
+.sour-x-hifi .x-page {
+    background: var(--x-bg);
+}
+
+.sour-x-hifi :is(.x-page, #mobile-layout) [class*='library-header-module-title'],
+.sour-x-hifi :is(.x-page, #mobile-layout) [class*='hub-module-title'],
+.sour-x-hifi :is(.x-page, #mobile-layout) [class*='home-sections-module-label'],
+.sour-x-hifi :is(.x-page, #mobile-layout) [class*='home-plus-module-label'],
+.sour-x-hifi :is(.x-page, #mobile-layout) [class*='grid-carousel-module-custom-title-content'] {
+    font-family: var(--x-head);
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.sour-x-hifi :is(.x-page, #mobile-layout) .fs-home-sections-module-box,
+.sour-x-hifi :is(.x-page, #mobile-layout) .fs-hub-module-card {
+    background: var(--x-bg2);
+    border: 1px solid var(--x-line);
+    border-radius: 8px;
+}
+
+.sour-x-hifi :is(.x-page, #mobile-layout) .mantine-Tabs-list {
+    gap: 4px;
+    padding: 3px;
+    background: #0c0d0f;
+    border: 1px solid var(--x-lo);
+    border-radius: 7px;
+}
+
+.sour-x-hifi :is(.x-page, #mobile-layout) .mantine-Tabs-list::before {
+    display: none;
+}
+
+.sour-x-hifi :is(.x-page, #mobile-layout) .mantine-Tabs-tab {
+    font-family: var(--x-head);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border: 1px solid transparent;
+    border-radius: 5px;
+}
+
+.sour-x-hifi :is(.x-page, #mobile-layout) .mantine-Tabs-tab[data-active] {
+    color: var(--x-lime);
+    background: var(--x-key);
+    border-color: var(--x-lo);
+    border-top-color: var(--x-hi);
+}
+
+.sour-x-hifi .mantine-Button-root {
+    font-family: var(--x-head);
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+@media (width < 1360px) {
+    .sour-x-hifi .x-deck {
+        grid-template-columns: minmax(280px, 1fr) auto 92px auto;
+    }
+
+    .sour-x-hifi .x-deck > .x-cover {
+        display: none;
+    }
+
+    .sour-x-hifi .x-hifi-under {
+        grid-template-columns: 200px minmax(0, 1fr) 290px;
+    }
+}
+
+.sour-x-hifi .x-fkeys .x-tool-autodj .x-tool-label {
+    display: block;
+}
+
+.sour-x-hifi :is(.x-page, #mobile-layout) .fs-home-plus-module-mood {
+    color: #cfd3d8;
+    background: var(--x-key) !important;
+    border: 1px solid var(--x-lo);
+    border-top-color: var(--x-hi);
+    border-radius: 6px;
+    box-shadow: 0 2px 0 var(--x-lo);
+}
+
+/* ---------- the Sour Stage: under the deck, like the display grew ---------- */
+.sour-x-hifi:not(.sour-phone) .fs-sour-stage-module-stage {
+    inset: 156px 0 0;
+}
+
+.sour-x-hifi:not(.sour-phone):has([class*='window-bar-module-window-bar']) .fs-sour-stage-module-stage {
+    top: 186px;
+}
+
+.sour-x-hifi .fs-sour-stage-module-stage {
+    color: var(--x-lime);
+    background: var(--x-lcd);
+    animation: none;
+}
+
+.sour-x-hifi .fs-sour-stage-module-stage::after {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    content: '';
+    background-image: radial-gradient(rgb(0 0 0 / 45%) 0.6px, transparent 0.8px);
+    background-size: 3px 3px;
+}
+
+.sour-x-hifi .fs-sour-stage-module-blur {
+    display: none;
+}
+
+.sour-x-hifi .fs-sour-stage-module-title {
+    font: 400 clamp(22px, 2.4vw, 36px) / 1.1 var(--x-head);
+    color: var(--x-ink);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    text-shadow: none;
+}
+
+.sour-x-hifi .fs-sour-stage-module-artist,
+.sour-x-hifi .fs-sour-stage-module-offset {
+    font-family: var(--x-mono);
+    color: var(--x-mid);
+    text-transform: uppercase;
+}
+
+.sour-x-hifi .fs-sour-stage-module-line {
+    font: 400 clamp(30px, 4.2vw, 70px) / 0.95 var(--x-dot);
+    color: #2f4b13;
+    text-transform: uppercase;
+}
+
+.sour-x-hifi .fs-sour-stage-module-past {
+    color: #22380d;
+}
+
+.sour-x-hifi .fs-sour-stage-module-current {
+    color: var(--x-mid);
+    text-shadow: 0 0 18px rgb(186 245 60 / 22%);
+}
+
+.sour-x-hifi .fs-sour-stage-module-word {
+    color: transparent;
+    background: linear-gradient(90deg, var(--x-lime) var(--fill, 0%), var(--x-mid) var(--fill, 0%));
+    background-clip: text;
+}
+
+.sour-x-hifi .fs-sour-stage-module-tool,
+.sour-x-hifi .fs-sour-stage-module-text-tool {
+    color: #cfd3d8;
+    background: var(--x-key);
+    border: 1px solid var(--x-lo);
+    border-top-color: var(--x-hi);
+    border-radius: 6px;
+}
+
+.sour-phone.sour-x-hifi .fs-sour-stage-module-stage {
+    inset: 0;
+}
+
+/* ---------- phones ---------- */
+.sour-phone.sour-x-hifi .fs-mobile-nav-module-nav {
+    gap: 6px;
+    height: calc(66px + env(safe-area-inset-bottom, 0px));
+    padding: 8px 12px env(safe-area-inset-bottom, 0);
+    background: var(--x-chassis);
+    border-top: 1px solid var(--x-hi);
+    box-shadow: 0 -1px 0 var(--x-lo);
+    backdrop-filter: none;
+}
+
+.sour-phone.sour-x-hifi .fs-mobile-nav-module-item {
+    position: relative;
+    height: 48px;
+    font: 400 9.5px/1 var(--x-head);
+    color: #cfd3d8;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: var(--x-key);
+    border: 1px solid var(--x-lo);
+    border-top-color: var(--x-hi);
+    border-radius: 6px;
+    box-shadow: 0 2px 0 var(--x-lo);
+}
+
+.sour-phone.sour-x-hifi .fs-mobile-nav-module-active {
+    color: var(--x-lime);
+}
+
+.sour-phone.sour-x-hifi .fs-mobile-nav-module-active::after {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 5px;
+    height: 5px;
+    content: '';
+    background: var(--x-lime);
+    border-radius: 50%;
+    box-shadow: 0 0 6px var(--x-lime);
+}
+
+.sour-phone.sour-x-hifi .fs-mobile-playerbar-module-container {
+    padding: 8px 12px 0;
+    background: var(--x-chassis);
+    border-top: 1px solid var(--x-hi);
+}
+
+.sour-phone.sour-x-hifi .fs-mobile-playerbar-module-card {
+    gap: 8px;
+    padding: 0;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.sour-phone.sour-x-hifi .fs-mobile-playerbar-module-cover {
+    border-radius: 4px;
+}
+
+.sour-phone.sour-x-hifi .fs-mobile-playerbar-module-meta {
+    align-self: stretch;
+    justify-content: center;
+    padding: 4px 10px;
+    margin: 6px 0;
+    background: var(--x-lcd);
+    border: 1px solid #000;
+    border-radius: 6px;
+}
+
+.sour-phone.sour-x-hifi .fs-mobile-playerbar-module-title {
+    font: 400 21px/0.9 var(--x-dot);
+    color: var(--x-lime);
+    text-transform: uppercase;
+}
+
+.sour-phone.sour-x-hifi .fs-mobile-playerbar-module-artist {
+    font: 400 9.5px/1.3 var(--x-mono);
+    color: var(--x-mid);
+    text-transform: uppercase;
+}
+
+.sour-phone.sour-x-hifi .fs-mobile-playerbar-module-button {
+    width: 44px;
+    height: 44px;
+    color: var(--x-lime);
+    background: var(--x-key);
+    border: 1px solid var(--x-lo);
+    border-top-color: var(--x-hi);
+    border-radius: 6px;
+    box-shadow: 0 2px 0 var(--x-lo);
+}
+
+.sour-phone.sour-x-hifi .fs-mobile-playerbar-module-progress {
+    display: none;
+}
+
+.sour-phone.sour-x-hifi .fs-phone-shell-module-top-bar {
+    background: var(--x-chassis);
+    border-bottom: 1px solid var(--x-lo);
+}
+
+.sour-phone.sour-x-hifi .fs-phone-tabs-module-search-bar {
+    font-family: var(--x-mono);
+    color: var(--x-mid);
+    text-transform: uppercase;
+    background: var(--x-lcd);
+    border: 1px solid #000;
+    border-radius: 6px;
+}
+
+.sour-phone.sour-x-hifi .fs-phone-tabs-module-chip {
+    font: 400 11px/1 var(--x-head);
+    color: #cfd3d8;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: var(--x-key);
+    border: 1px solid var(--x-lo);
+    border-top-color: var(--x-hi);
+    border-radius: 6px;
+    box-shadow: 0 2px 0 var(--x-lo);
+}
+
+.sour-phone.sour-x-hifi .x-phone-home {
+    gap: 12px;
+}
+
+.sour-phone.sour-x-hifi .x-phone-home .x-home-h {
+    align-items: center;
+}
+
+.sour-phone.sour-x-hifi .x-phone-home .x-home-h h1 {
+    font-size: 28px;
+}
+
+.sour-phone.sour-x-hifi .x-phone-home .x-home-h > .x-bell {
+    margin-left: auto;
+}
+
+.sour-phone.sour-x-hifi .x-phone-home .x-chs {
+    grid-template-columns: 1fr;
+}
+
+.sour-phone.sour-x-hifi .x-phone-home .x-ch {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 84px;
+    gap: 8px;
+    align-items: center;
+}
+
+.sour-phone.sour-x-hifi .x-phone-home .x-ch-h {
+    grid-column: 1 / -1;
+}
+
+.sour-phone.sour-x-hifi .x-phone-home .x-presets .x-preset {
+    height: 42px;
+    font-size: 11px;
+}
+
+.sour-phone.sour-x-hifi .x-phone-home .x-sotd .x-big-cover {
+    width: 76px;
+}
+
+.sour-phone.sour-x-hifi .x-phone-home .x-sotd-text h2 {
+    font-size: 18px;
+}

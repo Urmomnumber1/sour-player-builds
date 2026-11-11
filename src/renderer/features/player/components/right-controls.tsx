@@ -195,7 +195,7 @@ export const SourWatchers = () => (
     </>
 );
 
-const AutoDJButton = () => {
+export const AutoDJButton = () => {
     const { t } = useTranslation();
     const settings = useAutoDJSettings();
     const { setSettings } = useSettingsStoreActions();
@@ -426,7 +426,7 @@ const AutoDJButton = () => {
     );
 };
 
-const QueueButton = () => {
+export const QueueButton = () => {
     const { t } = useTranslation();
     const isSidebarRightExpanded = useSidebarRightExpanded();
     const { setSideBar } = useAppStoreActions();
@@ -472,7 +472,7 @@ const QueueButton = () => {
 };
 
 // Lyrics live in the Sour Stage now (synced lyrics, karaoke, timing and other sources)
-const LyricsButton = () => {
+export const LyricsButton = () => {
     const open = useStageOpen();
     return (
         <ActionIcon
@@ -490,7 +490,7 @@ const LyricsButton = () => {
     );
 };
 
-const FavoriteButton = () => {
+export const FavoriteButton = () => {
     const currentSong = usePlayerSong();
     const { bindings } = useHotkeySettings();
     const addToFavoritesMutation = useCreateFavorite({});
@@ -578,7 +578,7 @@ const useFavoritePreviousSongHotkeys = ({
     return null;
 };
 
-const RatingButton = () => {
+export const RatingButton = () => {
     const server = useCurrentServer();
     const currentSong = usePlayerSong();
     const setRating = useSetRating();
@@ -612,7 +612,7 @@ const RatingButton = () => {
     );
 };
 
-const VolumeButton = () => {
+export const VolumeButton = () => {
     const { bindings } = useHotkeySettings();
     const volume = usePlayerVolume();
     const muted = usePlayerMuted();

@@ -222,19 +222,7 @@ export const MainContent = ({ shell }: { shell?: boolean }) => {
     );
 };
 
-function GlobalExpandedPanel() {
-    const globalExpanded = useGlobalExpanded();
-
-    if (!globalExpanded) return null;
-
-    return (
-        <ExpandedListContainer>
-            <ExpandedListItem item={globalExpanded.item} itemType={globalExpanded.itemType} />
-        </ExpandedListContainer>
-    );
-}
-
-function MainContentBody() {
+export function MainContentBody() {
     return (
         <div className={styles.mainContentBody}>
             <div className={styles.mainContentBodyScroll}>
@@ -244,5 +232,17 @@ function MainContentBody() {
             </div>
             <GlobalExpandedPanel />
         </div>
+    );
+}
+
+function GlobalExpandedPanel() {
+    const globalExpanded = useGlobalExpanded();
+
+    if (!globalExpanded) return null;
+
+    return (
+        <ExpandedListContainer>
+            <ExpandedListItem item={globalExpanded.item} itemType={globalExpanded.itemType} />
+        </ExpandedListContainer>
     );
 }

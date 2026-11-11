@@ -1,4 +1,4 @@
-import { Suspense, useRef } from 'react';
+import { lazy, Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useGridCarouselContainerQuery } from '/@/renderer/components/grid-carousel/grid-carousel-v2';
@@ -19,8 +19,9 @@ import {
     SOUR_HOME_ITEMS,
     SourHomeSection,
 } from '/@/renderer/features/sour/components/home-sections';
+import { isNewLayout } from '/@/renderer/features/sour/layouts/layout-kind';
 import { PhoneHomeTop } from '/@/renderer/features/sour/mobile/phone-tabs';
-import { useSimpleMode } from '/@/renderer/features/sour/store/sour.store';
+import { useSimpleMode, useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import { useIsMobile } from '/@/renderer/hooks/use-is-mobile';
 import {
     HomeFeatureStyle,
@@ -41,6 +42,15 @@ import {
     SortOrder,
 } from '/@/shared/types/domain-types';
 import { Platform } from '/@/shared/types/types';
+
+// 0.12 layouts: their own top of Home (song of the day, friends, moods), downloaded only when used
+const LayoutHomeTop = lazy(() => import('/@/renderer/features/sour/layouts/layout-home'));
+// what that top already shows, so it isn't shown twice
+const LAYOUT_TOP = new Set<string>([
+    HomeItem.FRIENDS_PLAYING,
+    HomeItem.SONG_OF_THE_DAY,
+    HomeItem.SOUR_HERO,
+]);
 
 const HomeRoute = () => {
     const { t } = useTranslation();
@@ -113,6 +123,7 @@ const HomeRoute = () => {
         }));
 
     const simple = useSimpleMode();
+    const layout = useSourStore((s) => (isNewLayout(s.look.ui) ? s.look.ui : null));
     // phones: the greeting comes first (no big picture banner), with phone-sized margins
     const phone = useIsMobile();
     return (
@@ -134,21 +145,39 @@ const HomeRoute = () => {
                     <Stack
                         gap={phone ? 'xl' : '2xl'}
                         mb={phone ? '2rem' : '5rem'}
-                        pt={phone ? '0.5rem' : windowBarStyle === Platform.WEB ? '5rem' : '3rem'}
+                        pt={
+                            phone
+                                ? '0.5rem'
+                                : layout
+                                  ? '1.5rem'
+                                  : windowBarStyle === Platform.WEB
+                                    ? '5rem'
+                                    : '3rem'
+                        }
                         px={phone ? '1rem' : '2rem'}
                         ref={containerQuery.ref}
                     >
-                        {phone && <PhoneHomeTop />}
-                        {!phone && homeFeature && homeFeatureStyle === HomeFeatureStyle.SINGLE && (
-                            <AlbumInfiniteSingleFeatureCarousel />
+                        {phone && !layout && <PhoneHomeTop />}
+                        {layout && (
+                            <Suspense fallback={null}>
+                                <LayoutHomeTop kind={layout} phone={phone} />
+                            </Suspense>
                         )}
                         {!phone &&
+                            !layout &&
+                            homeFeature &&
+                            homeFeatureStyle === HomeFeatureStyle.SINGLE && (
+                                <AlbumInfiniteSingleFeatureCarousel />
+                            )}
+                        {!phone &&
+                            !layout &&
                             homeFeature &&
                             homeFeatureStyle === HomeFeatureStyle.MULTIPLE && (
                                 <AlbumInfiniteFeatureCarousel />
                             )}
                         {sortedItems.map((item) => {
                             // Sour Player: friend-group sections (radio, friends, requests, ...)
+                            if (layout && LAYOUT_TOP.has(item.id)) return null;
                             if (SOUR_HOME_ITEMS.has(item.id)) {
                                 if (simple) return null; // Simple mode: just the music
                                 return <SourHomeSection id={item.id} key={`sour-${item.id}`} />;

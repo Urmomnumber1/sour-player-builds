@@ -1,3 +1,5 @@
+import { useLocation } from 'react-router';
+
 import styles from '../components/hub.module.css';
 
 import { NativeScrollArea } from '/@/renderer/components/native-scroll-area/native-scroll-area';
@@ -27,6 +29,9 @@ import { Text } from '/@/shared/components/text/text';
 // The Sour Hub: the friend group's games and goings-on in one place.
 const SourHubRoute = () => {
     const url = useHermesUrl();
+    // the tab comes from the link (?tab=shop), so the menus of the 0.12 layouts can open any tab
+    const { search } = useLocation();
+    const tab = new URLSearchParams(search).get('tab') || 'feed';
     return (
         <NativeScrollArea>
             <div className={styles.page}>
@@ -37,14 +42,7 @@ const SourHubRoute = () => {
                         videos).
                     </Text>
                 ) : (
-                    <Tabs
-                        defaultValue={
-                            new URLSearchParams(window.location.hash.split('?')[1] || '').get(
-                                'tab',
-                            ) || 'feed'
-                        }
-                        keepMounted={false}
-                    >
+                    <Tabs defaultValue={tab} keepMounted={false} key={tab}>
                         <Tabs.List>
                             <Tabs.Tab value="feed">Feed</Tabs.Tab>
                             <Tabs.Tab value="shop">Shop</Tabs.Tab>

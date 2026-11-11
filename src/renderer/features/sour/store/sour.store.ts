@@ -76,9 +76,12 @@ export interface SourLook {
     stageScene: 'concert' | 'drive' | 'none' | 'rain' | 'snow' | 'stars';
     stageVinyl: boolean;
     startupSound: boolean;
+    // Magazine and Pop: the light or the dark version (Hi-Fi is always dark)
+    tone?: 'dark' | 'light';
     // the whole app's look: the v0.8 redesign, or Classic (how it looked up to v0.7)
     // liquid = the v0.10 look, new = v2 (v0.8-0.9), classic = v0.7
-    ui: 'classic' | 'liquid' | 'new';
+    // 0.12 layouts (features/sour/layouts): mag = Magazine, hifi = Hi-Fi, pop = Pop
+    ui: 'classic' | 'hifi' | 'liquid' | 'mag' | 'new' | 'pop';
     // a heads-up with the next song a few seconds before this one ends
     upNext: boolean;
     visualizer: VisualizerStyle;

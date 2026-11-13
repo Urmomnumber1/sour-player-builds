@@ -61,13 +61,15 @@ export const useLineTranslations = (
     });
 };
 
-// Translate needs the Claude token on Hermes Music (the button hides without it)
+// Translate needs the Claude token on Hermes Music (the button hides without it). Hermes 3.14+ says so in
+// /api/status (the app can't read /api/config: browsers block it).
 export const useCanTranslate = () => {
     const url = useHermesUrl();
     return !!useQuery({
         enabled: !!url,
         queryFn: async () =>
-            ((await (await fetch(`${url}/api/config`)).json()) as { hasToken?: boolean }).hasToken,
+            ((await (await fetch(`${url}/api/status`)).json()) as { canTranslate?: boolean })
+                .canTranslate ?? false,
         queryKey: ['hermes-has-token', url],
         staleTime: 10 * 60000,
     }).data;

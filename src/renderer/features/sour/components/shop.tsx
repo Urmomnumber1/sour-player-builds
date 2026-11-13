@@ -215,7 +215,11 @@ export const ShopPanel = () => {
                                     <Button
                                         disabled={points < it.now}
                                         onClick={() =>
-                                            act('buy', { item: it.id }, `You got ${it.name}`)
+                                            act(
+                                                'buy',
+                                                { item: it.id },
+                                                `You got ${it.name}. Wear it here or in Edit profile > Look.`,
+                                            )
                                         }
                                         size="compact-xs"
                                     >
@@ -419,4 +423,80 @@ export const ShopGifts = () => {
         post(`${url}/api/shop/gifts/seen`, { key: me.key, profile: me.id }).catch(() => {});
     }, [me, mine?.gifts, shop, url]);
     return null;
+};
+
+// Edit profile > Look: everything you've bought, to wear or take off. Things the shop doesn't sell any
+// more are here too (the shop's own lists only show what's for sale today).
+export const ShopWardrobe = () => {
+    const url = useHermesUrl();
+    const me = useSourStore((s) => s.me);
+    const qc = useQueryClient();
+    const shop = useShop().data;
+    const mine = useMyProfile().data;
+    const [busy, setBusy] = useState<null | string>(null);
+    if (!me || !mine || !shop) return null;
+    const owned = new Set(mine.owned ?? []);
+    const items = shop.items.filter((i) => owned.has(i.id));
+    const equipped = (mine.looks ?? {}) as Record<string, string | undefined>;
+    const worn = (it: ShopItem) =>
+        it.slot === 'decoration' ? mine.decoration === it.id : equipped[it.slot] === it.id;
+    const wear = (it: ShopItem) => {
+        setBusy(it.id);
+        post(`${url}/api/shop/equip`, {
+            item: worn(it) ? null : it.id,
+            key: me.key,
+            profile: me.id,
+            slot: it.slot,
+        })
+            .then(() => {
+                qc.invalidateQueries({ queryKey: ['sour-me'] });
+                qc.invalidateQueries({ queryKey: ['sour-profiles', url] });
+            })
+            .catch((e: Error) => toast.error({ message: e.message }))
+            .finally(() => setBusy(null));
+    };
+    const groups = SLOTS.filter((s) => s.value !== 'featured')
+        .map((s) => ({ ...s, items: items.filter((i) => i.slot === s.value) }))
+        .filter((g) => g.items.length);
+    return (
+        <Stack gap="xs">
+            <Text fw={600} size="sm">
+                From the Sour Shop
+            </Text>
+            {!groups.length && (
+                <Text isMuted size="xs">
+                    Nothing yet. Every song you listen to past halfway is a point; spend them in
+                    Sour Hub &gt; Shop and wear them here.
+                </Text>
+            )}
+            {groups.map((g) => (
+                <Stack gap={4} key={g.value}>
+                    <Text isMuted size="xs">
+                        {g.label}
+                    </Text>
+                    <div className={styles.wardrobe}>
+                        {g.items.map((it) => (
+                            <button
+                                aria-pressed={worn(it)}
+                                className={clsx(styles.wardrobeItem, worn(it) && styles.wardrobeOn)}
+                                disabled={busy === it.id}
+                                key={it.id}
+                                onClick={() => wear(it)}
+                                title={worn(it) ? `Take off ${it.name}` : `Wear ${it.name}`}
+                                type="button"
+                            >
+                                <span className={styles.wardrobePreview}>
+                                    <ItemPreview id={it.id} name={it.name} slot={it.slot} />
+                                </span>
+                                <span className={styles.wardrobeName}>{it.name}</span>
+                                <span className={styles.wardrobeState}>
+                                    {worn(it) ? 'Wearing' : 'Wear'}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                </Stack>
+            ))}
+        </Stack>
+    );
 };

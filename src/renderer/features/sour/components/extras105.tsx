@@ -12,7 +12,6 @@ import {
 import { getAlbumSongsById, getPlaylistSongsById } from '/@/renderer/features/player/utils';
 import { sourApi } from '/@/renderer/features/sour/api/sour-api';
 import { Card } from '/@/renderer/features/sour/components/hub-panels';
-import { AppLookPicker } from '/@/renderer/features/sour/layouts/app-look-picker';
 import {
     useMyProfile,
     useSourProfiles,
@@ -23,6 +22,7 @@ import { useCurrentServer } from '/@/renderer/store';
 import { Button } from '/@/shared/components/button/button';
 import { ContextMenu } from '/@/shared/components/context-menu/context-menu';
 import { Group } from '/@/shared/components/group/group';
+import { SegmentedControl } from '/@/shared/components/segmented-control/segmented-control';
 import { Select } from '/@/shared/components/select/select';
 import { Stack } from '/@/shared/components/stack/stack';
 import { TextInput } from '/@/shared/components/text-input/text-input';
@@ -511,6 +511,7 @@ export const SetupGuide = () => {
     const { setUrl } = useHermesVideoActions();
     const [step, setStep] = useState(0);
     const [addr, setAddr] = useState(url || '');
+    const ui = useSourStore((s) => s.look.ui ?? 'bubble');
     const navigate = useNavigate();
     // not on a phone that already has Hermes Music's address (the iPhone app and the browser version
     // run from it): the looks are for computers and the sign-in it points to is already on the
@@ -569,7 +570,18 @@ export const SetupGuide = () => {
                             <Text size="sm">
                                 Pick how it looks (you can change it any time in Sour Studio).
                             </Text>
-                            <AppLookPicker compact />
+                            <SegmentedControl
+                                data={[
+                                    { label: 'Bubble', value: 'bubble' },
+                                    { label: 'Liquid', value: 'liquid' },
+                                    { label: 'v2', value: 'new' },
+                                    { label: 'Classic', value: 'classic' },
+                                ]}
+                                onChange={(v) =>
+                                    useSourStore.getState().setLook({ ui: v as 'bubble' })
+                                }
+                                value={ui}
+                            />
                             <Button onClick={() => setStep(2)}>Next</Button>
                         </>
                     )}

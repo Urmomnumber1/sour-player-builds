@@ -27,7 +27,8 @@ const daypart = () => {
 
 export const UiTen = () => {
     const c = useCustom();
-    const ui = useSourStore((s) => s.look.ui ?? 'liquid');
+    const ui = useSourStore((s) => s.look.ui ?? 'bubble');
+    const modern = ui === 'liquid' || ui === 'bubble';
     const focus = useSourStore((s) => !!s.focusMode);
     const location = useLocation();
     const first = useRef(true);
@@ -82,7 +83,7 @@ export const UiTen = () => {
     // the classes the CSS keys off
     useEffect(() => {
         const root = document.documentElement;
-        root.classList.toggle('sour-poster', c.poster && ui === 'liquid');
+        root.classList.toggle('sour-poster', c.poster && modern);
         root.classList.toggle('sour-parallax', c.parallax);
         root.classList.toggle('sour-gallery', c.gallery);
         root.classList.toggle('sour-focus', focus);
@@ -93,7 +94,7 @@ export const UiTen = () => {
         tick();
         const t = setInterval(tick, 5 * 60000);
         return () => clearInterval(t);
-    }, [c.gallery, c.parallax, c.poster, c.timeOfDay, focus, ui]);
+    }, [c.gallery, c.parallax, c.poster, c.timeOfDay, focus, modern]);
 
     // Ctrl+Shift+F: focus mode; Esc leaves it
     useEffect(() => {
@@ -117,7 +118,7 @@ export const UiTen = () => {
 
     return (
         <>
-            {c.dock && !focus && ui === 'liquid' && <Dock />}
+            {c.dock && !focus && modern && <Dock />}
             {focus && (
                 <button
                     className={styles.leaveFocus}

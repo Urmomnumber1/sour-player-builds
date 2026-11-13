@@ -51,6 +51,7 @@ import { ListenAlong, SocialWatcher } from '/@/renderer/features/sour/components
 import { SourPresence } from '/@/renderer/features/sour/components/sour-presence';
 import { SourStudioButton } from '/@/renderer/features/sour/components/sour-studio';
 import { isIphone } from '/@/renderer/features/sour/mobile/ios-look';
+import { isPodcast } from '/@/renderer/features/sour/podcasts/podcast-id';
 import {
     SourStageButton,
     toggleStage,
@@ -135,6 +136,8 @@ export const RightControls = () => {
     const simple = useSourStore((state) => !!state.look.simple);
     const roomy = useMediaQuery('(min-width: 1180px)');
     const show = (id: string) => !hidden.includes(id) && (!simple || id === 'request');
+    // podcast episodes can't be favourited or rated (they aren't in the library)
+    const podcast = isPodcast(usePlayerSong());
     return (
         <Flex
             align="flex-end"
@@ -158,7 +161,7 @@ export const RightControls = () => {
                 {show('video') && <MusicVideoButton />}
                 {show('stage') && <SourStageButton />}
                 {show('studio') && <SourStudioButton />}
-                {showRatings && roomy && !simple && <RatingButton />}
+                {showRatings && roomy && !simple && !podcast && <RatingButton />}
                 {!simple && <AutoDJButton />}
             </Group>
             <Group align="center" gap="xs" justify="flex-end" wrap="nowrap">
@@ -172,7 +175,7 @@ export const RightControls = () => {
                 {show('request') && <RequestButton />}
                 {show('group') && <GroupPlayButton />}
                 <LyricsButton />
-                {showFavorites && <FavoriteButton />}
+                {showFavorites && !podcast && <FavoriteButton />}
                 <QueueButton />
                 {playbackType === PlayerType.DLNA ? <DlnaVolumeButton /> : <VolumeButton />}
             </Group>

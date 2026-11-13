@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import styles from './sour-visualizer.module.css';
 
 import { useItemImageUrl } from '/@/renderer/components/item-image/item-image';
+import { useStageOpen } from '/@/renderer/features/sour/stage/sour-stage';
 import {
     type BarVisualizerStyle,
     useSourStore,
@@ -428,8 +429,9 @@ export const useBarVisualizer = () => {
 
 export const PlayerBarVisualizer = () => {
     const on = useSourStore((s) => s.look.barVisualizer && !s.look.simple);
+    const stageOpen = useStageOpen();
     const { colors, coverUrl, style, width } = useBarVisualizer();
-    if (!on) return null;
+    if (!on || stageOpen) return null;
     return (
         <div className={styles.bar} style={{ width }}>
             <SourVisualizer colors={colors} coverUrl={coverUrl} style={style} />

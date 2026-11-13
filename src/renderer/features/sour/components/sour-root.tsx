@@ -28,15 +28,10 @@ import { SourSafe } from '/@/renderer/features/sour/components/sour-safe';
 import { TvInvite } from '/@/renderer/features/sour/components/sour-tv';
 import { UiTen } from '/@/renderer/features/sour/components/ui10';
 import { LiquidTint, TenthUpdate } from '/@/renderer/features/sour/components/v10';
-import { LayoutsIntro } from '/@/renderer/features/sour/layouts/app-look-picker';
-import {
-    isNewLayout,
-    layoutIsDark,
-    loadLookStyles,
-    NEW_LAYOUTS,
-} from '/@/renderer/features/sour/layouts/layout-kind';
+import { PodcastProgress } from '/@/renderer/features/sour/podcasts/podcasts';
 import { applyAppIcon } from '/@/renderer/features/sour/skins/app-icon';
 import { currentHoliday, holidayById } from '/@/renderer/features/sour/skins/holidays';
+import { loadLookStyles } from '/@/renderer/features/sour/skins/look-styles';
 import { AmbiencePlayer } from '/@/renderer/features/sour/stage/ambience';
 import { LoopWatcher } from '/@/renderer/features/sour/stage/loop';
 import { SourStage } from '/@/renderer/features/sour/stage/sour-stage';
@@ -93,14 +88,13 @@ const LookSwitches = () => {
         root.classList.toggle('sour-sidebar-right', look.sidebarRight);
         root.classList.toggle('sour-fade-covers', look.fadeCovers && !look.reducedMotion);
         root.classList.toggle('sour-lemon-loader', look.lemonLoader && !simple);
-        const ui = look.ui ?? 'liquid';
-        const layout = isNewLayout(ui) ? ui : null;
-        root.classList.toggle('sour-v8', ui === 'new' || ui === 'liquid');
+        const ui = look.ui ?? 'bubble';
+        root.classList.toggle('sour-v8', ui !== 'classic');
         root.classList.toggle('sour-v10', ui === 'liquid');
-        // 0.12: Magazine, Hi-Fi and Pop (their styles load the first time they're picked)
-        root.classList.toggle('sour-x', !!layout);
-        for (const kind of NEW_LAYOUTS) root.classList.toggle(`sour-x-${kind}`, layout === kind);
-        root.classList.toggle('sour-x-dark', !!layout && layoutIsDark(look));
+        // 0.13: soft, round and springy (sour-bubble.css, on top of the v2 panels)
+        root.classList.toggle('sour-bubble', ui === 'bubble');
+        // calm: reduced motion or simple mode (the little "alive" animations rest)
+        root.classList.toggle('sour-calm', !!look.reducedMotion || simple);
         loadLookStyles(ui);
     }, [look]);
 
@@ -202,10 +196,10 @@ export const SourRoot = () => (
         <SourSafe name="playback tools">
             <PlaybackWatcher />
             <AmbiencePlayer />
+            <PodcastProgress />
         </SourSafe>
         <SourSafe name="setup guide">
             <SetupGuide />
-            <LayoutsIntro />
         </SourSafe>
         <SourSafe name="desktop extras">
             <DesktopBits />

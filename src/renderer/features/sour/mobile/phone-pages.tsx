@@ -117,6 +117,7 @@ const LIBRARY: { icon: IconName; label: string; to: string }[] = [
     { icon: 'genre', label: 'Genres', to: AppRoute.LIBRARY_GENRES },
     { icon: 'folder', label: 'Folders', to: AppRoute.LIBRARY_FOLDERS },
     { icon: 'radio', label: 'Radio stations', to: AppRoute.RADIO },
+    { icon: 'podcast', label: 'Podcasts', to: AppRoute.SOUR_PODCASTS },
     { icon: 'grid', label: 'Cover wall and tools', to: AppRoute.SOUR_LIBRARY },
 ];
 

@@ -4,6 +4,7 @@ import isElectron from 'is-electron';
 import { api } from '/@/renderer/api';
 import { queryKeys } from '/@/renderer/api/query-keys';
 import { getDefaultStructuredIndex } from '/@/renderer/features/lyrics/api/lyrics-utils';
+import { isPodcast } from '/@/renderer/features/sour/podcasts/podcast-id';
 import { queryClient, QueryHookArgs } from '/@/renderer/lib/react-query';
 import { getServerById, useSettingsStore } from '/@/renderer/store';
 import { hasFeature } from '/@/shared/api/utils';
@@ -276,7 +277,8 @@ export const lyricsQueries = {
         return queryOptions({
             gcTime: Infinity,
             queryFn: async ({ signal }): Promise<LyricsQueryResult> => {
-                if (!song) return emptyResult();
+                // podcast episodes have no song lyrics
+                if (!song || isPodcast(song)) return emptyResult();
 
                 const prev = queryClient.getQueryData<LyricsQueryResult>(lyricsKey);
                 const overrideSelection = prev?.overrideSelection ?? null;

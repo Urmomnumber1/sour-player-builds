@@ -11,3 +11,9 @@
 *.ttf   binary
 *.woff  binary
 *.woff2 binary
+*.aac   binary
+*.mp3   binary
+*.m4a   binary
+*.ogg   binary
+*.wav   binary
+*.flac  binary

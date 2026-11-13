@@ -222,19 +222,6 @@ export const MainContent = ({ shell }: { shell?: boolean }) => {
     );
 };
 
-export function MainContentBody() {
-    return (
-        <div className={styles.mainContentBody}>
-            <div className={styles.mainContentBodyScroll}>
-                <Suspense fallback={<Spinner container />}>
-                    <Outlet />
-                </Suspense>
-            </div>
-            <GlobalExpandedPanel />
-        </div>
-    );
-}
-
 function GlobalExpandedPanel() {
     const globalExpanded = useGlobalExpanded();
 
@@ -244,5 +231,18 @@ function GlobalExpandedPanel() {
         <ExpandedListContainer>
             <ExpandedListItem item={globalExpanded.item} itemType={globalExpanded.itemType} />
         </ExpandedListContainer>
+    );
+}
+
+function MainContentBody() {
+    return (
+        <div className={styles.mainContentBody}>
+            <div className={styles.mainContentBodyScroll}>
+                <Suspense fallback={<Spinner container />}>
+                    <Outlet />
+                </Suspense>
+            </div>
+            <GlobalExpandedPanel />
+        </div>
     );
 }

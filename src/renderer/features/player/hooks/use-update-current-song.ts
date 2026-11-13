@@ -5,6 +5,7 @@ import { useCallback } from 'react';
 import { api } from '/@/renderer/api';
 import { queryKeys } from '/@/renderer/api/query-keys';
 import { usePlayerEvents } from '/@/renderer/features/player/audio-player/hooks/use-player-events';
+import { isPodcast } from '/@/renderer/features/sour/podcasts/podcast-id';
 import { updateQueueSong } from '/@/renderer/store/player.store';
 import { logger } from '/@/renderer/utils/logger';
 import { QueueSong, SongDetailQuery } from '/@/shared/types/domain-types';
@@ -16,7 +17,8 @@ export const useUpdateCurrentSong = () => {
         async (properties: { index: number; song: QueueSong | undefined }) => {
             const currentSong = properties.song;
 
-            if (!currentSong?.id || !currentSong?._serverId) {
+            // podcast episodes aren't on the music server (it could answer with some other song)
+            if (!currentSong?.id || !currentSong?._serverId || isPodcast(currentSong)) {
                 return;
             }
 

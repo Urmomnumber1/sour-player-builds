@@ -60,6 +60,7 @@ export enum AppTheme {
     SOUR_SUMMER = 'sourSummer',
     SOUR_SUNSET = 'sourSunset',
     SOUR_TERMINAL = 'sourTerminal',
+    SOUR_THANKSGIVING = 'sourThanksgiving',
     SOUR_VALENTINE = 'sourValentine',
     SOUR_VAPORWAVE = 'sourVaporwave',
     SOUR_VINYL = 'sourVinyl',

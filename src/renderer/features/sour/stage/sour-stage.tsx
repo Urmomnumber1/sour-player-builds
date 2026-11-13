@@ -48,6 +48,7 @@ import {
 } from '/@/renderer/features/sour/stage/loop';
 import { PeelOff } from '/@/renderer/features/sour/stage/peel-off';
 import { usePlayContext } from '/@/renderer/features/sour/stage/play-context';
+import { type ReverbKind, REVERBS, useReverb } from '/@/renderer/features/sour/stage/reverb';
 import { Scene, SCENES } from '/@/renderer/features/sour/stage/scenes';
 import {
     KaraokeLine,
@@ -76,6 +77,7 @@ import {
 import { useFastAverageColor } from '/@/renderer/hooks';
 import { useIsMobile } from '/@/renderer/hooks/use-is-mobile';
 import { AppRoute } from '/@/renderer/router/routes';
+import { usePlaybackType } from '/@/renderer/store';
 import {
     usePlayerSong,
     usePlayerSpeed,
@@ -88,6 +90,7 @@ import { Icon } from '/@/shared/components/icon/icon';
 import { SegmentedControl } from '/@/shared/components/segmented-control/segmented-control';
 import { Select } from '/@/shared/components/select/select';
 import { LibraryItem, type SynchronizedLyrics } from '/@/shared/types/domain-types';
+import { PlayerType } from '/@/shared/types/types';
 import { PlayerStatus } from '/@/shared/types/types';
 
 export const useStage = create<{ open: boolean }>(() => ({ open: false }));
@@ -190,11 +193,16 @@ const StageView = () => {
     const [flipped, setFlipped] = useState(false);
     // phones: the Stage is the full screen player too (its controls, and lyrics that can be hidden)
     const phone = useIsMobile();
-    // Stormy night: a faint flash of lightning now and then (the thunder follows)
+    // Stormy night: lightning flickers in the Stage, as bright as the strike is close (the thunder follows)
     const ambience = useAmbience((s) => s.kind);
-    const [flash, setFlash] = useState(0);
+    const reverb = useReverb((s) => s.kind);
+    const playbackType = usePlaybackType();
+    const [flash, setFlash] = useState({ n: 0, power: 0.6, x: 70 });
     useEffect(() => {
-        const on = () => setFlash((n) => n + 1);
+        const on = (e: Event) => {
+            const d = (e as CustomEvent<{ power?: number; x?: number }>).detail ?? {};
+            setFlash((f) => ({ n: f.n + 1, power: d.power ?? 0.6, x: d.x ?? 70 }));
+        };
         window.addEventListener(LIGHTNING_EVENT, on);
         return () => window.removeEventListener(LIGHTNING_EVENT, on);
     }, []);
@@ -361,17 +369,25 @@ const StageView = () => {
         const levels = makeLevels();
         let frame = 0;
         let pulse = 0;
+        let shown = -1;
+        let last = 0;
         let lastBuzz = 0;
         const tick = (now: number) => {
             frame = requestAnimationFrame(tick);
+            if (now - last < 33) return;
+            last = now;
             readLevels(levels, now);
-            pulse = levels.beat ? 1 : pulse * 0.88;
+            pulse = levels.beat ? 1 : pulse * 0.78;
+            if (pulse < 0.01) pulse = 0;
             // phones: feel the beat (Settings > Phone)
             if (levels.beat && hapticsOn() && now - lastBuzz > 220) {
                 lastBuzz = now;
                 navigator.vibrate?.(18);
             }
-            if (coverWrap.current) coverWrap.current.style.setProperty('--beat', String(pulse));
+            if (coverWrap.current && Math.abs(pulse - shown) > 0.02) {
+                shown = pulse;
+                coverWrap.current.style.setProperty('--beat', pulse.toFixed(2));
+            }
         };
         frame = requestAnimationFrame(tick);
         return () => cancelAnimationFrame(frame);
@@ -448,12 +464,16 @@ const StageView = () => {
                     }}
                 />
             ) : (
-                cover && (
-                    <div className={styles.blur} style={{ backgroundImage: `url("${cover}")` }} />
-                )
+                cover && <StageGlow src={cover} />
             )}
             <Scene className={styles.scene} scene={look.stageScene} />
-            {flash > 0 && ambience === 'storm' && <div className={styles.lightning} key={flash} />}
+            {flash.n > 0 && ambience === 'storm' && (
+                <div
+                    className={styles.lightning}
+                    key={flash.n}
+                    style={{ '--power': flash.power, '--x': `${flash.x}%` } as CSSProperties}
+                />
+            )}
             <div className={styles.toolbar}>
                 {phone && (
                     <button
@@ -757,6 +777,18 @@ const StageView = () => {
                             size="xs"
                             value={ambience}
                         />
+                        <SegmentedControl
+                            data={REVERBS.map((r) => ({ label: r.label, value: r.id }))}
+                            disabled={playbackType !== PlayerType.WEB}
+                            onChange={(v) => useReverb.setState({ kind: v as ReverbKind })}
+                            size="xs"
+                            title={
+                                playbackType !== PlayerType.WEB
+                                    ? 'Reverb needs the built-in player (Settings > Playback > Audio player)'
+                                    : 'Reverb'
+                            }
+                            value={reverb}
+                        />
                         <button
                             className={clsx(styles.tool, { [styles.on]: loop.a !== null })}
                             onClick={() => setLoopPoint('a')}
@@ -935,3 +967,23 @@ export const SourStageButton = () => (
         variant="subtle"
     />
 );
+
+// the cover, 24 by 24 pixels, stretched over the Stage: a soft glow that costs nothing to draw (a canvas
+// can show a picture from the music server even when it can't read its pixels)
+const StageGlow = ({ src }: { src: string }) => {
+    const ref = useRef<HTMLCanvasElement>(null);
+    useEffect(() => {
+        const img = new Image();
+        img.onload = () => {
+            const ctx = ref.current?.getContext('2d');
+            if (!ctx) return;
+            ctx.clearRect(0, 0, 24, 24);
+            ctx.drawImage(img, 0, 0, 24, 24);
+        };
+        img.src = src;
+        return () => {
+            img.onload = null;
+        };
+    }, [src]);
+    return <canvas aria-hidden className={styles.glow} height={24} ref={ref} width={24} />;
+};

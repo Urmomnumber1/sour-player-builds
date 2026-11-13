@@ -90,6 +90,7 @@ export const Sidebar = () => {
             Home: t('page.sidebar.home'),
             'Now Playing': t('page.sidebar.nowPlaying'),
             Playlists: t('page.sidebar.playlists'),
+            Podcasts: t('page.sidebar.podcasts'),
             Radio: t('page.sidebar.radio'),
             Search: t('page.sidebar.search'),
             Settings: t('page.sidebar.settings'),
@@ -133,7 +134,8 @@ export const Sidebar = () => {
         [simple, sidebarItemsWithRoute],
     );
 
-    const ui = useSourStore((state) => state.look.ui ?? 'liquid');
+    const ui = useSourStore((state) => state.look.ui ?? 'bubble');
+    const modern = ui === 'liquid' || ui === 'bubble';
     const isCustomWindowBar =
         windowBarStyle === Platform.WINDOWS || windowBarStyle === Platform.MACOS;
 
@@ -166,8 +168,8 @@ export const Sidebar = () => {
                     multiple
                 >
                     {!simple && <SidebarPins />}
-                    {!simple && ui !== 'liquid' && <SidebarSour />}
-                    {(simple || ui === 'liquid') && <SidebarBotOnly />}
+                    {!simple && !modern && <SidebarSour />}
+                    {(simple || modern) && <SidebarBotOnly />}
                     <Accordion.Item value="library">
                         <Accordion.Control>
                             <Text fw={500} variant="secondary">

@@ -90,6 +90,9 @@ const BaseItemImage = (
 
 export const ItemImage = memo(BaseItemImage);
 
+// a picture from elsewhere on the internet (a podcast's cover) comes as its address instead of an id
+const webImage = (id?: null | string) => (id && /^https?:\/\//.test(id) ? id : undefined);
+
 interface UseItemImageUrlProps {
     id?: null | string;
     imageUrl?: null | string;
@@ -101,7 +104,8 @@ interface UseItemImageUrlProps {
 }
 
 export const useItemImageUrl = (args: UseItemImageUrlProps) => {
-    const { id, imageUrl, itemType, size, type, useRemoteUrl } = args;
+    const { id, itemType, size, type, useRemoteUrl } = args;
+    const imageUrl = args.imageUrl || webImage(id);
     const serverId = useCurrentServerId();
 
     const imageRes = useImageRes();
@@ -135,7 +139,8 @@ export const useItemImageUrl = (args: UseItemImageUrlProps) => {
 };
 
 export const useItemImageRequest = (args: UseItemImageUrlProps) => {
-    const { id, imageUrl, itemType, size, type, useRemoteUrl } = args;
+    const { id, itemType, size, type, useRemoteUrl } = args;
+    const imageUrl = args.imageUrl || webImage(id);
     const serverId = useCurrentServerId();
 
     const imageRes = useImageRes();
@@ -172,7 +177,8 @@ export const useItemImageRequest = (args: UseItemImageUrlProps) => {
 };
 
 export function getItemImageRequest(args: UseItemImageUrlProps) {
-    const { id, imageUrl, itemType, size, type, useRemoteUrl } = args;
+    const { id, itemType, size, type, useRemoteUrl } = args;
+    const imageUrl = args.imageUrl || webImage(id);
     const authStore = useAuthStore.getState();
     const currentServerId = authStore.currentServer?.id;
     const serverId = (args.serverId || currentServerId) as string;
@@ -208,7 +214,8 @@ export function getItemImageRequest(args: UseItemImageUrlProps) {
 }
 
 export function getItemImageUrl(args: UseItemImageUrlProps) {
-    const { id, imageUrl, itemType, size, type, useRemoteUrl } = args;
+    const { id, itemType, size, type, useRemoteUrl } = args;
+    const imageUrl = args.imageUrl || webImage(id);
     const authStore = useAuthStore.getState();
     const currentServerId = authStore.currentServer?.id;
     const serverId = (args.serverId || currentServerId) as string;

@@ -65,3 +65,63 @@
         transform: none;
     }
 }
+
+/* Edit profile > Looks: your shop things */
+.wardrobe {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+}
+
+.wardrobe-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: stretch;
+    padding: 6px;
+    font: inherit;
+    color: var(--theme-colors-foreground);
+    text-align: left;
+    cursor: pointer;
+    background: var(--theme-colors-surface);
+    border: 2px solid transparent;
+    border-radius: 12px;
+    transition:
+        border-color 0.15s ease,
+        transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.wardrobe-item:hover {
+    border-color: var(--theme-colors-border);
+    transform: translateY(-2px);
+}
+
+.wardrobe-on,
+.wardrobe-on:hover {
+    border-color: var(--theme-colors-primary);
+}
+
+.wardrobe-preview {
+    display: grid;
+    place-items: center;
+    height: 64px;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.wardrobe-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.wardrobe-state {
+    font-size: 11px;
+    color: var(--theme-colors-foreground-muted);
+}
+
+.wardrobe-on .wardrobe-state {
+    color: var(--theme-colors-primary);
+}

@@ -7,6 +7,7 @@ import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-vid
 import { getSongById } from '/@/renderer/features/player/utils';
 import { type Me } from '/@/renderer/features/sour/api/sour-api';
 import { SongPicker } from '/@/renderer/features/sour/components/song-picker';
+import { isPodcast } from '/@/renderer/features/sour/podcasts/podcast-id';
 import { useMyProfile, useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import { useCurrentServer } from '/@/renderer/store';
 import { addToQueueByData, usePlayerStoreBase } from '/@/renderer/store/player.store';
@@ -68,11 +69,13 @@ export const usePlaySongs = () => {
     return async (songs: GroupSong[], how: Play = Play.NOW) => {
         if (!serverId || !songs.length) return;
         const found = await Promise.all(
-            songs.map((s) =>
-                getSongById({ id: s.id, queryClient, serverId })
-                    .then((r) => r.items)
-                    .catch(() => []),
-            ),
+            songs
+                .filter((s) => !isPodcast(s))
+                .map((s) =>
+                    getSongById({ id: s.id, queryClient, serverId })
+                        .then((r) => r.items)
+                        .catch(() => []),
+                ),
         );
         const items = found.flat();
         if (!items.length) {

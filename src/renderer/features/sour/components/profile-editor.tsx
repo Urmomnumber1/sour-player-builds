@@ -18,6 +18,7 @@ import { AlbumOfWeekPicker } from '/@/renderer/features/sour/components/album-pi
 import { EmojiPicker, firstGrapheme } from '/@/renderer/features/sour/components/emoji-picker';
 import { SongCover } from '/@/renderer/features/sour/components/profile-bits';
 import { ProfileView, SECTIONS } from '/@/renderer/features/sour/components/profile-view';
+import { ShopWardrobe } from '/@/renderer/features/sour/components/shop';
 import { ProfileEditor10 } from '/@/renderer/features/sour/components/social10';
 import { fontChoices } from '/@/renderer/features/sour/fonts';
 import { useMyProfile, useSourStore } from '/@/renderer/features/sour/store/sour.store';
@@ -163,6 +164,7 @@ export const ProfileEditor = ({
 
     const looks = (
         <Stack gap="sm">
+            <ShopWardrobe />
             <Group gap="lg">
                 <Switch
                     checked={!!c.bannerPan}

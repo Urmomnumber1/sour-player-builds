@@ -1,3 +1,4 @@
+import isElectron from 'is-electron';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { create } from 'zustand';
@@ -306,6 +307,7 @@ export const Customize = () => {
                 Focus mode: Ctrl+Shift+F (Esc leaves) hides everything but the page and the player.
             </Text>
             <QuietHours />
+            <GraphicsSwitch />
             <Row label="Low-power mode">
                 <SegmentedControl
                     data={[
@@ -533,3 +535,29 @@ const Row = ({ children, label }: { children: React.ReactNode; label: string }) 
         {children}
     </Group>
 );
+
+// the computer app: hardware acceleration (it turns itself off after the graphics driver crashes twice)
+const GraphicsSwitch = () => {
+    const settings = isElectron() ? window.api.localSettings : null;
+    const [off, setOff] = useState<boolean | null>(null);
+    useEffect(() => {
+        settings
+            ?.get('disable_gpu')
+            .then((v: unknown) => setOff(!!v))
+            .catch(() => setOff(false));
+    }, [settings]);
+    if (!settings || off === null) return null;
+    return (
+        <Switch
+            checked={!off}
+            description="Turn this off if the window freezes or flickers. Sour Player restarts to apply it."
+            label="Graphics acceleration"
+            onChange={(e) => {
+                settings.set('disable_gpu', !e.currentTarget.checked);
+                setOff(!e.currentTarget.checked);
+                settings.restart();
+            }}
+            size="xs"
+        />
+    );
+};

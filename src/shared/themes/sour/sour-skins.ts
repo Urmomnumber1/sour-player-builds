@@ -302,6 +302,18 @@ export const sourAutumn = skin({
     surface: 'rgb(52, 32, 18)',
 });
 
+// Thanksgiving week: harvest colours (pumpkin, cranberry, wheat) and cozy headings
+export const sourThanksgiving = skin({
+    background: [33, 17, 10],
+    css: `h1 { font-family: "Sour Lobster", var(--theme-content-font-family) !important; letter-spacing: 0.01em; }
+#main-content { background-image: radial-gradient(1000px 520px at 88% -14%, rgb(232 122 46 / 16%), transparent 62%), radial-gradient(820px 480px at -6% 112%, rgb(170 44 60 / 14%), transparent 60%); }`,
+    foreground: 'rgb(255, 241, 224)',
+    muted: 'rgb(224, 188, 142)',
+    primary: 'rgb(232, 122, 46)',
+    sidebar: [23, 11, 6],
+    surface: 'rgb(58, 32, 18)',
+});
+
 export const sourLunar = skin({
     background: [36, 8, 8],
     foreground: 'rgb(255, 238, 214)',

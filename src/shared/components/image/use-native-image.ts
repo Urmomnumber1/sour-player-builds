@@ -116,12 +116,23 @@ export function useNativeImage({
                 objectUrlRef.current = objectUrl;
                 loadedRequestSignatureRef.current = requestSignature;
                 setState({ displaySrc: objectUrl, status: 'loaded' });
-            } catch {
+            } catch (error) {
                 if (abortController.signal.aborted) {
                     return;
                 }
 
                 revokeObjectUrl();
+                // a picture from a site that doesn't let apps read it (a podcast's cover, a radio
+                // station's logo): the page can't fetch it, but an <img> can still show it
+                if (
+                    error instanceof TypeError &&
+                    !request.headers &&
+                    /^https?:\/\//.test(request.url)
+                ) {
+                    loadedRequestSignatureRef.current = requestSignature;
+                    setState({ displaySrc: request.url, status: 'loaded' });
+                    return;
+                }
                 setState({ status: 'error' });
                 onFetchErrorRef.current?.();
             } finally {

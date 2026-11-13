@@ -37,6 +37,7 @@ export const THEME_DATA = [
     { label: 'Sour Matcha', type: 'light', value: AppTheme.SOUR_MATCHA },
     { label: 'Sour Halloween (holiday)', type: 'dark', value: AppTheme.SOUR_HALLOWEEN },
     { label: 'Sour Autumn (holiday)', type: 'dark', value: AppTheme.SOUR_AUTUMN },
+    { label: 'Sour Thanksgiving (holiday)', type: 'dark', value: AppTheme.SOUR_THANKSGIVING },
     { label: 'Sour Winter (holiday)', type: 'dark', value: AppTheme.SOUR_WINTER },
     { label: 'Sour New Year (holiday)', type: 'dark', value: AppTheme.SOUR_NEW_YEAR },
     { label: 'Sour Lunar New Year (holiday)', type: 'dark', value: AppTheme.SOUR_LUNAR },

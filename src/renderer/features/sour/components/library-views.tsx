@@ -219,18 +219,21 @@ export const CoverWall = () => {
     const list = albums.data ?? [];
     // re-sort by colour every couple of seconds while colours are still coming in
     useEffect(() => {
-        const sort = () =>
-            setOrder(
-                [...list]
-                    .sort((a, b) =>
-                        sortBy === 'color'
-                            ? (hues[a.id] ?? 999) - (hues[b.id] ?? 999)
-                            : sortBy === 'year'
-                              ? (a.releaseYear ?? 0) - (b.releaseYear ?? 0)
-                              : a.name.localeCompare(b.name),
-                    )
-                    .map((a) => a.id),
+        // (only a new order makes the wall draw again)
+        const sort = () => {
+            const next = [...list]
+                .sort((a, b) =>
+                    sortBy === 'color'
+                        ? (hues[a.id] ?? 999) - (hues[b.id] ?? 999)
+                        : sortBy === 'year'
+                          ? (a.releaseYear ?? 0) - (b.releaseYear ?? 0)
+                          : a.name.localeCompare(b.name),
+                )
+                .map((a) => a.id);
+            setOrder((prev) =>
+                prev.length === next.length && prev.every((id, i) => id === next[i]) ? prev : next,
             );
+        };
         sort();
         const timer = setInterval(sort, 2500);
         return () => clearInterval(timer);

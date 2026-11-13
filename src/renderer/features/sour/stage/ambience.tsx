@@ -1,13 +1,20 @@
 import { useEffect } from 'react';
 import { create } from 'zustand';
 
+import rainHeavyUrl from '../../../../../assets/sounds/rain-heavy.aac?url';
+import rainLightUrl from '../../../../../assets/sounds/rain-light.aac?url';
+import thunder1Url from '../../../../../assets/sounds/thunder-1.aac?url';
+import thunder2Url from '../../../../../assets/sounds/thunder-2.aac?url';
+import thunder3Url from '../../../../../assets/sounds/thunder-3.aac?url';
+
 import { usePlayerStoreBase } from '/@/renderer/store/player.store';
 import { PlayerStatus } from '/@/shared/types/types';
 
-// Rain under the music (the Sour Stage, next to Slowed and Nightcore): "Rainy day" is steady rain, "Stormy
-// night" is heavier rain with thunder far away and a faint flash of lightning in the Stage. All of it is made
-// right here with Web Audio (noise shaped into rain, low rumbles for thunder): no sound files, nothing to
-// download. It follows the music: quiet while paused, as loud as the player's volume allows.
+// Rain under the music (the Sour Stage, next to Slowed and Nightcore). Real recordings (credits in
+// assets/sounds/readme.txt): "Rainy day" is a garden in the rain, "Stormy night" is a downpour with thunder.
+// The lightning flickers in the Stage first, as bright as the strike is close, and its thunder follows:
+// right away and loud for a close one, seconds later, softer and duller for one far off. The sounds load
+// the first time they're used. It follows the music: quiet while paused, as loud as the player allows.
 
 export type Ambience = 'none' | 'rain' | 'storm';
 
@@ -19,19 +26,25 @@ export const AMBIENCES: { id: Ambience; label: string }[] = [
 
 export const useAmbience = create<{ kind: Ambience }>(() => ({ kind: 'none' }));
 
-// the Stage listens for this to flash its picture
+// the Stage listens for this to flash its picture: detail { power 0-1, x 0-100 (where in the sky) }
 export const LIGHTNING_EVENT = 'sour-lightning';
+
+// the rain files hold one 20 s loop, recorded with a little extra so it can loop inside the steady part
+const LOOP = 20;
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let rain: AudioBufferSourceNode | null = null;
 let rainGain: GainNode | null = null;
 let thunderTimer = 0;
+let rainKind: Ambience = 'none';
+const buffers = new Map<string, Promise<null | { buffer: AudioBuffer; start: number }>>();
 
 const audio = () => {
     if (!ctx) {
         const Ctx = window.AudioContext || (window as any).webkitAudioContext;
-        ctx = new Ctx();
+        // big buffers: this never needs to be quick, it needs to never crackle
+        ctx = new Ctx({ latencyHint: 'playback' });
         master = ctx.createGain();
         master.gain.value = 0;
         master.connect(ctx.destination);
@@ -40,61 +53,41 @@ const audio = () => {
     return { ctx, master: master! };
 };
 
-// a few seconds of stereo rain: soft noise (the hiss of rain) with drops scattered through it, made once and looped
-const rainBuffer = (c: AudioContext, heavy: boolean) => {
-    const seconds = 6;
-    const rate = c.sampleRate;
-    const buf = c.createBuffer(2, seconds * rate, rate);
-    for (let ch = 0; ch < 2; ch++) {
-        const d = buf.getChannelData(ch);
-        // pink-ish noise (Paul Kellet's filter)
-        let b0 = 0;
-        let b1 = 0;
-        let b2 = 0;
-        for (let i = 0; i < d.length; i++) {
-            const w = Math.random() * 2 - 1;
-            b0 = 0.99765 * b0 + w * 0.099046;
-            b1 = 0.963 * b1 + w * 0.2965164;
-            b2 = 0.57 * b2 + w * 1.0526913;
-            d[i] = (b0 + b1 + b2 + w * 0.1848) * 0.11;
-        }
-        // drops: short bright ticks that fade fast
-        const drops = (heavy ? 900 : 520) * seconds;
-        for (let k = 0; k < drops; k++) {
-            const at = Math.floor(Math.random() * (d.length - 400));
-            const size = 0.05 + Math.random() * (heavy ? 0.3 : 0.2);
-            const len = 60 + Math.floor(Math.random() * 300);
-            for (let i = 0; i < len; i++)
-                d[at + i] += (Math.random() * 2 - 1) * size * Math.exp(-i / (len / 5));
-        }
-        // the loop's ends meet without a click
-        const fade = Math.floor(rate * 0.05);
-        for (let i = 0; i < fade; i++) {
-            const g = i / fade;
-            d[i] *= g;
-            d[d.length - 1 - i] *= g;
-        }
+// a sound, decoded once; start = where it really begins (the files open with a moment of silence)
+const load = (url: string) => {
+    let p = buffers.get(url);
+    if (!p) {
+        p = fetch(url)
+            .then((r) => r.arrayBuffer())
+            .then((data) => audio().ctx.decodeAudioData(data))
+            .then((buffer) => {
+                const d = buffer.getChannelData(0);
+                let i = 0;
+                while (i < d.length && Math.abs(d[i]) < 0.003) i++;
+                return { buffer, start: i / buffer.sampleRate };
+            })
+            .catch(() => null);
+        buffers.set(url, p);
     }
-    return buf;
+    return p;
 };
 
-const startRain = (heavy: boolean) => {
+const startRain = async (kind: Ambience) => {
+    rainKind = kind;
+    const sound = await load(kind === 'storm' ? rainHeavyUrl : rainLightUrl);
+    // switched again (or off) while it was loading
+    if (!sound || rainKind !== kind) return;
     const { ctx: c, master: out } = audio();
     stopRain();
     const src = c.createBufferSource();
-    src.buffer = rainBuffer(c, heavy);
+    src.buffer = sound.buffer;
     src.loop = true;
-    // rain is mostly hiss: no deep rumble, a soft top
-    const high = c.createBiquadFilter();
-    high.type = 'highpass';
-    high.frequency.value = heavy ? 250 : 400;
-    const low = c.createBiquadFilter();
-    low.type = 'lowpass';
-    low.frequency.value = heavy ? 6500 : 8000;
+    src.loopStart = sound.start + 1;
+    src.loopEnd = Math.min(sound.buffer.duration, sound.start + 1 + LOOP);
     const g = c.createGain();
-    g.gain.value = heavy ? 0.9 : 0.7;
-    src.connect(high).connect(low).connect(g).connect(out);
-    src.start();
+    g.gain.value = kind === 'storm' ? 1 : 0.9;
+    src.connect(g).connect(out);
+    src.start(0, src.loopStart);
     rain = src;
     rainGain = g;
 };
@@ -111,38 +104,45 @@ const stopRain = () => {
     rainGain = null;
 };
 
-// thunder far away: a low rumble that swells, crackles a little and rolls off (different every time)
-const thunder = () => {
+const flashAt = (power: number, x: number) =>
+    window.dispatchEvent(new CustomEvent(LIGHTNING_EVENT, { detail: { power, x } }));
+
+// one strike: the flash now, the thunder after the time its sound takes to get here
+const strike = async () => {
     if (!ctx || !master) return;
+    // 0 = right overhead, 1 = far away
+    const distance = Math.random() ** 0.8;
+    const power = 1 - distance * 0.72;
+    const x = 12 + Math.random() * 76;
+    flashAt(power, x);
+    // close strikes often flash twice
+    if (distance < 0.35 && Math.random() < 0.5)
+        window.setTimeout(() => flashAt(power * 0.8, x), 260 + Math.random() * 200);
+    const url =
+        distance < 0.3
+            ? thunder1Url
+            : distance < 0.65
+              ? Math.random() < 0.5
+                  ? thunder2Url
+                  : thunder1Url
+              : thunder3Url;
+    const sound = await load(url);
+    if (!sound || !ctx || !master) return;
     const c = ctx;
-    const seconds = 4 + Math.random() * 4;
-    const rate = c.sampleRate;
-    const buf = c.createBuffer(2, Math.floor(seconds * rate), rate);
-    const swell = 0.25 + Math.random() * 0.9;
-    for (let ch = 0; ch < 2; ch++) {
-        const d = buf.getChannelData(ch);
-        let brown = 0;
-        for (let i = 0; i < d.length; i++) {
-            const t = i / rate;
-            brown = (brown + 0.02 * (Math.random() * 2 - 1)) / 1.02;
-            const env = t < swell ? t / swell : Math.exp(-(t - swell) / (seconds / 3.2));
-            // a few rolls inside the rumble
-            const roll = 0.7 + 0.3 * Math.sin(t * (2 + ch) + Math.sin(t * 0.7) * 3);
-            d[i] = brown * 3.2 * env * roll;
-        }
-    }
+    const delay = 0.12 + distance * 3.4;
     const src = c.createBufferSource();
-    src.buffer = buf;
+    src.buffer = sound.buffer;
+    // far thunder loses its crack (the air takes the highs) and arrives quieter
     const low = c.createBiquadFilter();
     low.type = 'lowpass';
-    low.frequency.value = 140 + Math.random() * 160;
+    low.frequency.value = 9000 - distance * 8200;
+    const pan = c.createStereoPanner();
+    pan.pan.value = Math.max(-0.8, Math.min(0.8, (x - 50) / 60));
     const g = c.createGain();
-    g.gain.value = 0.55 + Math.random() * 0.35;
-    src.connect(low).connect(g).connect(master);
-    src.start();
+    g.gain.value = 1.15 - distance * 0.65;
+    src.connect(low).connect(pan).connect(g).connect(master);
+    src.start(c.currentTime + delay, sound.start);
     src.onended = () => src.disconnect();
-    // the flash comes first (light is faster than sound)
-    window.dispatchEvent(new CustomEvent(LIGHTNING_EVENT));
 };
 
 const scheduleThunder = () => {
@@ -150,12 +150,11 @@ const scheduleThunder = () => {
     thunderTimer = window.setTimeout(
         () => {
             const { status } = usePlayerStoreBase.getState().player;
-            if (useAmbience.getState().kind === 'storm' && status === PlayerStatus.PLAYING) {
-                window.setTimeout(thunder, 600 + Math.random() * 1800);
-            }
+            if (useAmbience.getState().kind === 'storm' && status === PlayerStatus.PLAYING)
+                void strike();
             scheduleThunder();
         },
-        14000 + Math.random() * 30000,
+        9000 + Math.random() * 26000,
     );
 };
 
@@ -164,7 +163,7 @@ const level = () => {
     const { status, volume } = usePlayerStoreBase.getState().player;
     if (status !== PlayerStatus.PLAYING) return 0;
     const v = Math.max(0, Math.min(100, volume)) / 100;
-    return 0.22 * v * v + 0.04 * v;
+    return 0.38 * v * v + 0.06 * v;
 };
 
 const fadeTo = (value: number, seconds = 0.8) => {
@@ -180,14 +179,22 @@ export const AmbiencePlayer = () => {
     const kind = useAmbience((s) => s.kind);
     useEffect(() => {
         if (kind === 'none') {
+            rainKind = 'none';
             fadeTo(0, 0.6);
             const t = window.setTimeout(stopRain, 700);
             window.clearTimeout(thunderTimer);
             return () => window.clearTimeout(t);
         }
-        startRain(kind === 'storm');
-        fadeTo(level(), 1.5);
-        if (kind === 'storm') scheduleThunder();
+        void startRain(kind).then(() => fadeTo(level(), 1.5));
+        let first = 0;
+        if (kind === 'storm') {
+            // the first strike comes soon, so you know the storm is there
+            void load(thunder1Url);
+            first = window.setTimeout(() => {
+                if (useAmbience.getState().kind === 'storm' && level() > 0) void strike();
+            }, 4000);
+            scheduleThunder();
+        }
         const unsubscribe = usePlayerStoreBase.subscribe(
             (s) => [s.player.status, s.player.volume] as const,
             () => fadeTo(level(), 0.5),
@@ -195,6 +202,7 @@ export const AmbiencePlayer = () => {
         );
         return () => {
             unsubscribe();
+            window.clearTimeout(first);
             window.clearTimeout(thunderTimer);
         };
     }, [kind]);

@@ -11,6 +11,7 @@ import { avatarUrl, type SourProfile, timeAgo } from '/@/renderer/features/sour/
 import { frameClass, nameClass } from '/@/renderer/features/sour/components/shop-looks';
 import { AvatarDecoration } from '/@/renderer/features/sour/components/v10';
 import { fontFamily } from '/@/renderer/features/sour/fonts';
+import { isPodcast } from '/@/renderer/features/sour/podcasts/podcast-id';
 import { useCurrentServer } from '/@/renderer/store';
 import { addToQueueByData, usePlayerStoreBase } from '/@/renderer/store/player.store';
 import { toast } from '/@/shared/components/toast/toast';
@@ -108,6 +109,13 @@ export const usePlaySong = () => {
     const serverId = useCurrentServer()?.id;
     return (song: GroupSong, position?: number) => {
         if (!serverId) return Promise.resolve();
+        // a friend's podcast episode isn't on the music server
+        if (isPodcast(song)) {
+            toast.info({
+                message: `${song.title} is a podcast episode: find the show in Podcasts`,
+            });
+            return Promise.resolve();
+        }
         return getSongById({ id: song.id, queryClient, serverId })
             .then((res) => addToQueueByData(Play.NOW, res.items))
             .then(() => {

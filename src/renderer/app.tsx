@@ -38,11 +38,7 @@ import '/@/shared/styles/sour-desktop.css';
 import '/@/shared/styles/sour-phone.css';
 import '/@/renderer/features/sour/mobile/ios-look';
 import { PlayerProvider } from '/@/renderer/features/player/context/player-context';
-import {
-    isNewLayout,
-    layoutScheme,
-    loadLookStyles,
-} from '/@/renderer/features/sour/layouts/layout-kind';
+import { loadLookStyles } from '/@/renderer/features/sour/skins/look-styles';
 import { useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import { isIosApp } from '/@/renderer/features/sour/mobile/android';
 import { IosWelcome } from '/@/renderer/features/sour/mobile/ios-welcome';
@@ -79,17 +75,15 @@ export const App = () => {
     return <ThemedApp />;
 };
 
-// the look's styles start loading before the first paint (v2 and v0.10 load sour-v8/sour-v10.css,
-// the 0.12 layouts their own), so the app doesn't flash the plain look first
+// the look's styles start loading before the first paint (v2, v0.10 and Bubble each have a file), so
+// the app doesn't flash the plain look first
 loadLookStyles(useSourStore.getState().look.ui);
 
 const ThemedApp = () => {
     const { mode, theme } = useAppTheme();
-    // the 0.12 layouts bring their own light or dark colours
-    const layoutMode = useSourStore((s) => (isNewLayout(s.look.ui) ? layoutScheme(s.look) : null));
 
     return (
-        <MantineProvider forceColorScheme={layoutMode ?? mode} theme={theme}>
+        <MantineProvider forceColorScheme={mode} theme={theme}>
             <AppShell />
         </MantineProvider>
     );

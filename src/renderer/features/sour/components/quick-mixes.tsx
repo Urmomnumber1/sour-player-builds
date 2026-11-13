@@ -107,7 +107,7 @@ export const copyNowPlaying = () => {
 
 export const toggleClassicLook = () => {
     const { look, setLook } = useSourStore.getState();
-    const ui = look.ui === 'classic' ? 'liquid' : 'classic';
+    const ui = look.ui === 'classic' ? 'bubble' : 'classic';
     setLook({ ui });
     toast.info({ message: ui === 'classic' ? 'Classic look (v0.7)' : 'New look (v0.10)' });
 };

@@ -94,6 +94,8 @@ const DiscordBotRoute = lazy(
     () => import('/@/renderer/features/sour/discord-bot/discord-bot-route'),
 );
 
+const PodcastsRoute = lazy(() => import('/@/renderer/features/sour/podcasts/podcasts-route'));
+
 // phones: the Library, Search and You tabs
 const PhoneLibraryRoute = lazy(() =>
     import('/@/renderer/features/sour/mobile/phone-tabs').then((m) => ({
@@ -280,6 +282,10 @@ export const AppRouter = () => {
                                         <Route
                                             element={<DiscordBotRoute />}
                                             path={AppRoute.SOUR_DISCORD_BOT}
+                                        />
+                                        <Route
+                                            element={<PodcastsRoute />}
+                                            path={AppRoute.SOUR_PODCASTS}
                                         />
                                         <Route
                                             element={<PhoneLibraryRoute />}

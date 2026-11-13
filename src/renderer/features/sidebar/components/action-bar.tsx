@@ -75,12 +75,12 @@ export const ActionBar = () => {
 
 const NavigateButtons = () => {
     const navigate = useNavigate();
-    const ui = useSourStore((state) => state.look.ui ?? 'liquid');
+    const ui = useSourStore((state) => state.look.ui ?? 'bubble');
 
     return (
         <>
             <InboxButton />
-            {ui === 'liquid' && (
+            {(ui === 'liquid' || ui === 'bubble') && (
                 <Button
                     onClick={() => navigate(AppRoute.SOUR_HUB)}
                     p="0"

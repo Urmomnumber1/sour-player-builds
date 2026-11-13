@@ -26,6 +26,7 @@ import {
     usePlaySong,
 } from '/@/renderer/features/sour/components/profile-bits';
 import { openRequestQuestion } from '/@/renderer/features/sour/components/request-question';
+import { isPodcast } from '/@/renderer/features/sour/podcasts/podcast-id';
 import { toggleStage, useStage } from '/@/renderer/features/sour/stage/sour-stage';
 import { useSourProfiles, useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import { useCurrentServer, usePlayerSong } from '/@/renderer/store';
@@ -655,7 +656,13 @@ export const SocialWatcher = () => {
             .me(url, me)
             .then((p) => {
                 const r = p.resume;
-                if (!r || r.device === deviceId() || Date.now() - r.at > 86400000) return;
+                if (
+                    !r ||
+                    isPodcast(r.song) ||
+                    r.device === deviceId() ||
+                    Date.now() - r.at > 86400000
+                )
+                    return;
                 notify(
                     'Pick up where you left off?',
                     <Group gap="xs">

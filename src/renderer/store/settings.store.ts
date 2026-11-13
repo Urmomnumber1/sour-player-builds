@@ -1065,6 +1065,7 @@ export enum SidebarItem {
     HOME = 'Home',
     NOW_PLAYING = 'Now Playing',
     PLAYLISTS = 'Playlists',
+    PODCASTS = 'Podcasts',
     RADIO = 'Radio',
     SEARCH = 'Search',
     SETTINGS = 'Settings',
@@ -1276,6 +1277,12 @@ export const sidebarItems: SidebarItemType[] = [
         id: 'Radio',
         label: i18n.t('page.sidebar.radio'),
         route: AppRoute.RADIO,
+    },
+    {
+        disabled: false,
+        id: 'Podcasts',
+        label: 'Podcasts',
+        route: AppRoute.SOUR_PODCASTS,
     },
     {
         disabled: true,
@@ -3053,10 +3060,24 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                     ];
                 }
 
+                if (version < 38) {
+                    // Sour Player 0.13: podcasts, right after the radio
+                    const items = state.general.sidebarItems;
+                    if (!items.some((item) => item.id === 'Podcasts')) {
+                        const at = items.findIndex((item) => item.id === 'Radio');
+                        items.splice(at < 0 ? items.length : at + 1, 0, {
+                            disabled: false,
+                            id: 'Podcasts',
+                            label: 'Podcasts',
+                            route: AppRoute.SOUR_PODCASTS,
+                        });
+                    }
+                }
+
                 return persistedState;
             },
             name: 'store_settings',
-            version: 37,
+            version: 38,
         },
     ),
 );

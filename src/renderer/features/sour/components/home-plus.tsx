@@ -24,7 +24,6 @@ import {
 } from '/@/renderer/features/sour/components/profile-bits';
 import { quickMixes } from '/@/renderer/features/sour/components/quick-mixes';
 import { localDate, WeeklyDigest } from '/@/renderer/features/sour/components/social10';
-import { isNewLayout } from '/@/renderer/features/sour/layouts/layout-kind';
 import { currentHoliday } from '/@/renderer/features/sour/skins/holidays';
 import {
     useMyProfile,
@@ -46,7 +45,7 @@ import { Play } from '/@/shared/types/types';
 const fail = (error: Error) => toast.error({ message: error.message });
 
 // random songs from the library (optionally a genre or some years), played straight away
-export const usePlayRandom = () => {
+const usePlayRandom = () => {
     const qc = useQueryClient();
     const serverId = useCurrentServer()?.id;
     return async (
@@ -208,7 +207,7 @@ export const SourHero = () => {
 };
 
 // ---------- mood tiles ----------
-export const MOODS: Array<{ color: string; genres: string[]; label: string }> = [
+const MOODS: Array<{ color: string; genres: string[]; label: string }> = [
     { color: '#1d3b4a', genres: ['Chill', 'Lo-Fi', 'Ambient', 'Jazz', 'Acoustic'], label: 'Chill' },
     { color: '#5a1f2a', genres: ['Hip-Hop', 'Rap', 'Electronic', 'Dance', 'EDM'], label: 'Hype' },
     {
@@ -223,35 +222,27 @@ export const MOODS: Array<{ color: string; genres: string[]; label: string }> = 
 
 export const MoodTiles = () => {
     const playRandom = usePlayRandom();
-    // the 0.12 layouts show the moods at the top of Home already
-    const layoutMoods = useSourStore((s) => isNewLayout(s.look.ui));
     return (
         <section className={styles.section}>
-            {!layoutMoods && <Text className={styles.label}>Pick a mood</Text>}
-            {!layoutMoods && (
-                <div className={styles.moods}>
-                    {MOODS.map((m) => (
-                        <button
-                            className={styles.mood}
-                            key={m.label}
-                            onClick={() =>
-                                playRandom(
-                                    {
-                                        genre: m.genres[
-                                            Math.floor(Math.random() * m.genres.length)
-                                        ],
-                                    },
-                                    `Mood: ${m.label}`,
-                                )
-                            }
-                            style={{ background: m.color }}
-                            type="button"
-                        >
-                            {m.label}
-                        </button>
-                    ))}
-                </div>
-            )}
+            <Text className={styles.label}>Pick a mood</Text>
+            <div className={styles.moods}>
+                {MOODS.map((m) => (
+                    <button
+                        className={styles.mood}
+                        key={m.label}
+                        onClick={() =>
+                            playRandom(
+                                { genre: m.genres[Math.floor(Math.random() * m.genres.length)] },
+                                `Mood: ${m.label}`,
+                            )
+                        }
+                        style={{ background: m.color }}
+                        type="button"
+                    >
+                        {m.label}
+                    </button>
+                ))}
+            </div>
             <Text className={styles.label}>Quick mixes</Text>
             <div className={styles.moods}>
                 {QUICK.map((q) => (
@@ -280,7 +271,7 @@ export const MoodTiles = () => {
     );
 };
 
-export const QUICK = [
+const QUICK = [
     {
         color: '#3a1f4f',
         hint: 'Songs you have never played',

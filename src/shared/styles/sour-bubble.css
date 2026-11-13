@@ -1,0 +1,441 @@
+/* stylelint-disable selector-class-pattern, no-descending-specificity */
+
+/*
+ * Bubble (Sour Player 0.13, the default look): built on the v2 panels (.sour-v8 stays on), everything gets
+ * soft and round, presses and hovers spring, pages, menus and pop-ups glide in, and the app takes on the
+ * colour of the song that's playing, sliding to the next one when the song changes.
+ *
+ * Kept light on purpose: no blur anywhere (no frosted glass to re-draw) and nothing that keeps moving
+ * when you're not doing anything. Every animation is short and only moves or fades things.
+ */
+
+/* the backdrop's colour as a real colour, so it can glide from one song to the next. It isn't inherited:
+   only the backdrop re-draws while it glides, not every element on the page. */
+@property --b-glow {
+    inherits: false;
+    initial-value: #7a8cff;
+    syntax: '<color>';
+}
+
+.sour-bubble {
+    --b-tint: var(--liquid-tint, var(--theme-colors-primary));
+    --b-gap: 10px;
+    --b-radius: 26px;
+    --b-radius-sm: 18px;
+    --b-panel: color-mix(in srgb, var(--theme-colors-surface) 90%, var(--b-tint) 10%);
+    --b-raised: color-mix(in srgb, var(--theme-colors-surface) 80%, var(--b-tint) 20%);
+    --b-line: color-mix(in srgb, var(--b-tint) 22%, var(--theme-colors-border));
+    --b-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 6%), 0 14px 34px -16px rgb(0 0 0 / 55%),
+        0 2px 6px rgb(0 0 0 / 16%);
+    --b-shadow-hover:
+        inset 0 1px 0 rgb(255 255 255 / 8%), 0 22px 44px -18px rgb(0 0 0 / 60%),
+        0 4px 10px rgb(0 0 0 / 18%);
+    --b-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --b-out: cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+/* ---------- the backdrop: the theme's base with two soft pools of the song's colour ---------- */
+.sour-bubble:not(.sour-ios) body,
+.sour-bubble:not(.sour-ios) #default-layout {
+    --b-glow: var(--liquid-tint, var(--theme-colors-primary));
+
+    background:
+        radial-gradient(1100px 640px at 8% -12%, color-mix(in srgb, var(--b-glow) 26%, transparent), transparent 62%),
+        radial-gradient(900px 560px at 104% 112%, color-mix(in srgb, var(--b-glow) 16%, transparent), transparent 60%),
+        var(--theme-colors-background);
+    transition: --b-glow 1.4s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+/* ---------- panels: rounder, softer, with a little shine on top (desktop) ---------- */
+.sour-bubble:not(.sour-ios, .sour-phone) #main-content {
+    gap: var(--b-gap);
+    padding: var(--b-gap) var(--b-gap) 0;
+}
+
+.sour-bubble:not(.sour-ios, .sour-phone) #sidebar,
+.sour-bubble:not(.sour-ios, .sour-phone) #sidebar-queue,
+.sour-bubble:not(.sour-ios, .sour-phone)
+    #main-content
+    > div:not(#sidebar, #sidebar-queue, [class*='resize']) {
+    background: var(--b-panel);
+    border: 1px solid var(--b-line);
+    border-radius: var(--b-radius);
+    box-shadow: var(--b-shadow);
+}
+
+/* ---------- player bar: a floating bubble (no glass: solid, so it costs nothing to draw) ---------- */
+.sour-bubble:not(.sour-ios, .sour-phone) #player-bar {
+    padding: 8px var(--b-gap) 10px;
+}
+
+.sour-bubble:not(.sour-ios, .sour-phone) #player-bar > div {
+    background: var(--b-raised);
+    border: 1px solid var(--b-line);
+    border-radius: 30px;
+    box-shadow: var(--b-shadow-hover);
+    backdrop-filter: none;
+}
+
+.sour-bubble [class*='left-controls-module-playerbar-image'],
+.sour-bubble [class*='left-controls-module-image-wrapper'] img {
+    border-radius: 14px;
+}
+
+/* the play button: a glossy bubble that squishes when pressed */
+.sour-bubble [class*='player-button-module-main'] {
+    background:
+        radial-gradient(circle at 32% 26%, color-mix(in srgb, var(--theme-colors-primary) 55%, white), transparent 58%),
+        var(--theme-colors-primary) !important;
+    box-shadow:
+        0 6px 16px -4px color-mix(in srgb, var(--theme-colors-primary) 70%, transparent),
+        inset 0 -2px 4px rgb(0 0 0 / 18%);
+    transition: transform 0.35s var(--b-spring);
+}
+
+.sour-bubble [class*='player-button-module-main'] svg {
+    color: var(--theme-colors-primary-contrast, #fff);
+    fill: var(--theme-colors-primary-contrast, #fff);
+}
+
+.sour-bubble [class*='player-button-module-main']:hover {
+    transform: scale(1.07);
+}
+
+.sour-bubble [class*='player-button-module-main']:active {
+    transform: scale(0.9);
+    transition-duration: 0.12s;
+}
+
+/* seek and volume: thicker, rounder, with a thumb that grows when you reach for it */
+.sour-bubble .mantine-Slider-track {
+    height: 6px;
+}
+
+.sour-bubble .mantine-Slider-track::before,
+.sour-bubble .mantine-Slider-bar {
+    border-radius: 999px;
+}
+
+.sour-bubble .mantine-Slider-thumb {
+    transition:
+        transform 0.3s var(--b-spring),
+        box-shadow 0.2s ease;
+}
+
+.sour-bubble .mantine-Slider-root:hover .mantine-Slider-thumb {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--theme-colors-primary) 22%, transparent);
+    transform: scale(1.25);
+}
+
+/* ---------- sidebar: pill rows that nudge when you point at them ---------- */
+.sour-bubble [class*='sidebar-item-module-root'],
+.sour-bubble [class*='sidebar-item-module-link'] {
+    border-radius: 999px;
+    transition:
+        background-color 0.2s ease,
+        transform 0.3s var(--b-spring);
+}
+
+.sour-bubble [class*='sidebar-item-module-root']:hover,
+.sour-bubble [class*='sidebar-item-module-link']:hover {
+    transform: translateX(3px);
+}
+
+/* ---------- buttons: pills that lift a little and squish on press ---------- */
+.sour-bubble .mantine-Button-root,
+.sour-bubble .mantine-ActionIcon-root {
+    transition:
+        transform 0.32s var(--b-spring),
+        background-color 0.18s ease,
+        box-shadow 0.2s ease;
+}
+
+.sour-bubble .mantine-Button-root {
+    border-radius: 999px;
+}
+
+.sour-bubble .mantine-ActionIcon-root {
+    border-radius: 50%;
+}
+
+.sour-bubble .mantine-Button-root:hover:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+.sour-bubble .mantine-Button-root:active:not(:disabled),
+.sour-bubble .mantine-ActionIcon-root:active:not(:disabled) {
+    transform: scale(0.93);
+    transition-duration: 0.1s;
+}
+
+.sour-bubble .mantine-Button-root[data-variant='filled'] {
+    box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--theme-colors-primary) 80%, transparent);
+}
+
+/* ---------- inputs, switches, tabs and toggles: round ---------- */
+.sour-bubble .mantine-Input-input,
+.sour-bubble .mantine-TextInput-input,
+.sour-bubble .mantine-Select-input,
+.sour-bubble .mantine-Autocomplete-input,
+.sour-bubble .mantine-NumberInput-input {
+    border-radius: 999px;
+    transition:
+        box-shadow 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.sour-bubble .mantine-Textarea-input {
+    border-radius: var(--b-radius-sm);
+}
+
+.sour-bubble .mantine-Input-input:focus,
+.sour-bubble .mantine-Input-input:focus-within {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--theme-colors-primary) 22%, transparent);
+}
+
+.sour-bubble .mantine-SegmentedControl-root,
+.sour-bubble .mantine-SegmentedControl-indicator {
+    border-radius: 999px;
+}
+
+.sour-bubble .mantine-SegmentedControl-indicator {
+    transition-timing-function: var(--b-spring) !important;
+}
+
+.sour-bubble .mantine-Switch-track,
+.sour-bubble .mantine-Switch-thumb {
+    transition-timing-function: var(--b-spring) !important;
+}
+
+.sour-bubble .mantine-Tabs-list::before {
+    display: none;
+}
+
+.sour-bubble .mantine-Tabs-list {
+    gap: 4px;
+}
+
+.sour-bubble .mantine-Tabs-tab {
+    border: 0;
+    border-radius: 999px;
+    transition:
+        background-color 0.2s ease,
+        transform 0.3s var(--b-spring);
+}
+
+.sour-bubble .mantine-Tabs-tab:hover {
+    background: color-mix(in srgb, var(--b-tint) 14%, transparent);
+}
+
+.sour-bubble .mantine-Tabs-tab[data-active] {
+    color: var(--theme-colors-foreground);
+    background: color-mix(in srgb, var(--b-tint) 26%, var(--theme-colors-surface));
+}
+
+.sour-bubble .mantine-Tabs-tab:active {
+    transform: scale(0.95);
+}
+
+/* ---------- covers and cards: round, and they bob up when you point at them ---------- */
+.sour-bubble [class*='item-card-module-image-container'],
+.sour-bubble [class*='item-card-module-image'] {
+    border-radius: 20px !important;
+}
+
+.sour-bubble [class*='item-card-module-image-container'] {
+    transition:
+        transform 0.42s var(--b-spring),
+        box-shadow 0.3s ease;
+}
+
+.sour-bubble [class*='item-card-module-container']:hover [class*='item-card-module-image-container'] {
+    box-shadow: 0 18px 30px -14px rgb(0 0 0 / 60%);
+    transform: translateY(-5px) scale(1.025);
+}
+
+.sour-bubble [class*='library-header-module-image'] {
+    border-radius: 24px;
+}
+
+/* ---------- pop-ups: menus, popovers, tooltips and windows pop in with a little spring ---------- */
+.sour-bubble .mantine-Menu-dropdown,
+.sour-bubble .mantine-Popover-dropdown,
+.sour-bubble .mantine-Combobox-dropdown,
+.sour-bubble [role='menu'] {
+    border-radius: var(--b-radius-sm);
+    box-shadow: var(--b-shadow-hover);
+    animation: b-pop 0.26s var(--b-spring);
+}
+
+.sour-bubble .mantine-Menu-item,
+.sour-bubble .mantine-Combobox-option,
+.sour-bubble [role='menuitem'] {
+    border-radius: 12px;
+}
+
+.sour-bubble .mantine-Tooltip-tooltip {
+    border-radius: 12px;
+    animation: b-pop 0.2s var(--b-spring);
+}
+
+.sour-bubble .mantine-Modal-content {
+    border-radius: 28px;
+    box-shadow: 0 30px 80px -20px rgb(0 0 0 / 65%);
+    animation: b-rise 0.42s var(--b-spring);
+}
+
+.sour-bubble .mantine-Modal-overlay {
+    animation: b-fade 0.25s ease;
+}
+
+.sour-bubble .mantine-Drawer-content {
+    border-radius: 28px 0 0 28px;
+}
+
+.sour-bubble .mantine-Notification-root {
+    border-radius: 20px;
+    box-shadow: var(--b-shadow-hover);
+    animation: b-drop 0.48s var(--b-spring);
+}
+
+@keyframes b-pop {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes b-rise {
+    from {
+        opacity: 0;
+        transform: translateY(26px) scale(0.94);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes b-drop {
+    from {
+        opacity: 0;
+        transform: translateY(-18px) scale(0.92);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes b-fade {
+    from {
+        opacity: 0;
+    }
+}
+
+/* ---------- the Sour Stage opens like a bubble growing out of the player ---------- */
+.sour-bubble .fs-sour-stage-module-stage {
+    transform-origin: 18% 100%;
+    animation: b-stage 0.55s var(--b-out);
+}
+
+@keyframes b-stage {
+    from {
+        border-radius: 40px;
+        opacity: 0;
+        transform: scale(0.94) translateY(24px);
+    }
+
+    to {
+        border-radius: 0;
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* ---------- alive: friends who are listening right now breathe softly in the sidebar ---------- */
+.sour-bubble:not(.sour-calm) [class*='sidebar-friends-module-row']:not([class*='row-offline']) img,
+.sour-bubble:not(.sour-calm) [class*='sidebar-friends-module-row']:not([class*='row-offline']) > span:first-child {
+    animation: b-breathe 3.2s ease-in-out infinite;
+}
+
+@keyframes b-breathe {
+    50% {
+        transform: scale(1.06);
+    }
+}
+
+/* ---------- scrollbars: rounded thumbs ---------- */
+.sour-bubble ::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+}
+
+/* ---------- phones: the tab bar, mini player and sheets get the same soft shapes ---------- */
+.sour-bubble.sour-phone [class*='mobile-playerbar-module-card'] {
+    border-radius: 22px;
+    box-shadow: var(--b-shadow-hover);
+}
+
+.sour-bubble.sour-phone [class*='mobile-nav-module-item'] {
+    transition: transform 0.3s var(--b-spring);
+}
+
+.sour-bubble.sour-phone [class*='mobile-nav-module-item']:active {
+    transform: scale(0.9);
+}
+
+.sour-bubble.sour-phone [class*='mobile-nav-module-active'] [class*='mobile-nav-module-icon-wrap'] {
+    padding: 4px 14px;
+    background: color-mix(in srgb, var(--b-tint) 30%, transparent);
+    border-radius: 999px;
+    animation: b-pop 0.3s var(--b-spring);
+}
+
+/* ---------- less motion when asked for (Sour Studio or the system setting) ---------- */
+
+/* alive: while the music plays, a soft ring ripples out of the play button (only transform and
+   opacity move, so it costs next to nothing) */
+.sour-bubble:not(.sour-calm) [class*='player-button-module-main'].player-state-playing {
+    position: relative;
+    overflow: visible;
+}
+
+.sour-bubble:not(.sour-calm) [class*='player-button-module-main'].player-state-playing::after {
+    position: absolute;
+    inset: -2px;
+    pointer-events: none;
+    content: '';
+    border: 2px solid color-mix(in srgb, var(--theme-colors-primary) 70%, transparent);
+    border-radius: 50%;
+    animation: b-ripple 2.6s ease-out infinite;
+}
+
+@keyframes b-ripple {
+    0% {
+        opacity: 0.65;
+        transform: scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(1.5);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sour-bubble *,
+    .sour-bubble *::before,
+    .sour-bubble *::after {
+        transition-duration: 0.001ms !important;
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}

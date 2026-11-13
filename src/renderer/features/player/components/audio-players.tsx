@@ -43,6 +43,7 @@ import { RemoteSettingsPushHook } from '/@/renderer/features/remote/hooks/use-re
 import { ComponentErrorBoundary } from '/@/renderer/features/shared/components/component-error-boundary';
 import { AndroidMediaHook } from '/@/renderer/features/sour/mobile/android-media';
 import { isIphone } from '/@/renderer/features/sour/mobile/ios-look';
+import { createReverb } from '/@/renderer/features/sour/stage/reverb';
 import { VisualizerSystemAudioBridgeHook } from '/@/renderer/features/visualizer/components/visualizer-system-audio-bridge';
 import { useSettingsStore } from '/@/renderer/store';
 import {
@@ -290,7 +291,10 @@ const AudioPlayersContent = ({
             preampGain.connect(compressorNode);
         }
 
-        compressorNode.connect(context.destination);
+        // Sour Player 0.13: reverb at the very end (off unless picked in the Stage)
+        const reverb = createReverb(context);
+        compressorNode.connect(reverb.input);
+        reverb.output.connect(context.destination);
 
         setWebAudio?.({
             context,
@@ -299,6 +303,7 @@ const AudioPlayersContent = ({
         });
 
         return () => {
+            reverb.dispose();
             void context.close().catch(() => {});
             setWebAudio?.(undefined);
         };

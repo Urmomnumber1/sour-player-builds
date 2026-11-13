@@ -1,4 +1,4 @@
-import { ChildProcess, execSync, spawn } from 'child_process';
+import { ChildProcess, spawn } from 'child_process';
 import { createHash } from 'crypto';
 import { ipcMain } from 'electron';
 import {
@@ -2176,9 +2176,13 @@ ipcMain.handle(
         data: { offset: number; preservePitch: boolean; speed: number; url: string },
     ) => {
         stopCurrentTranscode();
-        try {
-            execSync('ffmpeg -version', { stdio: 'ignore' });
-        } catch {
+        // checked without blocking the app (a missing ffmpeg used to stall every window for a moment)
+        const hasFfmpeg = await new Promise<boolean>((resolve) => {
+            const probe = spawn('ffmpeg', ['-version'], { stdio: 'ignore' });
+            probe.on('error', () => resolve(false));
+            probe.on('exit', (code) => resolve(code === 0));
+        });
+        if (!hasFfmpeg) {
             dlnaLog('FFmpeg not found on PATH');
             getMainWindow()?.webContents.send('renderer-dlna-toast', {
                 message:

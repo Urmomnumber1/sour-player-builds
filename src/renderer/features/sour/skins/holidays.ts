@@ -15,6 +15,7 @@ export type Particles =
     | 'confetti'
     | 'eggs'
     | 'fireworks'
+    | 'harvest'
     | 'hearts'
     | 'lanterns'
     | 'leaves'
@@ -142,9 +143,9 @@ const HOLIDAYS: Array<Holiday & { when: (d: Date) => boolean }> = [
         emoji: '\u{1F342}',
         greeting: 'Happy Thanksgiving',
         id: 'thanksgiving',
-        name: 'Thanksgiving',
-        particles: 'leaves',
-        theme: AppTheme.SOUR_AUTUMN,
+        name: 'Thanksgiving (the whole week)',
+        particles: 'harvest',
+        theme: AppTheme.SOUR_THANKSGIVING,
         when: (d) => {
             const t = thanksgiving(d.getFullYear());
             return between(d, addDays(t, -3), addDays(t, 3));

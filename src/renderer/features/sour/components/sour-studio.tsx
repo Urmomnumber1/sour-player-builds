@@ -6,7 +6,6 @@ import styles from './sour-studio.module.css';
 
 import { Customize } from '/@/renderer/features/sour/components/customize';
 import { fontFamily, SOUR_FONTS } from '/@/renderer/features/sour/fonts';
-import { AppLookPicker } from '/@/renderer/features/sour/layouts/app-look-picker';
 import { drawAppIcon, ICON_PACKS } from '/@/renderer/features/sour/skins/app-icon';
 import { currentHoliday, HOLIDAY_LIST } from '/@/renderer/features/sour/skins/holidays';
 import {
@@ -231,7 +230,16 @@ const Layout = () => {
                 <Text fw={600} size="sm">
                     App look
                 </Text>
-                <AppLookPicker studio />
+                <SegmentedControl
+                    data={[
+                        { label: 'Bubble (0.13)', value: 'bubble' },
+                        { label: 'Liquid (v0.10)', value: 'liquid' },
+                        { label: 'v2 (v0.9)', value: 'new' },
+                        { label: 'Classic (v0.7)', value: 'classic' },
+                    ]}
+                    onChange={(v) => setLook({ ui: v as SourLook['ui'] })}
+                    value={look.ui ?? 'bubble'}
+                />
             </Stack>
             <Stack gap={4}>
                 <Text fw={600} size="sm">
@@ -453,7 +461,7 @@ const STUDIO_INDEX: [string, string][] = [
     ['skin theme colours', 'skins'],
     ['holiday skins snow bats halloween christmas', 'holidays'],
     ['visualizer player bar strip mix', 'visualizer'],
-    ['app look layout magazine hi-fi hifi pop new v2 classic player bar corners', 'layout'],
+    ['app look bubble liquid new v2 classic player bar corners', 'layout'],
     ['font app font name font playlist font', 'fonts'],
     ['app icon icon pack', 'icon'],
     ['theme builder colours accent', 'customize'],

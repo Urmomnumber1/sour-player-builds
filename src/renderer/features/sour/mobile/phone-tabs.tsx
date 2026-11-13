@@ -319,6 +319,7 @@ const MORE: { icon: Parameters<typeof Icon>[0]['icon']; label: string; to: strin
     { icon: 'genre', label: 'Genres', to: AppRoute.LIBRARY_GENRES },
     { icon: 'folder', label: 'Folders', to: AppRoute.LIBRARY_FOLDERS },
     { icon: 'radio', label: 'Radio', to: AppRoute.RADIO },
+    { icon: 'podcast', label: 'Podcasts', to: AppRoute.SOUR_PODCASTS },
     { icon: 'grid', label: 'Tools', to: AppRoute.SOUR_LIBRARY },
 ];
 type Kind = 'albums' | 'artists' | 'playlists';

@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId } from 'react';
 
 import styles from './v10.module.css';
 
@@ -12,7 +12,8 @@ import { LibraryItem } from '/@/shared/types/domain-types';
 
 // ---------- the v0.10 look: the whole app takes on the colour of the song that's playing ----------
 export const LiquidTint = () => {
-    const ui = useSourStore((s) => s.look.ui ?? 'liquid');
+    const ui = useSourStore((s) => s.look.ui ?? 'bubble');
+    const tinted = ui === 'liquid' || ui === 'bubble';
     const song = usePlayerSong();
     const cover = useItemImageUrl({
         id: song?.imageId || undefined,
@@ -21,86 +22,39 @@ export const LiquidTint = () => {
     });
     const { background } = useFastAverageColor({
         algorithm: 'dominant',
-        src: ui === 'liquid' ? cover || null : null,
+        src: tinted ? cover || null : null,
         srcLoaded: true,
     });
     useEffect(() => {
         const root = document.documentElement;
-        if (ui !== 'liquid' || !background) {
+        if (!tinted || !background) {
             root.style.removeProperty('--liquid-tint');
             return;
         }
         root.style.setProperty('--liquid-tint', background);
-    }, [background, ui]);
+    }, [background, tinted]);
     return null;
 };
 
-// ---------- v0.10, the 10th big update: confetti once, the first time it opens ----------
-const COLORS = ['#f4d03f', '#ff7a59', '#9be15d', '#7aa2ff', '#d58cff', '#ff5c8a'];
-
+// ---------- 0.13: everyone on v2, v0.10 or a 0.12 layout moves to Bubble once (Classic stays) ----------
 export const TenthUpdate = () => {
-    const seen = useSourStore((s) => s.celebrated ?? []);
-    const [on, setOn] = useState(false);
-    const canvas = useRef<HTMLCanvasElement>(null);
     useEffect(() => {
-        if (seen.includes('0.10')) return undefined;
-        const { look, set } = useSourStore.getState();
-        // v0.8-0.9 users move to the new look once (v2 and Classic stay in Sour Studio > Layout)
+        const { celebrated = [], look, set } = useSourStore.getState();
+        if (celebrated.includes('0.13')) return;
+        const ui = look.ui as string;
+        const move = ui !== 'classic' && ui !== 'bubble';
         set({
-            celebrated: [...seen, '0.10'],
-            ...(look.ui === 'new' ? { look: { ...look, ui: 'liquid' as const } } : {}),
+            celebrated: [...new Set(['0.10', '0.13', ...celebrated])],
+            ...(move ? { look: { ...look, ui: 'bubble' as const } } : {}),
         });
-        setOn(true);
-        toast.success({
-            autoClose: 9000,
-            message: 'Sour Player 0.10 - the 10th big update. Thanks for listening with us!',
-        });
-        const t = window.setTimeout(() => setOn(false), 7000);
-        return () => window.clearTimeout(t);
-        // once, on the first start of 0.10
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        if (move && celebrated.length)
+            toast.info({
+                autoClose: 9000,
+                message:
+                    'Sour Player 0.13 has a new look, Bubble. The older looks are in Sour Studio > Layout.',
+            });
     }, []);
-    useEffect(() => {
-        const c = canvas.current;
-        if (!on || !c) return undefined;
-        if (matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
-        const ctx = c.getContext('2d');
-        if (!ctx) return undefined;
-        c.width = window.innerWidth;
-        c.height = window.innerHeight;
-        const bits = Array.from({ length: 220 }, () => ({
-            c: COLORS[Math.floor(Math.random() * COLORS.length)],
-            r: Math.random() * Math.PI,
-            s: 6 + Math.random() * 7,
-            spin: (Math.random() - 0.5) * 0.3,
-            vx: (Math.random() - 0.5) * 9,
-            vy: -6 - Math.random() * 12,
-            x: c.width / 2 + (Math.random() - 0.5) * c.width * 0.6,
-            y: c.height + 20,
-        }));
-        let frame = 0;
-        const draw = () => {
-            ctx.clearRect(0, 0, c.width, c.height);
-            for (const b of bits) {
-                b.vy += 0.22;
-                b.vx *= 0.99;
-                b.x += b.vx;
-                b.y += b.vy;
-                b.r += b.spin;
-                ctx.save();
-                ctx.translate(b.x, b.y);
-                ctx.rotate(b.r);
-                ctx.fillStyle = b.c;
-                ctx.fillRect(-b.s / 2, -b.s / 4, b.s, b.s / 2);
-                ctx.restore();
-            }
-            frame = requestAnimationFrame(draw);
-        };
-        draw();
-        return () => cancelAnimationFrame(frame);
-    }, [on]);
-    if (!on) return null;
-    return <canvas aria-hidden className={styles.confetti} ref={canvas} />;
+    return null;
 };
 
 // ---------- avatar decorations: the party hat (accounts from before 0.10) ----------

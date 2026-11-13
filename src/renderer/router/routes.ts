@@ -41,4 +41,5 @@ export enum AppRoute {
     SOUR_DISCORD_BOT = '/sour/discord-bot',
     SOUR_HUB = '/sour/hub',
     SOUR_LIBRARY = '/sour/library',
+    SOUR_PODCASTS = '/sour/podcasts',
 }

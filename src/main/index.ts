@@ -6,6 +6,7 @@ import {
     BrowserWindow,
     BrowserWindowConstructorOptions,
     desktopCapturer,
+    dialog,
     globalShortcut,
     ipcMain,
     Menu,
@@ -825,8 +826,33 @@ async function createWindow(first = true): Promise<void> {
         });
     });
 
+    // a window that stays frozen: after a few seconds, offer to reload it (the queue is kept)
+    let hung: NodeJS.Timeout | null = null;
     mainWindow.webContents.on('unresponsive', () => {
         log.error('Renderer process unresponsive');
+        if (hung) return;
+        hung = setTimeout(async () => {
+            hung = null;
+            if (!mainWindow || mainWindow.isDestroyed()) return;
+            const { response } = await dialog.showMessageBox(mainWindow, {
+                buttons: ['Wait', 'Reload Sour Player'],
+                cancelId: 0,
+                defaultId: 0,
+                detail: 'It may come back by itself. Reloading keeps your queue.',
+                message: "Sour Player isn't responding",
+                type: 'warning',
+            });
+            if (response === 1 && mainWindow && !mainWindow.isDestroyed()) {
+                log.warn('Reloading a frozen window');
+                mainWindow.webContents.forcefullyCrashRenderer();
+                mainWindow.webContents.reload();
+            }
+        }, 8000);
+    });
+    mainWindow.webContents.on('responsive', () => {
+        log.info('Renderer process responsive again');
+        if (hung) clearTimeout(hung);
+        hung = null;
     });
 
     // Mouse navigation
@@ -984,8 +1010,38 @@ if (chromiumDisabledFeatures.length > 0) {
 // https://github.com/electron/electron/issues/46538#issuecomment-2808806722
 app.commandLine.appendSwitch('gtk-version', '3');
 
-// Enable garbage collection API
-app.commandLine.appendSwitch('js-flags', '--expose-gc');
+// 0.13: no more forced garbage collection. The page used to run a full collection (and empty the image
+// cache) on every page change and every 5 minutes, which froze the window for a moment on big
+// libraries and made every cover load again. V8 collects garbage by itself, a little at a time.
+
+// a graphics driver that keeps crashing freezes the window: after two crashes the app restarts without
+// hardware acceleration (Sour Studio > Customize > Graphics acceleration turns it back on)
+if (store.get('disable_gpu')) {
+    app.disableHardwareAcceleration();
+}
+let gpuCrashes = 0;
+app.on('child-process-gone', (_event, details) => {
+    if (details.type !== 'GPU' || details.reason === 'clean-exit') return;
+    gpuCrashes += 1;
+    log.error('GPU process gone', {
+        count: gpuCrashes,
+        exitCode: details.exitCode,
+        reason: details.reason,
+    });
+    if (gpuCrashes < 2 || store.get('disable_gpu')) return;
+    store.set('disable_gpu', true);
+    void dialog
+        .showMessageBox({
+            buttons: ['Restart'],
+            detail: 'Sour Player will restart without hardware acceleration. You can turn it back on in Sour Studio > Customize.',
+            message: 'The graphics driver crashed twice',
+            type: 'warning',
+        })
+        .finally(() => {
+            app.relaunch();
+            app.exit(0);
+        });
+});
 
 // Must duplicate with the one in renderer process settings.store.ts
 enum BindingActions {

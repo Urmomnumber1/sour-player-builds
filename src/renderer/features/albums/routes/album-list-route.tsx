@@ -54,8 +54,8 @@ const AlbumListRoute = () => {
     const [itemCount, setItemCount] = useState<number | undefined>(undefined);
     const [isSidebarOpen, setIsSidebarOpen] = usePageSidebar(pageKey);
     // the v0.10 look: Sour Library's wall, timeline, folders and tools live in an Albums > Tools tab
-    const ui = useSourStore((state) => state.look.ui ?? 'liquid');
-    const canTools = ui === 'liquid' && pageKey === ItemListKey.ALBUM;
+    const ui = useSourStore((state) => state.look.ui ?? 'bubble');
+    const canTools = (ui === 'liquid' || ui === 'bubble') && pageKey === ItemListKey.ALBUM;
     const [tools, setTools] = useState<'albums' | 'tools'>(() =>
         window.location.hash.includes('tab=tools') ? 'tools' : 'albums',
     );

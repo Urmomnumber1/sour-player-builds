@@ -5,6 +5,7 @@ import { api } from '/@/renderer/api';
 import { isNativeApp } from '/@/renderer/features/sour/mobile/android';
 import { offlineUrl } from '/@/renderer/features/sour/mobile/offline';
 import { phoneTranscode } from '/@/renderer/features/sour/mobile/phone-store';
+import { isPodcast, podcastStreamUrl } from '/@/renderer/features/sour/podcasts/podcast-id';
 import { TranscodingConfig } from '/@/renderer/store';
 import { QueueSong } from '/@/shared/types/domain-types';
 
@@ -15,14 +16,15 @@ export function useSongUrl(
 ): string | undefined {
     // Android: data saver on mobile data, and saved offline copies (see features/sour/mobile)
     const transcode = isNativeApp() ? phoneTranscode(transcodeSetting) : transcodeSetting;
-    const offline = offlineUrl(song);
+    // a saved copy, or a podcast episode (through Hermes Music)
+    const offline = offlineUrl(song) ?? podcastStreamUrl(song);
     const prior = useRef(['', '']);
     const shouldReusePrior = Boolean(
         song?._serverId && current && prior.current[0] === song._uniqueId && prior.current[1],
     );
 
     const { data: queryStreamUrl } = useQuery({
-        enabled: Boolean(song?._serverId) && !shouldReusePrior,
+        enabled: Boolean(song?._serverId) && !shouldReusePrior && !isPodcast(song),
         queryFn: () =>
             api.controller.getStreamUrl({
                 apiClientProps: { serverId: song!._serverId },
@@ -76,7 +78,7 @@ export const getSongUrl = async (
     forRenderer?: boolean,
     startTime?: number,
 ) => {
-    const offline = offlineUrl(song);
+    const offline = offlineUrl(song) ?? podcastStreamUrl(song);
     if (offline) return offline;
     if (isNativeApp()) transcode = phoneTranscode(transcode);
     const url = await api.controller.getStreamUrl({

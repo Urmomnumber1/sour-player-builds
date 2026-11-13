@@ -9,6 +9,8 @@ import {
     RiHeartLine,
     RiHome6Fill,
     RiHome6Line,
+    RiMic2Fill,
+    RiMic2Line,
     RiMusic2Fill,
     RiMusic2Line,
     RiPlayFill,
@@ -75,6 +77,9 @@ export const SidebarIcon = ({ active, route, size }: SidebarIconProps) => {
             case AppRoute.SETTINGS:
                 if (isActive) return <RiSettings2Fill size={size} />;
                 return <RiSettings2Line size={size} />;
+            case AppRoute.SOUR_PODCASTS:
+                if (isActive) return <RiMic2Fill size={size} />;
+                return <RiMic2Line size={size} />;
             case generatePath(AppRoute.SEARCH, { itemType: LibraryItem.SONG }):
                 if (isActive) return <RiSearchFill size={size} />;
                 return <RiSearchLine size={size} />;

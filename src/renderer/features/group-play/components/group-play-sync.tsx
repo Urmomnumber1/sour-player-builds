@@ -20,6 +20,14 @@ import { followKaraoke } from '/@/renderer/features/sour/components/social';
 import { useStage } from '/@/renderer/features/sour/stage/sour-stage';
 import { useSourProfiles, useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import { playSound, setSoundBase } from '/@/renderer/features/sour/utils/sounds';
+import { followVersion, heardVersion } from '/@/renderer/features/sour/versions/version-deck';
+import {
+    loadedVersion,
+    ORIGINAL,
+    startWithVersion,
+    versionOffset,
+    versionsOf,
+} from '/@/renderer/features/sour/versions/versions';
 import { useAuthStore, useCurrentServer } from '/@/renderer/store';
 import { addToQueueByData, usePlayerStoreBase } from '/@/renderer/store/player.store';
 import { useTimestampStoreBase } from '/@/renderer/store/timestamp.store';
@@ -227,6 +235,8 @@ export const GroupPlaySync = () => {
                     .then((res) => {
                         const latest = useGroupPlayStore.getState().state ?? state;
                         const store = usePlayerStoreBase.getState();
+                        // (0.15) the host's version of the song, from the host's moment of it
+                        startWithVersion(target.id, latest.version || ORIGINAL);
                         store.setQueue(res.items, 0, groupPosition(latest, clockOffset));
                         if (!latest.playing) store.mediaPause();
                     })
@@ -248,8 +258,12 @@ export const GroupPlaySync = () => {
                 if (Math.abs((player.player.speed || 1) - speed) > 0.001) player.setSpeed(speed);
                 followKaraoke(!!state.karaoke);
             }
+            // (0.15) the version the host hears; positions are in each player's own version's timeline
+            followVersion(state.version || ORIGINAL);
+            const current = player.getCurrentSong();
+            const mine = versionOffset(versionsOf(current), loadedVersion(current?._uniqueId));
             // tighter than before (2.5 s): small drifts are fixed quickly, but not more than every 4 s
-            const expected = groupPosition(state, clockOffset);
+            const expected = groupPosition(state, clockOffset) - (state.vshift || 0) + mine;
             const timestamp = useTimestampStoreBase.getState().timestamp;
             if (Math.abs(timestamp - expected) > 0.9 && Date.now() - lastSeek.current > 4000) {
                 lastSeek.current = Date.now();
@@ -278,7 +292,7 @@ export const GroupPlaySync = () => {
     useEffect(() => {
         if (role !== 'host' || !url || !code) return;
         let lastIds = '';
-        let last = { at: 0, index: -1, playing: false, position: 0 };
+        let last = { at: 0, index: -1, playing: false, position: 0, version: ORIGINAL };
         const report = () => {
             const player = usePlayerStoreBase.getState();
             const items = player.getQueue().items;
@@ -291,10 +305,15 @@ export const GroupPlaySync = () => {
             const position = useTimestampStoreBase.getState().timestamp;
             const ids = items.map((item) => item.id).join(',');
             const predicted = last.position + (last.playing ? (Date.now() - last.at) / 1000 : 0);
+            // (0.15) the version the host hears, and how far the player's own version sits from the original
+            const version = heardVersion();
+            const current = player.getCurrentSong();
+            const vshift = versionOffset(versionsOf(current), loadedVersion(current?._uniqueId));
             const changed =
                 ids !== lastIds ||
                 index !== last.index ||
                 playing !== last.playing ||
+                version !== last.version ||
                 Math.abs(position - predicted) > 1.5 ||
                 Date.now() - last.at > 5000 ||
                 applied.current.length > 0;
@@ -309,10 +328,12 @@ export const GroupPlaySync = () => {
                 playing,
                 position,
                 speed: player.player.speed || 1,
+                version,
+                vshift,
             };
             if (ids !== lastIds) body.queue = items.map(toGroupSong);
             if (applied.current.length) body.applied = applied.current.splice(0);
-            last = { at: Date.now(), index, playing, position };
+            last = { at: Date.now(), index, playing, position, version };
             groupApi
                 .report(url, code, body)
                 .then(() => {
@@ -337,7 +358,9 @@ export const GroupPlaySync = () => {
                     .then(() => getSongById({ id: request.song.id, queryClient, serverId }))
                     .then((res) => {
                         const empty = usePlayerStoreBase.getState().getQueue().items.length === 0;
-                        return addToQueueByData(empty ? Play.NOW : Play.LAST, res.items);
+                        return addToQueueByData(empty ? Play.NOW : Play.LAST, res.items, {
+                            noVersionPrompt: true,
+                        });
                     })
                     .then(() =>
                         toast.info({ message: `${request.by} added ${request.song.title}` }),

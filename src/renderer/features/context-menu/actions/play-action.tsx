@@ -27,7 +27,12 @@ export const PlayAction = ({ ids, itemType, songs }: PlayActionProps) => {
                 itemType === LibraryItem.PLAYLIST_SONG ||
                 itemType === LibraryItem.QUEUE_SONG
             ) {
-                player.addToQueueByData(songs || [], playType);
+                // one song: it was clicked (a song with versions asks which one)
+                player.addToQueueByData(
+                    songs || [],
+                    playType,
+                    songs?.length === 1 ? songs[0].id : undefined,
+                );
             } else {
                 player.addToQueueByFetch(serverId, ids, itemType, playType);
             }

@@ -17,6 +17,7 @@ import { ShuffleItemsAction } from '/@/renderer/features/context-menu/actions/sh
 import { ContextMenuPreview } from '/@/renderer/features/context-menu/components/context-menu-preview';
 import { RemoveSongAction, WrongSongAction } from '/@/renderer/features/sour/components/song-fix';
 import { CopyToBotAction } from '/@/renderer/features/sour/discord-bot/bot-library';
+import { PutUnderAction, VersionsAction } from '/@/renderer/features/sour/versions/version-actions';
 import { ContextMenu } from '/@/shared/components/context-menu/context-menu';
 import { LibraryItem, QueueSong } from '/@/shared/types/domain-types';
 
@@ -41,6 +42,7 @@ export const QueueContextMenu = ({ items }: QueueContextMenuProps) => {
             <ShuffleItemsAction items={items} />
             <ContextMenu.Divider />
             <PlayTrackRadioAction disabled={items.length > 1} skipFirstSong song={items[0]} />
+            <VersionsAction songs={items} />
             <ContextMenu.Divider />
             <AddToPlaylistAction items={ids} itemType={LibraryItem.SONG} />
             <ContextMenu.Divider />
@@ -56,6 +58,7 @@ export const QueueContextMenu = ({ items }: QueueContextMenuProps) => {
             <EditMetadataAction songs={items} />
             <CopyToBotAction songs={items} />
             <WrongSongAction songs={items} />
+            <PutUnderAction songs={items} />
             <RemoveSongAction songs={items} />
             <GetInfoAction disabled={items.length === 0} items={items} />
         </ContextMenu.Content>

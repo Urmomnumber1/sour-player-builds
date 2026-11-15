@@ -18,6 +18,7 @@ import {
 import { playlistsQueries } from '/@/renderer/features/playlists/api/playlists-api';
 import { songsQueries } from '/@/renderer/features/songs/api/songs-api';
 import { markPlayContext } from '/@/renderer/features/sour/stage/play-context';
+import { askVersionThen, hasVersions } from '/@/renderer/features/sour/versions/version-picker';
 import {
     AddToQueueOptions,
     AddToQueueType,
@@ -55,6 +56,8 @@ export interface PlayerContext {
         // before calling this, where the confirm modal this would otherwise
         // open has no way to reach whoever actually needs to answer it.
         skipConfirmation?: boolean,
+        // Sour Player 0.15: a whole list played (it never asks which version of a song to play)
+        noVersionPrompt?: boolean,
     ) => void;
     addToQueueByFetch: (
         serverId: string,
@@ -272,6 +275,7 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
             playSongId?: string,
             contextPlaylistId?: null | string,
             skipConfirmation?: boolean,
+            noVersionPrompt?: boolean,
         ) => {
             const filters = useSettingsStore.getState().playback.filters;
             let filteredData = filterSongsByPlayerFilters(data, filters);
@@ -311,11 +315,22 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
                 }
             };
 
-            if (!skipConfirmation && isReplaceQueueType(type)) {
-                confirmQueueChange(addToQueue);
-            } else {
-                addToQueue();
-            }
+            const start = () => {
+                if (!skipConfirmation && isReplaceQueueType(type)) {
+                    confirmQueueChange(addToQueue);
+                } else {
+                    addToQueue();
+                }
+            };
+            // Sour Player 0.15: starting a song that has versions (the one clicked: playSongId) asks which one
+            // first; lists played whole never ask. Picking one is the go-ahead, so the "replace the queue?"
+            // question isn't asked as well
+            const clicked =
+                type === Play.NOW && !skipConfirmation && !noVersionPrompt && playSongId
+                    ? filteredData.find((s) => s.id === playSongId)
+                    : undefined;
+            if (clicked && hasVersions(clicked)) askVersionThen(clicked, addToQueue);
+            else start();
         },
         [confirmQueueChange, storeActions],
     );
@@ -593,7 +608,14 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
                 }
 
                 if (itemType === LibraryItem.SONG) {
-                    addToQueueByData(finalResults as Song[], type);
+                    addToQueueByData(
+                        finalResults as Song[],
+                        type,
+                        undefined,
+                        undefined,
+                        false,
+                        true,
+                    );
                 } else {
                     await addToQueueByFetch(serverId, finalResults as string[], itemType, type);
                 }

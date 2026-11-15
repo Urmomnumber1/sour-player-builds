@@ -8,6 +8,8 @@ export interface MusicVideo {
     offset?: number; // seconds into the video where the song starts
     pending?: boolean; // Hermes Music is still lining the video up with the song
     title?: string;
+    // (0.15) the version of the song this video belongs to (none: the song's own)
+    versionId?: string;
     videoId: string;
 }
 

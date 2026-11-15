@@ -47,6 +47,7 @@ import { openLyricsSettingsModal } from '/@/renderer/features/lyrics/utils/open-
 import { usePlayerEvents } from '/@/renderer/features/player/audio-player/hooks/use-player-events';
 import { useIsRadioActive } from '/@/renderer/features/radio/hooks/use-radio-player';
 import { ComponentErrorBoundary } from '/@/renderer/features/shared/components/component-error-boundary';
+import { useOriginalShift } from '/@/renderer/features/sour/versions/versions';
 import { queryClient } from '/@/renderer/lib/react-query';
 import { useLyricsSettings, usePlayerSong } from '/@/renderer/store';
 import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
@@ -276,7 +277,11 @@ export const Lyrics = ({ fadeOutNoLyricsMessage = true, settingsKey = 'default' 
         return lyrics.agents;
     }, [lyrics]);
 
-    const displayOffsetMs = isLyricsDisabled ? 0 : currentOffsetMs;
+    // Sour Player 0.15: a version of the song that lines up (the lyrics are timed to the original)
+    const version = useOriginalShift(currentSong);
+    const displayOffsetMs = isLyricsDisabled
+        ? 0
+        : currentOffsetMs - (version.inStep ? Math.round(version.shift * 1000) : 0);
     const useServerPronunciation = !!pronunciationLyricsOverlay;
 
     const shouldGenerateSyncedRomaji =

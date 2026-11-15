@@ -1853,7 +1853,33 @@ export type AddToQueueOptions = {
 
 export type AddToQueueType = AddToQueueByPlayType | AddToQueueByUniqueId;
 
-export async function addToQueueByData(type: AddToQueueType, data: Song[]) {
+// Sour Player 0.15: starting one song that has versions asks which one first (features/sour/versions sets this;
+// it answers false for songs without versions)
+type AskBeforePlaying = (song: Song, go: () => void, cancel: () => void) => boolean;
+let askBeforePlaying: AskBeforePlaying | null = null;
+export const setAskBeforePlaying = (fn: AskBeforePlaying | null) => {
+    askBeforePlaying = fn;
+};
+
+export async function addToQueueByData(
+    type: AddToQueueType,
+    data: Song[],
+    options?: { noVersionPrompt?: boolean },
+) {
+    const ask = askBeforePlaying;
+    if (type === Play.NOW && data.length === 1 && !options?.noVersionPrompt && ask) {
+        const go = await new Promise<boolean>((resolve) => {
+            if (
+                !ask(
+                    data[0],
+                    () => resolve(true),
+                    () => resolve(false),
+                )
+            )
+                resolve(true);
+        });
+        if (!go) return;
+    }
     const items = data.map(toQueueSong);
 
     if (typeof type === 'string') {

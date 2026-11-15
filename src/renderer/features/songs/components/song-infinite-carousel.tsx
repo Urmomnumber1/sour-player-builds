@@ -68,7 +68,7 @@ const BaseSongInfiniteCarousel = (props: SongCarouselProps & { rows: DataRow[] }
                     return;
                 }
 
-                player.addToQueueByData([item as Song], playType);
+                player.addToQueueByData([item as Song], playType, (item as Song).id);
             },
         };
     }, [baseControls, player]);

@@ -276,10 +276,17 @@ const AudioPlayersContent = ({
             compressorNode.knee.value = 0;
         }
 
-        // Wire: each gain → preamp → eq[0] → eq[1] → ... → compressor → destination
-        for (const gain of gains) {
-            gain.connect(preampGain);
-        }
+        // Sour Player 0.15: after each player's gain, a volume the version switch fades and a left/right
+        // for split ears (features/sour/versions)
+        const ducks = [context.createGain(), context.createGain()];
+        const pans = [context.createStereoPanner(), context.createStereoPanner()];
+
+        // Wire: each gain → duck → pan → preamp → eq[0] → eq[1] → ... → compressor → destination
+        gains.forEach((gain, i) => {
+            gain.connect(ducks[i]);
+            ducks[i].connect(pans[i]);
+            pans[i].connect(preampGain);
+        });
 
         if (eqFilters.length > 0) {
             preampGain.connect(eqFilters[0]);
@@ -299,7 +306,9 @@ const AudioPlayersContent = ({
         setWebAudio?.({
             context,
             dsp: { compressor: compressorNode, eqFilters, preampGain },
+            ducks,
             gains,
+            pans,
         });
 
         return () => {

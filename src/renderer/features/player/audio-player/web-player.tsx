@@ -13,9 +13,11 @@ import {
 } from '/@/renderer/features/player/audio-player/engine/web-player-engine';
 import { usePlayerEvents } from '/@/renderer/features/player/audio-player/hooks/use-player-events';
 import { useSongUrl } from '/@/renderer/features/player/audio-player/hooks/use-stream-url';
+import { setPlayerElement } from '/@/renderer/features/player/audio-player/player-elements';
 import { PlayerOnProgressProps } from '/@/renderer/features/player/audio-player/types';
 import { usePlayer } from '/@/renderer/features/player/context/player-context';
 import { useWebAudio } from '/@/renderer/features/player/hooks/use-webaudio';
+import { takeReloadSeek } from '/@/renderer/features/sour/versions/versions';
 import {
     useMpvSettings,
     usePlaybackSettings,
@@ -544,9 +546,21 @@ export function WebPlayer() {
         [num, status, volume],
     );
 
+    // Sour Player 0.15: a version switched by reloading carries on from where the song was
+    const applyVersionSeek = useCallback(
+        (reactPlayer: ReactPlayer, slot: 1 | 2) => {
+            setPlayerElement(slot, reactPlayer.getInternalPlayer() as HTMLMediaElement | undefined);
+            const song = slot === 1 ? player1 : player2;
+            const at = takeReloadSeek(song?._uniqueId);
+            if (at !== null && at > 0.5) reactPlayer.seekTo(at, 'seconds');
+        },
+        [player1, player2],
+    );
+
     const handlePlayer1Start = useCallback(
         async (reactPlayer: ReactPlayer) => {
             applyPendingSeekIfNeeded(reactPlayer, 1);
+            applyVersionSeek(reactPlayer, 1);
             if (!webAudio || player1Source) return;
             if (player1Url) {
                 // This should fire once, only if the source is real (meaning we
@@ -564,12 +578,13 @@ export function WebPlayer() {
                 setPlayer1Source(source);
             }
         },
-        [applyPendingSeekIfNeeded, player1Source, player1Url, webAudio],
+        [applyPendingSeekIfNeeded, applyVersionSeek, player1Source, player1Url, webAudio],
     );
 
     const handlePlayer2Start = useCallback(
         async (reactPlayer: ReactPlayer) => {
             applyPendingSeekIfNeeded(reactPlayer, 2);
+            applyVersionSeek(reactPlayer, 2);
             if (!webAudio || player2Source) return;
             if (player2Url) {
                 if (webAudio.context.state !== 'running') {
@@ -585,7 +600,7 @@ export function WebPlayer() {
                 setPlayer2Source(source);
             }
         },
-        [applyPendingSeekIfNeeded, player2Source, player2Url, webAudio],
+        [applyPendingSeekIfNeeded, applyVersionSeek, player2Source, player2Url, webAudio],
     );
 
     const handleOnErrorPause = useCallback(() => {

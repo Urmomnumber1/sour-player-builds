@@ -148,8 +148,12 @@ export interface GroupState {
     tv?: null | { event: string; members: string[] };
     updatedAt: number;
     upvotes?: Record<string, number>;
+    // (0.15) the version of the song the host hears, and how far the host player's own version sits from the
+    // original (positions are in that version's timeline)
+    version?: string;
     votes?: number;
     votesNeeded?: number;
+    vshift?: number;
     watchVideo?: boolean;
 }
 

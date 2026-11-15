@@ -72,7 +72,7 @@ export const LibraryCommandItem = ({
 
             // Use addToQueueByData for songs when we have the song data
             if (itemType === LibraryItem.SONG && song) {
-                addToQueueByData([song], playType);
+                addToQueueByData([song], playType, song.id);
             } else {
                 addToQueueByFetch(server.id, [id], itemType, playType);
             }

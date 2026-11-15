@@ -14,6 +14,7 @@ import {
     ShareCardButton,
 } from '/@/renderer/features/sour/components/extras104';
 import { HotTake } from '/@/renderer/features/sour/components/social10';
+import { setKaraokeOff } from '/@/renderer/features/sour/stage/karaoke-off';
 import {
     myLanguage,
     useCanTranslate,
@@ -149,13 +150,26 @@ export const restoreKaraokeVolume = () => {
 // Karaoke: the vocals fade out. The song's instrumental (Hermes Music's /karaoke keeps them in a
 // hidden folder, they never show up as songs) plays from Hermes Music in step with the song while
 // the song itself is turned all the way down; leaving karaoke fades the song back in.
-const KaraokeBacking = ({ song }: { song: QueueSong }) => {
+const KaraokeBacking = ({
+    noLyrics,
+    song,
+    version,
+}: {
+    noLyrics: boolean;
+    song: QueueSong;
+    version: { inStep: boolean; shift: number };
+}) => {
     const url = useHermesUrl();
     const me = useSourStore((state) => state.me);
     const title = plainTitle(song.name);
     const query = `artist=${encodeURIComponent(song.artistName || '')}&title=${encodeURIComponent(title)}`;
     const [asked, setAsked] = useState(false);
     const [on, setOn] = useState(false);
+    // (0.15) karaoke anyway, for a song without lyrics (this time only)
+    const [anyway, setAnyway] = useState(false);
+    // the instrumental is the original's: a version of the song shifts it (kept in a ref, the sync loop reads it)
+    const shiftRef = useRef(version.shift);
+    shiftRef.current = version.inStep ? version.shift : 0;
     // instrumentals often start a touch earlier or later than the album version: your nudge for
     // this song (seconds), remembered
     const nudgeKey = `sour-karaoke-nudge:${song.id}`;
@@ -202,15 +216,19 @@ const KaraokeBacking = ({ song }: { song: QueueSong }) => {
         enabled: !!url,
         queryFn: async () => {
             const res = await fetch(`${url}/api/karaoke?${query}`);
-            if (!res.ok) return { available: false };
-            return (await res.json()) as { available: boolean; gain?: number };
+            if (!res.ok) return { available: false, off: false };
+            return (await res.json()) as { available: boolean; gain?: number; off?: boolean };
         },
         queryKey: ['sour-karaoke', url, query],
         // once asked for, keep looking until Hermes Music has it
         refetchInterval: (q) => (asked && !q.state.data?.available ? 15000 : false),
         retry: false,
     });
-    const available = !!check.data?.available;
+    // (0.15) no karaoke for this song (switched off for everyone), none without lyrics (unless asked for this
+    // time), and none for a version that doesn't line up with the original (the instrumental can't follow it)
+    const off = !!check.data?.off;
+    const blocked = off || (noLyrics && !anyway) || !version.inStep;
+    const available = !!check.data?.available && !blocked;
     // how much quieter (or louder) the instrumental has to play to match the song (Hermes Music
     // measures both)
     const gain = check.data?.gain && check.data.gain > 0 ? check.data.gain : 1;
@@ -244,7 +262,11 @@ const KaraokeBacking = ({ song }: { song: QueueSong }) => {
                 lastRaw = raw;
                 lastAt = clock;
             }
-            const at = raw + (playing ? ((clock - lastAt) / 1000) * rate : 0) + nudgeRef.current;
+            const at =
+                raw +
+                (playing ? ((clock - lastAt) / 1000) * rate : 0) +
+                nudgeRef.current -
+                shiftRef.current;
             const drift = audio.currentTime - at;
             if (audio.readyState >= 1 && at >= 0) {
                 if (Math.abs(drift) > 0.25) {
@@ -315,7 +337,63 @@ const KaraokeBacking = ({ song }: { song: QueueSong }) => {
         }
     };
 
+    const switchOff = (value: boolean) =>
+        setKaraokeOff(url, song, value)
+            .then(() =>
+                toast.success({
+                    message: value
+                        ? `No karaoke for ${song.name} (for everyone)`
+                        : `Karaoke is back on for ${song.name}`,
+                }),
+            )
+            .catch((e: Error) => toast.error({ message: e.message }));
+
     if (!url || !check.isFetched) return null;
+    if (off)
+        return (
+            <>
+                <span
+                    className={styles.offset}
+                    title="Switched off for this song (no singing in it)"
+                >
+                    <Icon icon="microphone" /> No karaoke for this song
+                </span>
+                <button className={styles.textTool} onClick={() => switchOff(false)} type="button">
+                    Turn it on
+                </button>
+            </>
+        );
+    if (!version.inStep)
+        return (
+            <span className={styles.offset}>
+                <Icon icon="microphone" /> This version doesn&#39;t line up with the original, so
+                karaoke can&#39;t follow it
+            </span>
+        );
+    if (noLyrics && !anyway)
+        return (
+            <>
+                <span className={styles.offset} title="Karaoke stays off for songs without lyrics">
+                    <Icon icon="microphone" /> No lyrics, no karaoke
+                </span>
+                <button className={styles.textTool} onClick={() => setAnyway(true)} type="button">
+                    Karaoke anyway
+                </button>
+                <button className={styles.textTool} onClick={() => switchOff(true)} type="button">
+                    Never for this song
+                </button>
+            </>
+        );
+    const never = (
+        <button
+            className={styles.textTool}
+            onClick={() => switchOff(true)}
+            title="Nobody sings in this one: no karaoke for it (for everyone)"
+            type="button"
+        >
+            <Icon icon="x" /> No karaoke for this song
+        </button>
+    );
     if (available) {
         return (
             <>
@@ -325,6 +403,7 @@ const KaraokeBacking = ({ song }: { song: QueueSong }) => {
                 >
                     <Icon icon="microphone" /> {on ? 'Vocals off' : 'Fading...'}
                 </span>
+                {never}
                 <button
                     className={styles.textTool}
                     onClick={() => shift(-0.05)}
@@ -379,16 +458,19 @@ const KaraokeBacking = ({ song }: { song: QueueSong }) => {
         );
     }
     return (
-        <button
-            className={styles.textTool}
-            disabled={asked}
-            onClick={ask}
-            title="Ask Hermes Music for this song's instrumental, so karaoke can drop the vocals"
-            type="button"
-        >
-            <Icon icon="download" />{' '}
-            {asked ? 'Getting the instrumental...' : 'Get the instrumental'}
-        </button>
+        <>
+            <button
+                className={styles.textTool}
+                disabled={asked}
+                onClick={ask}
+                title="Ask Hermes Music for this song's instrumental, so karaoke can drop the vocals"
+                type="button"
+            >
+                <Icon icon="download" />{' '}
+                {asked ? 'Getting the instrumental...' : 'Get the instrumental'}
+            </button>
+            {never}
+        </>
     );
 };
 
@@ -426,12 +508,16 @@ let offsetSave: ReturnType<typeof setTimeout> | undefined;
 
 export const LyricsTools = ({
     karaoke,
+    noLyrics = false,
     offsetMs,
     song,
+    version = { inStep: true, shift: 0 },
 }: {
     karaoke: boolean;
+    noLyrics?: boolean;
     offsetMs: number;
     song?: QueueSong;
+    version?: { inStep: boolean; shift: number };
 }) => {
     const queryClient = useQueryClient();
     const url = useHermesUrl();
@@ -531,7 +617,9 @@ export const LyricsTools = ({
             >
                 <Icon icon="search" /> Lyrics
             </button>
-            {karaoke && <KaraokeBacking key={song.id} song={song} />}
+            {karaoke && (
+                <KaraokeBacking key={song.id} noLyrics={noLyrics} song={song} version={version} />
+            )}
         </div>
     );
 };

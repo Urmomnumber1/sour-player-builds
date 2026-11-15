@@ -284,6 +284,18 @@
     text-align: center;
 }
 
+/* (0.15) the song's version, over any album colour */
+.titles .stage-pill {
+    margin-bottom: 4px;
+    color: #fff;
+    background: rgb(0 0 0 / 30%);
+    backdrop-filter: blur(6px);
+}
+
+.titles .stage-pill:hover {
+    background: rgb(0 0 0 / 42%);
+}
+
 .title {
     overflow: hidden;
     text-overflow: ellipsis;

@@ -15,6 +15,7 @@ import { ShowInFileExplorerAction } from '/@/renderer/features/context-menu/acti
 import { ContextMenuPreview } from '/@/renderer/features/context-menu/components/context-menu-preview';
 import { RemoveSongAction, WrongSongAction } from '/@/renderer/features/sour/components/song-fix';
 import { CopyToBotAction } from '/@/renderer/features/sour/discord-bot/bot-library';
+import { PutUnderAction, VersionsAction } from '/@/renderer/features/sour/versions/version-actions';
 import { ContextMenu } from '/@/shared/components/context-menu/context-menu';
 import { LibraryItem, Song } from '/@/shared/types/domain-types';
 
@@ -35,6 +36,7 @@ export const PlaylistSongContextMenu = ({ items, type }: PlaylistSongContextMenu
         >
             <PlayAction ids={ids} itemType={type} songs={items} />
             <PlayTrackRadioAction disabled={items.length > 1} song={items[0]} />
+            <VersionsAction songs={items} />
             <ContextMenu.Divider />
             <RemoveFromPlaylistAction items={items} />
             <ContextMenu.Divider />
@@ -52,6 +54,7 @@ export const PlaylistSongContextMenu = ({ items, type }: PlaylistSongContextMenu
             <EditMetadataAction songs={items} />
             <CopyToBotAction songs={items} />
             <WrongSongAction songs={items} />
+            <PutUnderAction songs={items} />
             <RemoveSongAction songs={items} />
             <GetInfoAction disabled={items.length === 0} items={items} />
         </ContextMenu.Content>

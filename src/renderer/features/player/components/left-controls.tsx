@@ -18,6 +18,7 @@ import {
     useIsRadioActive,
     useRadioPlayer,
 } from '/@/renderer/features/radio/hooks/use-radio-player';
+import { VersionPill } from '/@/renderer/features/sour/versions/version-picker';
 import { useHotkeys } from '/@/renderer/hooks/use-hotkeys';
 import { AppRoute } from '/@/renderer/router/routes';
 import {
@@ -211,6 +212,8 @@ export const LeftControls = () => {
                         <>
                             <div className={styles.lineItem} onClick={stopPropagation}>
                                 <Group align="center" gap="xs" wrap="nowrap">
+                                    {/* (0.15) the song's version, when it has others: a tab in front of its name */}
+                                    {isSongDefined && <VersionPill />}
                                     <Text
                                         className={PlaybackSelectors.songTitle}
                                         component={Link}

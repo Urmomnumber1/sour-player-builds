@@ -27,6 +27,12 @@ import {
 import { RemoveSongAction, WrongSongAction } from '/@/renderer/features/sour/components/song-fix';
 import { CopyToBotAction } from '/@/renderer/features/sour/discord-bot/bot-library';
 import { useSimpleMode } from '/@/renderer/features/sour/store/sour.store';
+import {
+    NoKaraokeAction,
+    PutUnderAction,
+    RequestVersionAction,
+    VersionsAction,
+} from '/@/renderer/features/sour/versions/version-actions';
 import { ContextMenu } from '/@/shared/components/context-menu/context-menu';
 import { LibraryItem, Song } from '/@/shared/types/domain-types';
 
@@ -48,6 +54,7 @@ export const SongContextMenu = ({ items, type }: SongContextMenuProps) => {
         >
             <PlayAction ids={ids} itemType={LibraryItem.SONG} songs={items} />
             <PlayTrackRadioAction disabled={items.length > 1} song={items[0]} />
+            <VersionsAction songs={items} />
             <ContextMenu.Divider />
             <AddToPlaylistAction items={ids} itemType={LibraryItem.SONG} />
             {!simple && (
@@ -84,10 +91,13 @@ export const SongContextMenu = ({ items, type }: SongContextMenuProps) => {
                             <BlockArtistAction songs={items} />
                         </>
                     )}
+                    <RequestVersionAction songs={items} />
+                    <NoKaraokeAction songs={items} />
                     <ShareAction ids={ids} itemType={LibraryItem.SONG} />
                     <ShowInFileExplorerAction items={items} />
                     {!simple && <EditMetadataAction songs={items} />}
                     {!simple && <CopyToBotAction songs={items} />}
+                    <PutUnderAction songs={items} />
                     {!simple && <RemoveSongAction songs={items} />}
                 </ContextMenu.SubmenuContent>
             </ContextMenu.Submenu>

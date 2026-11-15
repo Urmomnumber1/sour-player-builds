@@ -298,6 +298,9 @@ export type WebAudio = {
         eqFilters: BiquadFilterNode[];
         preampGain: GainNode;
     };
+    // Sour Player 0.15: per player, a volume the version switch fades and a left/right for split ears
+    ducks?: GainNode[];
     gains: GainNode[];
+    pans?: StereoPannerNode[];
     visualizerInputs?: AudioNode[];
 };

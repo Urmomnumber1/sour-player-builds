@@ -7,12 +7,10 @@ import { create } from 'zustand';
 import styles from './music-video-button.module.css';
 
 import { api } from '/@/renderer/api';
-import {
-    type MusicVideo,
-    useMusicVideo,
-} from '/@/renderer/features/hermes-video/hooks/use-music-video';
+import { type MusicVideo } from '/@/renderer/features/hermes-video/hooks/use-music-video';
 import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-video.store';
 import { useSourStore } from '/@/renderer/features/sour/store/sour.store';
+import { useSongVideo, VideoSourceChip } from '/@/renderer/features/sour/versions/version-video';
 import { useAuthStore, usePlayerSong } from '/@/renderer/store';
 import { addToQueueByData, usePlayerStoreBase } from '/@/renderer/store/player.store';
 import { useTimestampStoreBase } from '/@/renderer/store/timestamp.store';
@@ -383,6 +381,9 @@ export const SourVideo = ({ artist, subtitle, title, variant, video: saved }: So
     const video: MusicVideo = live ? { ...saved, offset: 0, videoId: live.videoId } : saved;
     const url = useHermesUrl();
     const queryClient = useQueryClient();
+    const playingSong = usePlayerSong();
+    // (0.15) a version's own video: its timing and "wrong video" are the version's (Versions > Add a video)
+    const versionVideo = !!saved.versionId;
     const [nudge, setNudge] = useState(0);
     const [saving, setSaving] = useState(false);
     const offset = (video.offset ?? 0) + nudge;
@@ -452,20 +453,25 @@ export const SourVideo = ({ artist, subtitle, title, variant, video: saved }: So
             </div>
             {variant === 'stage' && (
                 <div className={styles.bar}>
-                    <button
-                        className={live ? styles['chip-on'] : styles.chip}
-                        onClick={toggleLive}
-                        type="button"
-                    >
-                        {live ? 'Live' : 'Official'}
-                    </button>
-                    <button
-                        className={styles.chip}
-                        onClick={() => openVideoPicker(artist, title)}
-                        type="button"
-                    >
-                        Wrong video?
-                    </button>
+                    <VideoSourceChip className={styles.chip} song={playingSong} />
+                    {!versionVideo && (
+                        <button
+                            className={live ? styles['chip-on'] : styles.chip}
+                            onClick={toggleLive}
+                            type="button"
+                        >
+                            {live ? 'Live' : 'Official'}
+                        </button>
+                    )}
+                    {!versionVideo && (
+                        <button
+                            className={styles.chip}
+                            onClick={() => openVideoPicker(artist, title)}
+                            type="button"
+                        >
+                            Wrong video?
+                        </button>
+                    )}
                     <span className={styles.timing}>
                         <button
                             aria-label="Video earlier"
@@ -487,7 +493,7 @@ export const SourVideo = ({ artist, subtitle, title, variant, video: saved }: So
                         >
                             +
                         </button>
-                        {!!nudge && (
+                        {!!nudge && !versionVideo && (
                             <button
                                 className={styles['chip-on']}
                                 disabled={saving}
@@ -611,7 +617,7 @@ export const openMusicVideo = () => {
 export const FloatingVideo = () => {
     const { floating } = useVideoWindow();
     const song = usePlayerSong();
-    const { data: video, isFetching } = useMusicVideo(song?.artistName, song?.name);
+    const { data: video, isFetching } = useSongVideo(song);
     // a song without a video closes the window
     useEffect(() => {
         if (floating && !isFetching && !video) useVideoWindow.setState({ floating: false });
@@ -653,7 +659,7 @@ export const FloatingVideo = () => {
 export const AutoVideo = () => {
     const song = usePlayerSong();
     const auto = useSourStore((state) => state.look.autoVideo);
-    const { data: video } = useMusicVideo(song?.artistName, song?.name);
+    const { data: video } = useSongVideo(song);
     useEffect(() => {
         if (auto && video && useVideoView.getState().view !== 'video')
             useVideoWindow.setState({ floating: true, watch: null });
@@ -849,7 +855,7 @@ export const VideoShelf = () => {
 // The player bar's Video button: only when Hermes Music has a video for the song
 export const MusicVideoButton = () => {
     const song = usePlayerSong();
-    const { data: video } = useMusicVideo(song?.artistName, song?.name);
+    const { data: video } = useSongVideo(song);
     if (!song || !video) return null;
     return (
         <ActionIcon

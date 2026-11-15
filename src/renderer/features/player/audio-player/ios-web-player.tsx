@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 
 import { usePlayerEvents } from '/@/renderer/features/player/audio-player/hooks/use-player-events';
 import { useSongUrl } from '/@/renderer/features/player/audio-player/hooks/use-stream-url';
+import { setPlayerElement } from '/@/renderer/features/player/audio-player/player-elements';
+import { takeReloadSeek, useMainMute } from '/@/renderer/features/sour/versions/versions';
 import {
     usePlaybackSettings,
     usePlayerActions,
@@ -38,8 +40,15 @@ export function IosWebPlayer() {
     const speed = usePlayerSpeed();
     const { preservePitch } = usePlaybackSettings();
     const firstLoad = useRef(true);
-    const latest = useRef({ mediaAutoNext, repeat, setTimestamp, status });
-    latest.current = { mediaAutoNext, repeat, setTimestamp, status };
+    // Sour Player 0.15: split ears play both versions alongside, with this one silent (see versions)
+    const versionsMuted = useMainMute((s) => s.on);
+    const latest = useRef({ mediaAutoNext, repeat, setTimestamp, status, uid: song?._uniqueId });
+    latest.current = { mediaAutoNext, repeat, setTimestamp, status, uid: song?._uniqueId };
+
+    useEffect(() => {
+        setPlayerElement(1, audio.current);
+        return () => setPlayerElement(1, null);
+    }, []);
 
     // a new song: same element, new source (keeps playing in the background)
     useEffect(() => {
@@ -48,6 +57,10 @@ export function IosWebPlayer() {
         if (a.src !== url) {
             a.src = url;
             a.load();
+            // another version of the same song: carry on from the same moment
+            const at = takeReloadSeek(latest.current.uid);
+            if (at !== null && at > 0.5)
+                a.addEventListener('loadedmetadata', () => (a.currentTime = at), { once: true });
             if (firstLoad.current) {
                 // carry on where the last session stopped
                 firstLoad.current = false;
@@ -92,8 +105,8 @@ export function IosWebPlayer() {
         const a = audio.current;
         if (!a) return;
         a.volume = Math.max(0, Math.min(1, volume / 100)); // iOS keeps its own volume; harmless
-        a.muted = muted;
-    }, [volume, muted]);
+        a.muted = muted || versionsMuted;
+    }, [volume, muted, versionsMuted]);
 
     usePlayerEvents(
         {

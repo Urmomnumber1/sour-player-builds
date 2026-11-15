@@ -14,7 +14,6 @@ import {
     useVideoWindow,
     VideoBackdrop,
 } from '/@/renderer/features/hermes-video/components/music-video-button';
-import { useMusicVideo } from '/@/renderer/features/hermes-video/hooks/use-music-video';
 import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-video.store';
 import { lyricsQueries } from '/@/renderer/features/lyrics/api/lyrics-api';
 import { useWordLyrics, wordCuesFor } from '/@/renderer/features/lyrics/api/word-lyrics';
@@ -67,6 +66,9 @@ import {
     useSourStore,
 } from '/@/renderer/features/sour/store/sour.store';
 import { getReason } from '/@/renderer/features/sour/utils/reasons';
+import { VersionPill } from '/@/renderer/features/sour/versions/version-picker';
+import { useSongVideo } from '/@/renderer/features/sour/versions/version-video';
+import { useOriginalShift } from '/@/renderer/features/sour/versions/versions';
 import {
     makeLevels,
     readLevels,
@@ -125,6 +127,8 @@ export const toggleStage = (open = !useStage.getState().open) => {
     useStage.setState({ open });
     document.documentElement.classList.toggle('sour-stage-open', open);
 };
+// dev builds only: for local tests
+if (import.meta.env.DEV) (window as any).__sourStage = { toggleStage };
 
 const LRC = /\[(\d{1,3}):(\d{2})(?:[.:](\d{1,3}))?]/g;
 
@@ -258,7 +262,7 @@ const StageView = () => {
     // Cover or Video: the song's music video (from Hermes Music) in place of the cover
     const view = useVideoView((s) => s.view);
     const videoBlur = useVideoView((s) => s.blur);
-    const { data: stageVideo } = useMusicVideo(song?.artistName, song?.name);
+    const { data: stageVideo } = useSongVideo(song);
     const showVideo = view === 'video' && !!stageVideo && !!song;
     // "Behind": the music video plays behind the cover and lyrics (blurred or sharp)
     const behind = view === 'behind' && !!stageVideo && !!song;
@@ -283,7 +287,7 @@ const StageView = () => {
     });
     const color = background || 'rgb(60, 50, 20)';
 
-    const { data } = useQuery(
+    const { data, isFetched: lyricsFetched } = useQuery(
         lyricsQueries.songLyrics(
             {
                 options: { enabled: !!song?.id },
@@ -307,7 +311,8 @@ const StageView = () => {
     }).data;
     const selected = data?.selected as null | undefined | { lyrics?: unknown };
     // word-by-word timing from Hermes Music (its timed lines when the song has none of its own)
-    const wordLines = useWordLyrics(song).data;
+    const wordQuery = useWordLyrics(song);
+    const wordLines = wordQuery.data;
     const { lines, synced } = useMemo(() => {
         const base = toLines(selected?.lyrics);
         if (!wordLines) return base;
@@ -331,7 +336,14 @@ const StageView = () => {
     }, [selected, wordLines]);
     // the lyrics' own offset plus the fix saved for this song on Hermes Music
     const sharedOffset = useSharedLyricOffset(song ?? undefined);
-    const offset = (data?.selectedOffsetMs ?? 0) + sharedOffset;
+    // (0.15) a version of the song: the lyrics are timed to the original
+    const version = useOriginalShift(song);
+    const offset =
+        (data?.selectedOffsetMs ?? 0) +
+        sharedOffset -
+        (version.inStep ? Math.round(version.shift * 1000) : 0);
+    // karaoke stays off by itself for songs without lyrics
+    const noLyrics = lyricsFetched && !wordQuery.isLoading && lines.length === 0;
     const nowMs = timestamp * 1000 + offset;
     let current = -1;
     if (synced)
@@ -755,6 +767,7 @@ const StageView = () => {
                         </button>
                     </div>
                     <div className={styles.titles}>
+                        <VersionPill className={styles['stage-pill']} />
                         <div className={styles.title}>{song?.name ?? 'Nothing playing'}</div>
                         <div className={styles.artist}>{song?.artistName}</div>
                         {why && <div className={styles.why}>{why}</div>}
@@ -834,8 +847,10 @@ const StageView = () => {
                     )}
                     <LyricsTools
                         karaoke={look.lyricStyle === 'karaoke'}
+                        noLyrics={noLyrics}
                         offsetMs={offset}
                         song={song}
+                        version={version}
                     />
                     <div
                         className={clsx(styles.lyrics, styles[look.lyricStyle])}

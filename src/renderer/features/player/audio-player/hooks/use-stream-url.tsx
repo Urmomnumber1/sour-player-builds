@@ -10,6 +10,12 @@ import { isNativeApp } from '/@/renderer/features/sour/mobile/android';
 import { offlineUrl } from '/@/renderer/features/sour/mobile/offline';
 import { phoneTranscode } from '/@/renderer/features/sour/mobile/phone-store';
 import { isPodcast, podcastStreamUrl } from '/@/renderer/features/sour/podcasts/podcast-id';
+import {
+    noteLoaded,
+    useVersionReloads,
+    useVersions,
+    versionStream,
+} from '/@/renderer/features/sour/versions/versions';
 import { TranscodingConfig } from '/@/renderer/store';
 import { QueueSong } from '/@/shared/types/domain-types';
 
@@ -73,10 +79,47 @@ export function useSongUrl(
         }
     }, [song?._serverId]);
 
-    return (
-        offline ??
-        withSongVersion(shouldReusePrior ? prior.current[1] : queryStreamUrl, song?.id, version)
+    // Sour Player 0.15: the version of the song to play (picked when it was started, else your most-played).
+    // Re-read when the versions list arrives or the song is switched by reloading.
+    useVersions((s) => s.at);
+    const reloads = useVersionReloads((s) => (song?._uniqueId ? s.n[song._uniqueId] || 0 : 0));
+    const frozen = useRef<null | {
+        bump?: number;
+        reloads: number;
+        uid: string;
+        url: string;
+        version: string;
+    }>(null);
+
+    const own = withSongVersion(
+        shouldReusePrior ? prior.current[1] : queryStreamUrl,
+        song?.id,
+        version,
     );
+    // (a song saved on this phone plays its saved copy, unless you picked a version and you're online)
+    const picked = versionStream(song);
+    const online = typeof navigator === 'undefined' || navigator.onLine !== false;
+    const chosen = offline && !(picked.url && online) ? null : picked;
+    let url = (chosen?.url ?? offline) || own;
+    let loaded = chosen?.url ? chosen.version : 'original';
+    if (!current) {
+        frozen.current = null;
+    } else {
+        // the song that's playing keeps its address (a version switched mid-song plays alongside it), unless
+        // its audio was swapped ("Not the right song") or it's switched by reloading
+        const f = frozen.current;
+        if (f && song && f.uid === song._uniqueId && f.bump === version && f.reloads === reloads) {
+            url = f.url;
+            loaded = f.version;
+        } else if (song?._uniqueId && url) {
+            frozen.current = { bump: version, reloads, uid: song._uniqueId, url, version: loaded };
+        }
+    }
+    const uid = song?._uniqueId;
+    useEffect(() => {
+        if (uid && url) noteLoaded(uid, loaded);
+    }, [uid, url, loaded]);
+    return url;
 }
 
 export const getSongUrl = async (
@@ -88,6 +131,10 @@ export const getSongUrl = async (
 ) => {
     const offline = offlineUrl(song) ?? podcastStreamUrl(song);
     if (offline) return offline;
+    // Sour Player 0.15: a version of the song (see versions.ts)
+    const chosen = versionStream(song);
+    if (song._uniqueId) noteLoaded(song._uniqueId, chosen.url ? chosen.version : 'original');
+    if (chosen.url) return chosen.url;
     if (isNativeApp()) transcode = phoneTranscode(transcode);
     const url = await api.controller.getStreamUrl({
         apiClientProps: { serverId: song._serverId },

@@ -4,8 +4,12 @@ import { type ClipboardEvent, useState } from 'react';
 
 import styles from './request-button.module.css';
 
+import { toGroupSong } from '/@/renderer/features/group-play/api/group-play-api';
 import { useReactions } from '/@/renderer/features/group-play/components/group-reactions';
-import { useGroupPlayStore } from '/@/renderer/features/group-play/store/group-play.store';
+import {
+    type GroupSong,
+    useGroupPlayStore,
+} from '/@/renderer/features/group-play/store/group-play.store';
 import {
     isCommand,
     requestCommand,
@@ -16,11 +20,13 @@ import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-vid
 import { requestApi, type RequestGuess } from '/@/renderer/features/sour/api/sour-api';
 import { FindSong } from '/@/renderer/features/sour/components/extras10';
 import { RequestQuestion } from '/@/renderer/features/sour/components/request-question';
+import { SongPicker } from '/@/renderer/features/sour/components/song-picker';
 import { useBotAccess } from '/@/renderer/features/sour/discord-bot/bot-api';
 import { BotRequest } from '/@/renderer/features/sour/discord-bot/bot-library';
 import { isIphone } from '/@/renderer/features/sour/mobile/ios-look';
 import { useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import { playSound } from '/@/renderer/features/sour/utils/sounds';
+import { loadVersions, versionsApi } from '/@/renderer/features/sour/versions/versions';
 import { usePlayerSong } from '/@/renderer/store';
 import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
 import { Button } from '/@/shared/components/button/button';
@@ -30,6 +36,7 @@ import { Stack } from '/@/shared/components/stack/stack';
 import { TextInput } from '/@/shared/components/text-input/text-input';
 import { Text } from '/@/shared/components/text/text';
 import { toast } from '/@/shared/components/toast/toast';
+import { type Song } from '/@/shared/types/domain-types';
 
 interface HermesRequest {
     artist?: string;
@@ -70,7 +77,7 @@ const SECRETS: Record<string, () => void> = {
     },
 };
 
-type RequestType = 'album' | 'artist' | 'karaoke' | 'song';
+type RequestType = 'album' | 'artist' | 'karaoke' | 'song' | 'version';
 
 const statusText = (r: HermesRequest) => {
     if (r.status === 'pending') return r.pos ? `Queued #${r.pos}` : 'Queued';
@@ -234,12 +241,17 @@ export const openVideoLink = (url: string, song = '') => {
 
 // Ask Hermes Music for a song, album or artist without leaving Sour Player; it downloads it into
 // the music folder and it shows up in the library after the next scan.
-const RequestPanel = () => {
+const RequestPanel = ({ versionOf }: { versionOf?: Song }) => {
     const url = useHermesUrl();
     const userName = useGroupPlayStore((state) => state.userName);
     const queryClient = useQueryClient();
     const me = useSourStore((state) => state.me);
-    const [type, setType] = useState<RequestType>('song');
+    const [type, setType] = useState<RequestType>(versionOf ? 'version' : 'song');
+    // (0.15) "Request a version": the song it goes under, and what to call it
+    const [base, setBase] = useState<GroupSong | null>(() =>
+        versionOf ? toGroupSong(versionOf) : null,
+    );
+    const [label, setLabel] = useState('');
     const [log, setLog] = useState<{ kind: string; text: string }[]>([]);
     const [query, setQuery] = useState('');
     const [busy, setBusy] = useState(false);
@@ -299,6 +311,38 @@ const RequestPanel = () => {
             return;
         }
         if (sendQuery.length < 2) return;
+        if (sendType === 'version') {
+            if (!base) {
+                toast.error({ message: 'Pick the song it is a version of first' });
+                return;
+            }
+            setBusy(true);
+            try {
+                const song =
+                    versionOf && versionOf.id === base.id
+                        ? versionOf
+                        : ({ artistName: base.artist, name: base.title } as Song);
+                await versionsApi.request(
+                    song,
+                    sendQuery,
+                    label.trim() || undefined,
+                    userName.trim() || undefined,
+                );
+                toast.success({
+                    message: `Asked for a version of ${base.title}: it shows up in its versions when it's ready`,
+                });
+                setQuery('');
+                setLabel('');
+                queryClient.invalidateQueries({ queryKey: ['hermes-requests', url] });
+                for (const ms of [20000, 60000, 150000])
+                    window.setTimeout(() => void loadVersions().catch(() => undefined), ms);
+            } catch (error) {
+                toast.error({ message: (error as Error).message });
+            } finally {
+                setBusy(false);
+            }
+            return;
+        }
         setBusy(true);
         try {
             const res = await fetch(`${url}/api/requests`, {
@@ -375,7 +419,9 @@ const RequestPanel = () => {
               ? 'Album name, e.g. hot fuss'
               : type === 'karaoke'
                 ? 'The song to sing along to, e.g. toby fox hotel (gets its instrumental)'
-                : 'Artist name, e.g. the killers';
+                : type === 'version'
+                  ? 'A link to the version (YouTube, Spotify, SoundCloud...) or a few words, e.g. kasane teto'
+                  : 'Artist name, e.g. the killers';
 
     return (
         <Stack gap="md" onPaste={forBot ? undefined : onPaste}>
@@ -399,10 +445,27 @@ const RequestPanel = () => {
                             { label: 'Album', value: 'album' },
                             { label: 'Artist', value: 'artist' },
                             { label: 'Karaoke', value: 'karaoke' },
+                            { label: 'Version', value: 'version' },
                         ]}
                         onChange={(value) => setType(value as RequestType)}
                         value={type}
                     />
+                    {type === 'version' && (
+                        <Stack gap={6}>
+                            <Text isMuted size="xs">
+                                Another version of a song you have (a cover, a sped-up edit...): it
+                                goes under the song instead of next to it, and plays from the
+                                song&#39;s versions.
+                            </Text>
+                            <SongPicker onPick={setBase} picked={base} />
+                            <TextInput
+                                onChange={(e) => setLabel(e.currentTarget.value)}
+                                placeholder="Its name (optional), e.g. Kasane Teto"
+                                size="xs"
+                                value={label}
+                            />
+                        </Stack>
+                    )}
                     <Group gap="xs" wrap="nowrap">
                         <TextInput
                             autoFocus
@@ -514,8 +577,19 @@ const RequestPanel = () => {
     );
 };
 
-export const openRequestWindow = () =>
-    openModal({ children: <RequestPanel />, size: 'lg', title: 'Request music' });
+// (0.15) { versionOf: song } opens it on "Version" with the song attached. Also used as a click handler
+// directly (its argument is then the click), so anything else opens it as usual.
+export const openRequestWindow = (options?: unknown) => {
+    const versionOf =
+        options && typeof options === 'object' && 'versionOf' in options
+            ? (options as { versionOf?: Song }).versionOf
+            : undefined;
+    openModal({
+        children: <RequestPanel versionOf={versionOf} />,
+        size: 'lg',
+        title: versionOf ? `Request a version of ${versionOf.name}` : 'Request music',
+    });
+};
 
 // Player bar: opens the request window.
 export const RequestButton = () => (

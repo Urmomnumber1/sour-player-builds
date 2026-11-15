@@ -37,6 +37,8 @@ import { AmbiencePlayer } from '/@/renderer/features/sour/stage/ambience';
 import { LoopWatcher } from '/@/renderer/features/sour/stage/loop';
 import { SourStage } from '/@/renderer/features/sour/stage/sour-stage';
 import { useSourStore } from '/@/renderer/features/sour/store/sour.store';
+import { VersionDeck } from '/@/renderer/features/sour/versions/version-deck';
+import { VersionPrompt } from '/@/renderer/features/sour/versions/version-picker';
 import { useSettingsStore } from '/@/renderer/store/settings.store';
 
 const DAILY_COLORS = [
@@ -197,6 +199,8 @@ export const SourRoot = () => (
         <SourSafe name="playback tools">
             <PlaybackWatcher />
             <AmbiencePlayer />
+            <VersionDeck />
+            <VersionPrompt />
             <SongMenuAnywhere />
             <PodcastProgress />
         </SourSafe>

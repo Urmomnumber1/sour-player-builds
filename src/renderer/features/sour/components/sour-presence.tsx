@@ -10,6 +10,7 @@ import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-vid
 import { sourApi } from '/@/renderer/features/sour/api/sour-api';
 import { deviceId } from '/@/renderer/features/sour/components/social';
 import { isNativeApp } from '/@/renderer/features/sour/mobile/android';
+import { isPodcast } from '/@/renderer/features/sour/podcasts/podcast-id';
 import { useStage } from '/@/renderer/features/sour/stage/sour-stage';
 import { useMyProfile, useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import { useCurrentServer } from '/@/renderer/store';
@@ -148,7 +149,8 @@ export const SourPresence = () => {
         const beat = () => {
             const player = usePlayerStoreBase.getState();
             const song = player.getCurrentSong();
-            const shown = song && !hidden.includes(song.id) ? song : null;
+            // podcast episodes aren't shared as songs (they'd count as plays in the stats)
+            const shown = song && !hidden.includes(song.id) && !isPodcast(song) ? song : null;
             const group = useGroupPlayStore.getState().state;
             // songs heard past halfway since the last report (Sour Shop points), kept until Hermes has them
             const heard = pendingHeard();

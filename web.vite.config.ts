@@ -56,6 +56,10 @@ export default defineConfig({
             localsConvention: 'camelCase',
         },
     },
+    // Citrus Player, the lighter build (src/shared/citrus.ts)
+    define: {
+        'import.meta.env.SOUR_CITRUS': JSON.stringify(process.env.SOUR_CITRUS === '1'),
+    },
     optimizeDeps: {
         exclude: [
             '@atlaskit/pragmatic-drag-and-drop',

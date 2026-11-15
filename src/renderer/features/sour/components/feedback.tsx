@@ -30,6 +30,9 @@ interface Report {
 
 const platform = () => {
     const ua = navigator.userAgent;
+    if (/iPhone|iPod/.test(ua) || (window as any).Capacitor?.getPlatform?.() === 'ios')
+        return 'iOS';
+    if (/iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return 'iPadOS';
     if (/android/i.test(ua)) return 'Android';
     if (/mac/i.test(ua)) return 'macOS';
     if (/linux/i.test(ua)) return 'Linux';

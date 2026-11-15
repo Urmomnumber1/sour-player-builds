@@ -20,6 +20,7 @@
 
 /* parallax headers */
 .sour-parallax [class*='library-header-module-image-section'] {
+    opacity: max(0, calc(1 - var(--sour-scroll, 0) / 380));
     transform: translateY(calc(var(--sour-scroll, 0) * 0.35px));
 }
 

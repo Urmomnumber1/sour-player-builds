@@ -1,3 +1,4 @@
+import { useMediaQuery } from '@mantine/hooks';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
@@ -877,6 +878,9 @@ export const TasteMap = () => {
     const svg = useRef<SVGSVGElement>(null);
     const [, setTick] = useState(0);
     const nodes = useRef<Node[]>([]);
+    const narrow = useMediaQuery('(max-width: 700px)');
+    const W = narrow ? 420 : 800;
+    const H = narrow ? 640 : 420;
     const key = profiles.map((p) => p.id).join();
     const pairs = useMemo(() => {
         const out: Array<[number, number, number]> = [];
@@ -892,8 +896,6 @@ export const TasteMap = () => {
     }, [key]);
 
     useEffect(() => {
-        const W = 800;
-        const H = 420;
         const maxHours = Math.max(1, ...profiles.map((p) => p.stats?.hoursTotal ?? 0));
         nodes.current = profiles.map((p, i) => ({
             color: `hsl(${hue(p.name)} 60% 50%)`,
@@ -903,8 +905,8 @@ export const TasteMap = () => {
             r: 22 + 18 * Math.sqrt((p.stats?.hoursTotal ?? 0) / maxHours),
             vx: 0,
             vy: 0,
-            x: W / 2 + Math.cos((i / profiles.length) * Math.PI * 2) * 150,
-            y: H / 2 + Math.sin((i / profiles.length) * Math.PI * 2) * 120,
+            x: W / 2 + Math.cos((i / profiles.length) * Math.PI * 2) * (narrow ? 110 : 150),
+            y: H / 2 + Math.sin((i / profiles.length) * Math.PI * 2) * (narrow ? 200 : 120),
         }));
         let frame = 0;
         let steps = 0;
@@ -916,7 +918,7 @@ export const TasteMap = () => {
                 const dx = b.x - a.x;
                 const dy = b.y - a.y;
                 const dist = Math.max(1, Math.hypot(dx, dy));
-                const want = a.r + b.r + 20 + (1 - match) * 260;
+                const want = a.r + b.r + 20 + (1 - match) * (narrow ? 170 : 260);
                 const f = (dist - want) * 0.004;
                 a.vx += (dx / dist) * f;
                 a.vy += (dy / dist) * f;
@@ -937,7 +939,7 @@ export const TasteMap = () => {
         frame = requestAnimationFrame(step);
         return () => cancelAnimationFrame(frame);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [key, pairs, url]);
+    }, [key, pairs, url, narrow]);
 
     const n = nodes.current;
     return (
@@ -951,7 +953,7 @@ export const TasteMap = () => {
                     Needs at least two people with some listening.
                 </Text>
             ) : (
-                <svg className={styles.map} ref={svg} viewBox="0 0 800 420">
+                <svg className={styles.map} ref={svg} viewBox={`0 0 ${W} ${H}`}>
                     <defs>
                         {n.map((p) => (
                             <clipPath id={`map-${p.id}`} key={p.id}>

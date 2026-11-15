@@ -2,6 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 
 import { api } from '/@/renderer/api';
+import {
+    useSongVersions,
+    withSongVersion,
+} from '/@/renderer/features/sour/components/song-version';
 import { isNativeApp } from '/@/renderer/features/sour/mobile/android';
 import { offlineUrl } from '/@/renderer/features/sour/mobile/offline';
 import { phoneTranscode } from '/@/renderer/features/sour/mobile/phone-store';
@@ -19,6 +23,7 @@ export function useSongUrl(
     // a saved copy, or a podcast episode (through Hermes Music)
     const offline = offlineUrl(song) ?? podcastStreamUrl(song);
     const prior = useRef(['', '']);
+    const version = useSongVersions((s) => (song ? s.v[song.id] : undefined));
     const shouldReusePrior = Boolean(
         song?._serverId && current && prior.current[0] === song._uniqueId && prior.current[1],
     );
@@ -68,7 +73,10 @@ export function useSongUrl(
         }
     }, [song?._serverId]);
 
-    return offline ?? (shouldReusePrior ? prior.current[1] : queryStreamUrl);
+    return (
+        offline ??
+        withSongVersion(shouldReusePrior ? prior.current[1] : queryStreamUrl, song?.id, version)
+    );
 }
 
 export const getSongUrl = async (
@@ -97,5 +105,5 @@ export const getSongUrl = async (
         },
     });
 
-    return url;
+    return withSongVersion(url, song.id) ?? url;
 };

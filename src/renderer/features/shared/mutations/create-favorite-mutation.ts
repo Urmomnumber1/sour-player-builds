@@ -11,6 +11,7 @@ import {
     PreviousQueryData,
     restoreFavoriteQueryData,
 } from '/@/renderer/features/shared/mutations/favorite-optimistic-updates';
+import { favoritesChanged } from '/@/renderer/features/sour/mobile/offline';
 import { MutationHookArgs } from '/@/renderer/lib/react-query';
 import { toast } from '/@/shared/components/toast/toast';
 import { FavoriteArgs, FavoriteResponse, LibraryItem } from '/@/shared/types/domain-types';
@@ -61,6 +62,7 @@ export const useCreateFavorite = (args: MutationHookArgs) => {
             return applyFavoriteOptimisticUpdates(queryClient, variables, true);
         },
         onSuccess: (_data, variables) => {
+            favoritesChanged();
             if (variables.query.type === LibraryItem.SONG) {
                 remote?.updateFavorite(true, variables.apiClientProps.serverId, variables.query.id);
             }

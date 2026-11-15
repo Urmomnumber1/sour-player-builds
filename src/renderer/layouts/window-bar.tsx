@@ -21,6 +21,7 @@ import {
     useWindowBarTrackinfo,
     useWindowSettings,
 } from '/@/renderer/store';
+import { APP_NAME } from '/@/shared/citrus';
 import { Text } from '/@/shared/components/text/text';
 import { Platform, PlayerStatus } from '/@/shared/types/types';
 
@@ -182,7 +183,7 @@ export const WindowBar = () => {
                 }
             }
 
-            return `${radioStatusString}${radioTitle}${radioMetadata} — Sour Player${privateMode ? ` ${privateModeString}` : ''}`;
+            return `${radioStatusString}${radioTitle}${radioMetadata} — ${APP_NAME}${privateMode ? ` ${privateModeString}` : ''}`;
         }
 
         // Show regular song information
@@ -190,8 +191,8 @@ export const WindowBar = () => {
         const queueString = queueLength ? `(${index + 1} / ${queueLength}) ` : '';
         const title = `${
             queueLength
-                ? `${statusString}${queueString}${currentSong?.name}${currentSong?.artistName ? ` — ${currentSong?.artistName} — Sour Player` : ''}`
-                : 'Sour Player'
+                ? `${statusString}${queueString}${currentSong?.name}${currentSong?.artistName ? ` — ${currentSong?.artistName} — ${APP_NAME}` : ''}`
+                : APP_NAME
         }${privateMode ? ` ${privateModeString}` : ''}`;
         return title;
     }, [

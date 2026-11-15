@@ -23,6 +23,8 @@ const createConfig = (isDevelopment: boolean): UserConfig => ({
             'import.meta.env.IS_LINUX': JSON.stringify(currentOSEnv === 'linux'),
             'import.meta.env.IS_MACOS': JSON.stringify(currentOSEnv === 'darwin'),
             'import.meta.env.IS_WIN': JSON.stringify(currentOSEnv === 'win32'),
+            // Citrus Player, the lighter build (src/shared/citrus.ts)
+            'import.meta.env.SOUR_CITRUS': JSON.stringify(process.env.SOUR_CITRUS === '1'),
         },
         plugins: [
             dynamicImportPlugin(),
@@ -41,6 +43,9 @@ const createConfig = (isDevelopment: boolean): UserConfig => ({
     preload: {
         build: {
             sourcemap: true,
+        },
+        define: {
+            'import.meta.env.SOUR_CITRUS': JSON.stringify(process.env.SOUR_CITRUS === '1'),
         },
         resolve: {
             alias: {
@@ -65,6 +70,9 @@ const createConfig = (isDevelopment: boolean): UserConfig => ({
                 generateScopedName: 'fs-[name]-[local]',
                 localsConvention: 'camelCase',
             },
+        },
+        define: {
+            'import.meta.env.SOUR_CITRUS': JSON.stringify(process.env.SOUR_CITRUS === '1'),
         },
         plugins: [
             createReactPlugin(),

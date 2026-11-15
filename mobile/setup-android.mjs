@@ -15,6 +15,10 @@ const edit = (file, change) => {
     fs.writeFileSync(file, after);
 };
 
+// Citrus Player (SOUR_CITRUS=1): the lighter build, with its own application id, name and icons. The code
+// keeps its Java package (com.anjalo.sourplayer); only the id people see and install changes.
+const CITRUS = process.env.SOUR_CITRUS === '1';
+
 // Java code and resources
 const javaDir = path.join(main, 'java', 'com', 'anjalo', 'sourplayer');
 fs.mkdirSync(javaDir, { recursive: true });
@@ -25,6 +29,14 @@ for (const dir of fs.readdirSync(path.join(here, 'native', 'res'))) {
     fs.mkdirSync(path.join(main, 'res', dir), { recursive: true });
     for (const f of fs.readdirSync(path.join(here, 'native', 'res', dir))) {
         fs.copyFileSync(path.join(here, 'native', 'res', dir, f), path.join(main, 'res', dir, f));
+    }
+}
+
+// Citrus: its own icon packs (the same pack names) over Sour Player's
+if (CITRUS) {
+    const packs = path.join(here, 'native', 'res-citrus', 'mipmap-xxxhdpi');
+    for (const f of fs.readdirSync(packs)) {
+        fs.copyFileSync(path.join(packs, f), path.join(main, 'res', 'mipmap-xxxhdpi', f));
     }
 }
 
@@ -50,7 +62,7 @@ const aliases = PACKS.map((pack) =>
 );
 
 // the app icon (the same one as the desktop app)
-const icon = path.join(here, '..', 'assets', 'icons', '512x512.png');
+const icon = path.join(here, '..', 'assets', CITRUS ? 'citrus' : 'icons', '512x512.png');
 for (const dir of fs.readdirSync(path.join(main, 'res'))) {
     if (dir.startsWith('mipmap-anydpi')) {
         fs.rmSync(path.join(main, 'res', dir), { force: true, recursive: true });
@@ -156,6 +168,7 @@ const version = process.env.SOUR_VERSION || '0.1.0b';
 const code = process.env.SOUR_VERSION_CODE || '1';
 edit(path.join(app, 'build.gradle'), (s) =>
     s
+        .replace(/applicationId "[^"]*"/, (m) => (CITRUS ? 'applicationId "com.anjalo.citrusplayer"' : m))
         .replace(/versionCode \d+/, `versionCode ${code}`)
         .replace(/versionName "[^"]*"/, `versionName "${version}"`)
         .replace(
@@ -187,3 +200,9 @@ edit(path.join(app, 'build.gradle'), (s) =>
 );
 
 console.log(`Sour Player ${version} (${code}) is set up for Android`);
+
+// Citrus: the name on the home screen and in the app switcher
+if (CITRUS) {
+    const strings = path.join(main, 'res', 'values', 'strings.xml');
+    fs.writeFileSync(strings, fs.readFileSync(strings, 'utf8').split('Sour Player').join('Citrus Player'));
+}

@@ -53,31 +53,44 @@ export const SongContextMenu = ({ items, type }: SongContextMenuProps) => {
             {!simple && (
                 <>
                     <AddToGroupAction songs={items} />
-                    <AddToProfileAction songs={items} />
                     <SocialSongMenu songs={items} />
-                    <SongDnaAction songs={items} />
-                    <PlayAfterAlbumAction songs={items} />
-                    <ShareSongAction songs={items} />
-                    <WhoElseLikesAction songs={items} />
-                    <SongNoteAction songs={items} />
-                    <HideFromActivityAction songs={items} />
-                    <BlockArtistAction songs={items} />
                 </>
             )}
             <ContextMenu.Divider />
             <SetFavoriteAction ids={ids} itemType={LibraryItem.SONG} />
             {!simple && <SetRatingAction ids={ids} itemType={LibraryItem.SONG} />}
             <ContextMenu.Divider />
-            <DownloadAction ids={ids} />
-            <ShareAction ids={ids} itemType={LibraryItem.SONG} />
-            <ContextMenu.Divider />
+            <DownloadAction ids={ids} songs={items} />
             <GoToAction items={items} />
-            <ShowInFileExplorerAction items={items} />
-            <ContextMenu.Divider />
-            {!simple && <EditMetadataAction songs={items} />}
-            {!simple && <CopyToBotAction songs={items} />}
             {!simple && <WrongSongAction songs={items} />}
-            {!simple && <RemoveSongAction songs={items} />}
+            <ContextMenu.Divider />
+            {/* 0.14: the rest, one step in (the menu was two dozen items long) */}
+            <ContextMenu.Submenu>
+                <ContextMenu.SubmenuTarget>
+                    <ContextMenu.Item leftIcon="ellipsisHorizontal" rightIcon="arrowRightS">
+                        More
+                    </ContextMenu.Item>
+                </ContextMenu.SubmenuTarget>
+                <ContextMenu.SubmenuContent>
+                    {!simple && (
+                        <>
+                            <AddToProfileAction songs={items} />
+                            <SongDnaAction songs={items} />
+                            <PlayAfterAlbumAction songs={items} />
+                            <ShareSongAction songs={items} />
+                            <WhoElseLikesAction songs={items} />
+                            <SongNoteAction songs={items} />
+                            <HideFromActivityAction songs={items} />
+                            <BlockArtistAction songs={items} />
+                        </>
+                    )}
+                    <ShareAction ids={ids} itemType={LibraryItem.SONG} />
+                    <ShowInFileExplorerAction items={items} />
+                    {!simple && <EditMetadataAction songs={items} />}
+                    {!simple && <CopyToBotAction songs={items} />}
+                    {!simple && <RemoveSongAction songs={items} />}
+                </ContextMenu.SubmenuContent>
+            </ContextMenu.Submenu>
             <GetInfoAction disabled={items.length === 0} items={items} />
         </ContextMenu.Content>
     );

@@ -4,8 +4,12 @@ import { useState } from 'react';
 
 import styles from './song-fix.module.css';
 
+import { api } from '/@/renderer/api';
 import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-video.store';
+import { bumpSong } from '/@/renderer/features/sour/components/song-version';
 import { useMyProfile, useSourStore } from '/@/renderer/features/sour/store/sour.store';
+import { queryClient } from '/@/renderer/lib/react-query';
+import { usePlayerStoreBase } from '/@/renderer/store/player.store';
 import { Button } from '/@/shared/components/button/button';
 import { ContextMenu } from '/@/shared/components/context-menu/context-menu';
 import { Group } from '/@/shared/components/group/group';
@@ -36,6 +40,16 @@ const hermesPost = async <T,>(url: string, body: unknown): Promise<T> => {
     const json = await res.json().catch(() => null);
     if (!res.ok) throw new Error(json?.error || `Hermes Music returned ${res.status}`);
     return json as T;
+};
+
+// after a song was removed or its audio swapped: the music server looks at the files right away (it lets
+// admins ask; for everyone else it notices on its own), and the lists here refresh once it has
+const afterLibraryChange = (serverId: string) => {
+    api.controller
+        .refreshItems({ apiClientProps: { serverId }, query: {} } as any)
+        .catch(() => undefined);
+    for (const ms of [4000, 15000])
+        window.setTimeout(() => void queryClient.invalidateQueries({ queryKey: [serverId] }), ms);
 };
 
 const time = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
@@ -70,15 +84,19 @@ const WrongSongSheet = ({ song }: { song: Song }) => {
         setBusy(alt.id);
         try {
             await hermesPost(`${url}/api/library/replace`, {
+                album: song.album,
                 artist: songArtist(song),
                 by: myName,
                 file: song.path,
                 title: song.name,
                 videoId: alt.id,
             });
+            // the player fetches the new audio (if it's playing, it starts again with the right one)
+            bumpSong(song.id);
+            afterLibraryChange(song._serverId);
             closeAllModals();
             toast.success({
-                message: `Swapped the audio of ${song.name}. The library notices in a minute or so.`,
+                message: `${song.name} has its new audio now (same name, plays and favourites).`,
                 title: 'Fixed',
             });
         } catch (e) {
@@ -172,6 +190,7 @@ export const RemoveSongAction = ({ songs }: { songs: Song[] }) => {
         for (const song of songs) {
             try {
                 await hermesPost(`${url}/api/library/remove`, {
+                    album: song.album,
                     artist: songArtist(song),
                     file: song.path,
                     key: me.key,
@@ -184,6 +203,18 @@ export const RemoveSongAction = ({ songs }: { songs: Song[] }) => {
             }
         }
         closeAllModals();
+        if (done) {
+            // out of the queue (the file is gone), and out of the lists once the music server has looked
+            const gone = new Set(
+                songs
+                    .filter((s) => !failed.some((f) => f.startsWith(`${s.name}:`)))
+                    .map((s) => s.id),
+            );
+            const player = usePlayerStoreBase.getState();
+            const inQueue = player.getQueue().items.filter((x) => gone.has(x.id));
+            if (inQueue.length) player.clearSelected(inQueue);
+            afterLibraryChange(songs[0]._serverId);
+        }
         if (done)
             toast.success({
                 message: `Removed ${done === 1 ? songs[0].name : `${done} songs`}. Library tools > Archive can put ${done === 1 ? 'it' : 'them'} back.`,

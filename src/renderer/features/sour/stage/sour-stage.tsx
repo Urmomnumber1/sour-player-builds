@@ -37,6 +37,8 @@ import {
     type Ambience,
     AMBIENCES,
     LIGHTNING_EVENT,
+    stormy,
+    unlockAmbience,
     useAmbience,
 } from '/@/renderer/features/sour/stage/ambience';
 import {
@@ -467,7 +469,7 @@ const StageView = () => {
                 cover && <StageGlow src={cover} />
             )}
             <Scene className={styles.scene} scene={look.stageScene} />
-            {flash.n > 0 && ambience === 'storm' && (
+            {flash.n > 0 && stormy(ambience) && (
                 <div
                     className={styles.lightning}
                     key={flash.n}
@@ -773,7 +775,10 @@ const StageView = () => {
                         />
                         <SegmentedControl
                             data={AMBIENCES.map((a) => ({ label: a.label, value: a.id }))}
-                            onChange={(v) => useAmbience.setState({ kind: v as Ambience })}
+                            onChange={(v) => {
+                                unlockAmbience();
+                                useAmbience.setState({ kind: v as Ambience });
+                            }}
                             size="xs"
                             value={ambience}
                         />

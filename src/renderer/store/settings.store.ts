@@ -29,6 +29,7 @@ import { mergeOverridingColumns } from '/@/renderer/store/utils';
 import { FontValueSchema } from '/@/renderer/types/fonts';
 import { randomString } from '/@/renderer/utils';
 import { sanitizeCss } from '/@/renderer/utils/sanitize';
+import { CITRUS } from '/@/shared/citrus';
 import { AppTheme } from '/@/shared/themes/app-theme-types';
 import { LibraryItem, LyricSource, SavedCollection } from '/@/shared/types/domain-types';
 import {
@@ -1243,7 +1244,7 @@ export const sidebarItems: SidebarItemType[] = [
         route: AppRoute.LIBRARY_ALBUM_ARTISTS,
     },
     {
-        disabled: false,
+        disabled: true,
         id: 'Artists-all',
         label: i18n.t('page.sidebar.artists'),
         route: AppRoute.LIBRARY_ARTISTS,
@@ -1255,7 +1256,7 @@ export const sidebarItems: SidebarItemType[] = [
         route: AppRoute.LIBRARY_GENRES,
     },
     {
-        disabled: false,
+        disabled: true,
         id: 'Folders',
         label: i18n.t('page.sidebar.folders'),
         route: AppRoute.LIBRARY_FOLDERS,
@@ -1431,13 +1432,16 @@ const initialState: SettingsState = {
         homeFeatureStyle: HomeFeatureStyle.SINGLE,
         homeItems,
         imagePlaceholderPriority: 'thumbhash',
-        imageRes: {
-            fullScreenPlayer: 0,
-            header: 1000,
-            itemCard: 600,
-            sidebar: 600,
-            table: 160,
-        },
+        // Citrus Player (the lighter build): smaller pictures, less to download, decode and keep in memory
+        imageRes: CITRUS
+            ? { fullScreenPlayer: 600, header: 500, itemCard: 300, sidebar: 300, table: 96 }
+            : {
+                  fullScreenPlayer: 0,
+                  header: 1000,
+                  itemCard: 600,
+                  sidebar: 600,
+                  table: 160,
+              },
         language: 'en',
         lastFM: true,
         lastfmApiKey: '',
@@ -3060,6 +3064,14 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                     ];
                 }
 
+                if (version < 39) {
+                    // Sour Player 0.14: a shorter sidebar (both stay in Settings > Sidebar)
+                    for (const item of state.general.sidebarItems) {
+                        if (item.id === 'Artists-all' || item.id === 'Folders')
+                            item.disabled = true;
+                    }
+                }
+
                 if (version < 38) {
                     // Sour Player 0.13: podcasts, right after the radio
                     const items = state.general.sidebarItems;
@@ -3077,7 +3089,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                 return persistedState;
             },
             name: 'store_settings',
-            version: 38,
+            version: 39,
         },
     ),
 );

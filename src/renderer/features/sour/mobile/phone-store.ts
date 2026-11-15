@@ -5,6 +5,7 @@ import { persist } from 'zustand/middleware';
 
 export interface OfflineSong {
     path: string;
+    // why it's on the phone: playlist ids, "album:<id>", "song" (saved on its own) and "fav" (a favourite)
     playlists: string[];
     size: number;
     song: Song;
@@ -27,6 +28,8 @@ export interface PhoneSettings {
     notifyFollows: boolean;
     notifyGroups: boolean;
     notifyRequests: boolean;
+    // favourites download by themselves (and leave when they stop being favourites)
+    offlineFavorites: boolean;
     offlineLimitMb: number;
     offlineWifiOnly: boolean;
     shake: 'off' | 'shuffle' | 'skip';
@@ -34,8 +37,12 @@ export interface PhoneSettings {
 
 interface PhoneStore {
     offline: Record<string, OfflineSong>;
+    // albums kept offline (album id -> server id)
+    offlineAlbums: Record<string, string>;
     // playlists the user wants kept offline (new songs in them download too)
     offlinePlaylists: Record<string, string>;
+    // songs saved on their own
+    offlineSongs: Record<string, { serverId: string; song: Song }>;
     set: (settings: Partial<PhoneSettings>) => void;
     settings: PhoneSettings;
 }
@@ -51,6 +58,7 @@ export const DEFAULT_PHONE: PhoneSettings = {
     notifyFollows: true,
     notifyGroups: true,
     notifyRequests: true,
+    offlineFavorites: false,
     offlineLimitMb: 2000,
     offlineWifiOnly: true,
     shake: 'off',
@@ -60,7 +68,9 @@ export const usePhoneStore = create<PhoneStore>()(
     persist(
         (set) => ({
             offline: {},
+            offlineAlbums: {},
             offlinePlaylists: {},
+            offlineSongs: {},
             set: (settings) => set((s) => ({ settings: { ...s.settings, ...settings } })),
             settings: DEFAULT_PHONE,
         }),

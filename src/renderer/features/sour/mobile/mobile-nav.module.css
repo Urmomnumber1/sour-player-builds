@@ -1,7 +1,7 @@
 .nav {
     display: grid;
     grid-area: nav;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     height: calc(58px + env(safe-area-inset-bottom, 0px));
     padding-bottom: env(safe-area-inset-bottom, 0);
     margin-bottom: calc(-1 * env(safe-area-inset-bottom, 0px));

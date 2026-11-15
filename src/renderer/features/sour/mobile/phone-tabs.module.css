@@ -386,3 +386,68 @@
     width: 100%;
     border: 0;
 }
+
+/* Downloads: the albums on the phone */
+.album-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.album-card {
+    position: relative;
+    min-width: 0;
+}
+
+.album-play {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    width: 100%;
+    padding: 0;
+    color: inherit;
+    text-align: left;
+    background: none;
+    border: 0;
+}
+
+.album-play:active {
+    opacity: 0.7;
+}
+
+.album-image {
+    width: 100%;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 12px;
+}
+
+.album-remove {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    color: inherit;
+    background: var(--surface);
+    border: 0;
+    border-radius: 50%;
+}
+
+.album-card .album-remove {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: rgb(0 0 0 / 55%);
+}
+
+.song-line {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+    min-width: 0;
+}
+
+.song-line .song-row {
+    flex: 1;
+}

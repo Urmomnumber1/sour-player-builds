@@ -8,6 +8,7 @@ import {
     usePlayerData,
     usePlayerMuted,
     usePlayerRepeat,
+    usePlayerSpeed,
     usePlayerVolume,
 } from '/@/renderer/store';
 import { useTimestampStoreBase } from '/@/renderer/store/timestamp.store';
@@ -33,6 +34,9 @@ export function IosWebPlayer() {
     const repeat = usePlayerRepeat();
     const volume = usePlayerVolume();
     const muted = usePlayerMuted();
+    // Slowed and Nightcore: the speed, with the pitch moving along (unless the setting keeps it)
+    const speed = usePlayerSpeed();
+    const { preservePitch } = usePlaybackSettings();
     const firstLoad = useRef(true);
     const latest = useRef({ mediaAutoNext, repeat, setTimestamp, status });
     latest.current = { mediaAutoNext, repeat, setTimestamp, status };
@@ -63,6 +67,26 @@ export function IosWebPlayer() {
         if (status === PlayerStatus.PLAYING) a.play().catch(() => undefined);
         else a.pause();
     }, [status]);
+
+    useEffect(() => {
+        const a = audio.current;
+        if (!a) return undefined;
+        const apply = () => {
+            a.defaultPlaybackRate = speed || 1;
+            a.playbackRate = speed || 1;
+            const media = a as HTMLAudioElement & { webkitPreservesPitch?: boolean };
+            media.preservesPitch = preservePitch;
+            media.webkitPreservesPitch = preservePitch;
+        };
+        apply();
+        // a new song starts at normal speed: set it again
+        a.addEventListener('loadedmetadata', apply);
+        a.addEventListener('play', apply);
+        return () => {
+            a.removeEventListener('loadedmetadata', apply);
+            a.removeEventListener('play', apply);
+        };
+    }, [speed, preservePitch]);
 
     useEffect(() => {
         const a = audio.current;

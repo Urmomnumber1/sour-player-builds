@@ -8,6 +8,7 @@ import { createWithEqualityFn } from 'zustand/traditional';
 import { type GroupSong } from '/@/renderer/features/group-play/store/group-play.store';
 import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-video.store';
 import { type Me, sourApi } from '/@/renderer/features/sour/api/sour-api';
+import { CITRUS } from '/@/shared/citrus';
 import { type Song } from '/@/shared/types/domain-types';
 
 export type BarVisualizerStyle = 'bars' | 'glow' | 'halo' | 'pulp' | 'river';
@@ -40,6 +41,8 @@ export interface SourLook {
     autoUpdate: boolean;
     autoVideo: boolean;
     barLayout: 'classic' | 'floating';
+    // the player bar's less-used buttons are showing (0.14: they sit behind a "more" button)
+    barMore?: boolean;
     // the look of the small visualizer in the player bar and the mini player
     barStyle: BarVisualizerStyle;
     barVisualizer: boolean;
@@ -98,6 +101,7 @@ export type VisualizerStyle =
     | 'soul'
     | V10Style;
 
+// Citrus Player (the lighter build) starts with the plain look and the moving extras off
 export const DEFAULT_LOOK: SourLook = {
     albumAccent: false,
     animatedBackground: false,
@@ -105,12 +109,12 @@ export const DEFAULT_LOOK: SourLook = {
     autoVideo: false,
     barLayout: 'classic',
     barStyle: 'bars',
-    barVisualizer: true,
+    barVisualizer: !CITRUS,
     corners: 'normal',
     cursor: false,
     dailyTheme: false,
     density: 1,
-    fadeCovers: true,
+    fadeCovers: !CITRUS,
     glass: false,
     hiddenButtons: [],
     holidays: true,
@@ -119,11 +123,11 @@ export const DEFAULT_LOOK: SourLook = {
     hoverPreview: false,
     iconPack: 'classic',
     keepPlayingOn: false,
-    lemonLoader: true,
+    lemonLoader: !CITRUS,
     lyricScale: 1,
     lyricStyle: 'centered',
-    pressFx: true,
-    reducedMotion: false,
+    pressFx: !CITRUS,
+    reducedMotion: CITRUS,
     seasonal: false,
     sidebarRight: false,
     simple: false,
@@ -132,7 +136,7 @@ export const DEFAULT_LOOK: SourLook = {
     stageScene: 'none',
     stageVinyl: false,
     startupSound: false,
-    ui: 'bubble',
+    ui: CITRUS ? 'classic' : 'bubble',
     upNext: false,
     visualizer: 'bars',
     vizMix: ['aurora', 'constellations'],

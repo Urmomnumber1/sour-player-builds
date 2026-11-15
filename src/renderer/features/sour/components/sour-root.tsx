@@ -24,6 +24,7 @@ import {
     SocialWatchers,
     useDailyColorStore,
 } from '/@/renderer/features/sour/components/social-watchers';
+import { SongMenuAnywhere } from '/@/renderer/features/sour/components/song-menu-anywhere';
 import { SourSafe } from '/@/renderer/features/sour/components/sour-safe';
 import { TvInvite } from '/@/renderer/features/sour/components/sour-tv';
 import { UiTen } from '/@/renderer/features/sour/components/ui10';
@@ -196,6 +197,7 @@ export const SourRoot = () => (
         <SourSafe name="playback tools">
             <PlaybackWatcher />
             <AmbiencePlayer />
+            <SongMenuAnywhere />
             <PodcastProgress />
         </SourSafe>
         <SourSafe name="setup guide">

@@ -186,3 +186,23 @@
 [data-radix-popper-content-wrapper] {
     -webkit-app-region: no-drag;
 }
+
+/* phones: side panels (Group Play) clear of the notch and the home bar, with a close button big enough to tap
+   (on iPhones it sat under the status bar, where taps don't land) */
+.sour-ios .mantine-Drawer-header,
+.sour-phone .mantine-Drawer-header {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
+}
+
+.sour-ios .mantine-Drawer-close,
+.sour-phone .mantine-Drawer-close {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+}
+
+.sour-ios .mantine-Drawer-body,
+.sour-phone .mantine-Drawer-body {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
+}

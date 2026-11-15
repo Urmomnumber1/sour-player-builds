@@ -9,13 +9,18 @@ import { ItemImage } from '/@/renderer/components/item-image/item-image';
 import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-video.store';
 import { usePlayer } from '/@/renderer/features/player/context/player-context';
 import { playlistsQueries } from '/@/renderer/features/playlists/api/playlists-api';
+import { PeoplePanel } from '/@/renderer/features/sour/components/people';
 import { isNativeApp, onSourMedia, sourMedia } from '/@/renderer/features/sour/mobile/android';
 import {
     clearOffline,
     offlineAvailable,
     offlineBytes,
+    offlineReasons,
     onOfflineProgress,
+    setAlbumOffline,
+    setFavoritesOffline,
     setPlaylistOffline,
+    setSongOffline,
     syncOffline,
 } from '/@/renderer/features/sour/mobile/offline';
 import { usePhoneSettings, usePhoneStore } from '/@/renderer/features/sour/mobile/phone-store';
@@ -133,6 +138,7 @@ export const PhoneOffline = () => {
     const settings = usePhoneSettings();
     const offline = usePhoneStore((s) => s.offline);
     const offlinePlaylists = usePhoneStore((s) => s.offlinePlaylists);
+    const offlineAlbums = usePhoneStore((s) => s.offlineAlbums);
     const player = usePlayer();
     const [status, setStatus] = useState('');
     const [online, setOnline] = useState(() => navigator.onLine);
@@ -156,6 +162,36 @@ export const PhoneOffline = () => {
             }),
         ).data?.items ?? [];
     const saved = Object.values(offline).map((o) => o.song);
+    // the albums on the phone: downloaded whole, or with a few of their songs saved
+    const byAlbum = new Map<
+        string,
+        {
+            artist: string;
+            id: string;
+            imageId: null | string;
+            name: string;
+            songs: typeof saved;
+            whole: boolean;
+        }
+    >();
+    for (const song of saved) {
+        if (!song.albumId) continue;
+        const a = byAlbum.get(song.albumId) ?? {
+            artist: song.albumArtistName || song.artistName,
+            id: song.albumId,
+            imageId: song.imageId,
+            name: song.album || 'Album',
+            songs: [],
+            whole: !!offlineAlbums[song.albumId],
+        };
+        a.songs.push(song);
+        byAlbum.set(song.albumId, a);
+    }
+    const albums = [...byAlbum.values()]
+        .filter((a) => a.whole || a.songs.length >= 3)
+        .sort((x, y) => x.name.localeCompare(y.name));
+    for (const a of albums)
+        a.songs.sort((x, y) => x.discNumber - y.discNumber || x.trackNumber - y.trackNumber);
     const used = offlineBytes();
     const limit = settings.offlineLimitMb * 1024 * 1024;
     const play = (shuffle: boolean, from?: string) => {
@@ -164,7 +200,7 @@ export const PhoneOffline = () => {
     };
     if (!offlineAvailable()) {
         return (
-            <TabPage title="Offline">
+            <TabPage title="Downloads">
                 <p className={styles.note}>
                     Saving songs for offline needs the Sour Player app (or the web app added to the
                     Home Screen).
@@ -173,7 +209,7 @@ export const PhoneOffline = () => {
         );
     }
     return (
-        <TabPage title="Offline">
+        <TabPage title="Downloads">
             <div className={styles.storage}>
                 <div className={styles.storageBar}>
                     <span
@@ -197,6 +233,60 @@ export const PhoneOffline = () => {
                 </div>
             )}
             <section className={styles.section}>
+                <h2>Favourites</h2>
+                <div className={styles.cardList}>
+                    <Switch
+                        checked={settings.offlineFavorites}
+                        description="Songs you heart download by themselves, and leave again when you un-heart them"
+                        disabled={!online && !settings.offlineFavorites}
+                        label="Download my favourites"
+                        onChange={(e) => void setFavoritesOffline(e.currentTarget.checked)}
+                    />
+                </div>
+            </section>
+            {albums.length > 0 && (
+                <section className={styles.section}>
+                    <h2>Albums on this phone</h2>
+                    <div className={styles.albumGrid}>
+                        {albums.map((a) => (
+                            <div className={styles.albumCard} key={a.id}>
+                                <button
+                                    className={styles.albumPlay}
+                                    onClick={() => player.addToQueueByData(a.songs, Play.NOW)}
+                                    type="button"
+                                >
+                                    <ItemImage
+                                        className={styles.albumImage}
+                                        id={a.imageId}
+                                        itemType={LibraryItem.SONG}
+                                        type="itemCard"
+                                    />
+                                    <span className={styles.rowText}>
+                                        {a.name}
+                                        <small>
+                                            {a.artist} · {a.songs.length}{' '}
+                                            {a.songs.length === 1 ? 'song' : 'songs'}
+                                        </small>
+                                    </span>
+                                </button>
+                                {a.whole && (
+                                    <button
+                                        aria-label={`Remove ${a.name} from this phone`}
+                                        className={styles.albumRemove}
+                                        onClick={() =>
+                                            void setAlbumOffline(a.id, server!.id, false)
+                                        }
+                                        type="button"
+                                    >
+                                        <Icon icon="x" size="sm" />
+                                    </button>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            )}
+            <section className={styles.section}>
                 <h2>Playlists on this phone</h2>
                 {!online && <p className={styles.note}>Connect to the internet to change these.</p>}
                 <div className={styles.cardList}>
@@ -214,32 +304,51 @@ export const PhoneOffline = () => {
                 </div>
             </section>
             <section className={styles.section}>
-                <h2>Saved songs</h2>
+                <h2>Songs</h2>
                 {saved.length === 0 ? (
                     <p className={styles.note}>
-                        Nothing saved yet: switch on a playlist above and its songs download here.
+                        Nothing here yet. Tap ⋯ on a song, album or playlist and pick Download,
+                        switch on a playlist above, or let your favourites download by themselves.
                     </p>
                 ) : (
                     <div className={styles.list}>
-                        {saved.slice(0, 400).map((song) => (
-                            <button
-                                className={styles.songRow}
-                                key={song.id}
-                                onClick={() => play(false, song.id)}
-                                type="button"
-                            >
-                                <ItemImage
-                                    className={styles.rowImage}
-                                    id={song.imageId}
-                                    itemType={LibraryItem.SONG}
-                                    type="table"
-                                />
-                                <span className={styles.rowText}>
-                                    {song.name}
-                                    <small>{song.artistName}</small>
-                                </span>
-                            </button>
-                        ))}
+                        {saved.slice(0, 400).map((song) => {
+                            const why = offlineReasons(offline[song.id]?.playlists ?? []);
+                            return (
+                                <div className={styles.songLine} key={song.id}>
+                                    <button
+                                        className={styles.songRow}
+                                        data-song-id={song.id}
+                                        onClick={() => play(false, song.id)}
+                                        type="button"
+                                    >
+                                        <ItemImage
+                                            className={styles.rowImage}
+                                            id={song.imageId}
+                                            itemType={LibraryItem.SONG}
+                                            type="table"
+                                        />
+                                        <span className={styles.rowText}>
+                                            {song.name}
+                                            <small>
+                                                {song.artistName}
+                                                {why.favorite ? ' · favourite' : ''}
+                                            </small>
+                                        </span>
+                                    </button>
+                                    {why.song && (
+                                        <button
+                                            aria-label={`Remove ${song.name} from this phone`}
+                                            className={styles.albumRemove}
+                                            onClick={() => void setSongOffline(song, false)}
+                                            type="button"
+                                        >
+                                            <Icon icon="x" size="sm" />
+                                        </button>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
             </section>
@@ -314,6 +423,7 @@ export const PhoneOffline = () => {
 
 // ---------- Library: albums, artists and playlists right in the tab (grid or list), the rest as chips ----------
 const MORE: { icon: Parameters<typeof Icon>[0]['icon']; label: string; to: string }[] = [
+    { icon: 'download', label: 'Downloads', to: AppRoute.PHONE_OFFLINE },
     { icon: 'favorite', label: 'Favorites', to: AppRoute.FAVORITES },
     { icon: 'itemSong', label: 'Songs', to: AppRoute.LIBRARY_SONGS },
     { icon: 'genre', label: 'Genres', to: AppRoute.LIBRARY_GENRES },
@@ -520,7 +630,7 @@ export const PhoneHomeTop = () => {
                     onClick={() => navigate(AppRoute.PHONE_OFFLINE)}
                     type="button"
                 >
-                    <Icon icon="download" size="sm" /> Offline
+                    <Icon icon="download" size="sm" /> Downloads
                 </button>
                 <button
                     className={styles.chip}
@@ -603,5 +713,26 @@ export const PhoneTV = () => {
                 title="Sour Player TV"
             />
         </div>
+    );
+};
+
+// ---------- Friends: the people list (profiles, who's online and what they're playing) ----------
+export const PhonePeople = () => {
+    const navigate = useNavigate();
+    return (
+        <TabPage
+            right={
+                <button
+                    className={styles.secondary}
+                    onClick={() => navigate(AppRoute.SOUR_HUB)}
+                    type="button"
+                >
+                    <Icon icon="sparkles" size="sm" /> Hub
+                </button>
+            }
+            title="Friends"
+        >
+            <PeoplePanel />
+        </TabPage>
     );
 };

@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { getItemImageUrl } from '/@/renderer/components/item-image/item-image';
 import { usePlayerEvents } from '/@/renderer/features/player/audio-player/hooks/use-player-events';
+import { isIphoneBrowser } from '/@/renderer/features/player/audio-player/ios-web-player';
 import { usePlayer } from '/@/renderer/features/player/context/player-context';
 import {
     useIsRadioActive,
@@ -158,6 +159,11 @@ export const useMediaSession = () => {
             );
         });
 
+        if (isIphoneBrowser()) {
+            // with these, iPhones put "10 s back / forward" on the lock screen instead of previous / next
+            mediaSession.setActionHandler('seekbackward', null);
+            mediaSession.setActionHandler('seekforward', null);
+        }
         return () => {
             mediaSession.setActionHandler('nexttrack', null);
             mediaSession.setActionHandler('pause', null);

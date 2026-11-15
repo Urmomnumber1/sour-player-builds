@@ -47,6 +47,7 @@ import {
     DEFAULT_WINDOW_BOUNDS,
     resolveWindowBounds,
 } from '/@/main/utils/window-bounds';
+import { CITRUS } from '/@/shared/citrus';
 import { PlayerRepeat, PlayerStatus, PlayerType, TitleTheme } from '/@/shared/types/types';
 
 const ALPHA_UPDATER_CONFIG: {
@@ -267,7 +268,7 @@ function configureAndGetUpdater(): UpdaterInstance {
         autoUpdater.allowPrerelease = true;
         autoUpdater.disableDifferentialDownload = true;
     } else {
-        autoUpdater.channel = 'latest';
+        autoUpdater.channel = CITRUS ? 'citrus' : 'latest';
         autoUpdater.allowDowngrade = false;
         autoUpdater.allowPrerelease = false;
     }
@@ -289,7 +290,7 @@ function configureAutoUpdaterForChannel(channel: 'beta' | 'latest'): void {
         autoUpdater.allowPrerelease = true;
         autoUpdater.disableDifferentialDownload = true;
     } else {
-        autoUpdater.channel = 'latest';
+        autoUpdater.channel = CITRUS ? 'citrus' : 'latest';
         autoUpdater.allowDowngrade = false;
         autoUpdater.allowPrerelease = false;
     }
@@ -549,9 +550,9 @@ const createTray = () => {
         icon.setTemplateImage(true);
         trayIcon = icon;
     } else if (isLinux()) {
-        trayIcon = getAssetPath('icons/icon.png');
+        trayIcon = getAssetPath(CITRUS ? 'citrus/256x256.png' : 'icons/icon.png');
     } else {
-        trayIcon = getAssetPath('icons/icon.ico');
+        trayIcon = getAssetPath(CITRUS ? 'citrus/64x64.png' : 'icons/icon.ico');
     }
 
     tray = new Tray(trayIcon);
@@ -695,7 +696,11 @@ async function createWindow(first = true): Promise<void> {
         // the app's own dark background while it starts (a web page flashes white)
         backgroundColor: '#0b0b0f',
         frame: false,
-        icon: isWindows() ? getAssetPath('icons/icon.ico') : getAssetPath('icons/icon.png'),
+        icon: CITRUS
+            ? getAssetPath('citrus/256x256.png')
+            : isWindows()
+              ? getAssetPath('icons/icon.ico')
+              : getAssetPath('icons/icon.png'),
         minHeight: 120,
         minWidth: 480,
         show: false,

@@ -49,7 +49,7 @@ const ProfileScreen = ({ id, onBack }: { id: string; onBack?: () => void }) => {
 };
 
 // Everyone with Sour Player: who's online and what they're listening to.
-const PeoplePanel = () => {
+export const PeoplePanel = () => {
     const url = useHermesUrl();
     const me = useSourStore((state) => state.me);
     const profiles = useSourProfiles();

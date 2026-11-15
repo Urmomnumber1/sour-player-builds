@@ -70,7 +70,7 @@ export const ProfileAvatar = ({
 export const SongCover = ({ size, song }: { size: number; song: GroupSong }) => {
     const serverId = useCurrentServer()?.id;
     return (
-        <div className={styles.cover} style={{ height: size, width: size }}>
+        <div className={styles.cover} data-song-id={song.id} style={{ height: size, width: size }}>
             {song.imageId && serverId && (
                 <ItemImage
                     className={styles.coverImage}

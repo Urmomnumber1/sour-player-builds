@@ -138,6 +138,8 @@ export const RightControls = () => {
     const show = (id: string) => !hidden.includes(id) && (!simple || id === 'request');
     // podcast episodes can't be favourited or rated (they aren't in the library)
     const podcast = isPodcast(usePlayerSong());
+    // 0.14: the everyday buttons stay; the rest wait behind "more" (one click shows them, and it's remembered)
+    const more = useSourStore((state) => !!state.look.barMore);
     return (
         <Flex
             align="flex-end"
@@ -150,34 +152,55 @@ export const RightControls = () => {
             wrap="nowrap"
         >
             <SourWatchers />
-            <Group gap={2} justify="flex-end" wrap="nowrap">
-                {!simple && <PlayCounter />}
-                <HermesUpdateButton />
-                <FeedbackButton />
-                <DlnaCastButton />
-                {!simple && <SleepTimerButton />}
-                {!simple && <PlayerConfig />}
-                {show('mini') && <MiniPlayerButton />}
-                {show('video') && <MusicVideoButton />}
-                {show('stage') && <SourStageButton />}
-                {show('studio') && <SourStudioButton />}
-                {showRatings && roomy && !simple && !podcast && <RatingButton />}
-                {!simple && <AutoDJButton />}
-            </Group>
+            {more && !simple && (
+                <Group gap={2} justify="flex-end" wrap="nowrap">
+                    <PlayCounter />
+                    <FeedbackButton />
+                    <DlnaCastButton />
+                    <SleepTimerButton />
+                    <PlayerConfig />
+                    {show('mini') && <MiniPlayerButton />}
+                    {show('video') && <MusicVideoButton />}
+                    {show('studio') && <SourStudioButton />}
+                    {showRatings && roomy && !podcast && <RatingButton />}
+                    <PlaybackTools />
+                    <NextUpHint />
+                    <FriendChips />
+                    {show('people') && <PeopleButton />}
+                    <AutoDJButton />
+                </Group>
+            )}
             <Group align="center" gap="xs" justify="flex-end" wrap="nowrap">
+                <HermesUpdateButton />
                 <ListenAlong />
                 <AlongHost />
-                {!simple && <PlaybackTools />}
-                {!simple && <NextUpHint />}
                 <PlayerBarVisualizer />
-                {!simple && <FriendChips />}
-                {show('people') && <PeopleButton />}
                 {show('request') && <RequestButton />}
                 {show('group') && <GroupPlayButton />}
+                {show('stage') && <SourStageButton />}
                 <LyricsButton />
                 {showFavorites && !podcast && <FavoriteButton />}
                 <QueueButton />
                 {playbackType === PlayerType.DLNA ? <DlnaVolumeButton /> : <VolumeButton />}
+                {!simple && (
+                    <ActionIcon
+                        aria-label={more ? 'Fewer buttons' : 'More buttons'}
+                        icon="ellipsisHorizontal"
+                        iconProps={{ color: more ? 'primary' : undefined, size: 'lg' }}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            useSourStore.getState().setLook({ barMore: !more });
+                        }}
+                        size="sm"
+                        tooltip={{
+                            label: more
+                                ? 'Fewer buttons'
+                                : 'More: EQ, sleep timer, cast, mini player, Studio, Auto DJ...',
+                            openDelay: 300,
+                        }}
+                        variant="subtle"
+                    />
+                )}
             </Group>
         </Flex>
     );

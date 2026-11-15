@@ -5,6 +5,7 @@ import { create } from 'zustand';
 import { isAndroidApp, onSourMedia, sourMedia } from '/@/renderer/features/sour/mobile/android';
 import { useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import { usePlayerStoreBase } from '/@/renderer/store/player.store';
+import { CITRUS } from '/@/shared/citrus';
 import { Button } from '/@/shared/components/button/button';
 import { Dialog } from '/@/shared/components/dialog/dialog';
 import { Group } from '/@/shared/components/group/group';
@@ -21,6 +22,12 @@ interface HermesUpdate {
 }
 
 // what the updater in the main process reports (downloads happen in the background)
+// phones: Sour Player's releases are "mobile-v...", Citrus Player's "citrus-mobile-v..." (each app only
+// takes its own APK)
+const MOBILE_TAG = CITRUS ? 'citrus-mobile-v' : 'mobile-v';
+const isOurApk = (name: string) =>
+    name.endsWith('.apk') && name.startsWith(CITRUS ? 'Citrus-Player-' : 'Sour-Player-');
+
 const useHermesUpdateStore = create<{ update: HermesUpdate | null }>(() => ({ update: null }));
 
 const utils = isElectron() ? window.api?.utils : undefined;
@@ -69,25 +76,24 @@ const useAndroidUpdateListener = () => {
                 // what's newer, so 0.1.0 can follow the 0.1.xb betas
                 const build = (r: (typeof releases)[number]) =>
                     Number(
-                        r.assets
-                            .find((a) => a.name.endsWith('.apk'))
-                            ?.name.match(/-(\d+)\.apk$/)?.[1] || 0,
+                        r.assets.find((a) => isOurApk(a.name))?.name.match(/-(\d+)\.apk$/)?.[1] ||
+                            0,
                     );
                 const newest = releases
                     .filter(
                         (r) =>
-                            r.tag_name.startsWith('mobile-v') &&
-                            r.assets.some((a) => a.name.endsWith('.apk')),
+                            r.tag_name.startsWith(MOBILE_TAG) &&
+                            r.assets.some((a) => isOurApk(a.name)),
                     )
                     .sort(
                         (a, b) => build(b) - build(a) || (isNewer(a.tag_name, b.tag_name) ? -1 : 1),
                     )[0];
-                const latest = newest?.tag_name.replace('mobile-v', '');
+                const latest = newest?.tag_name.replace(MOBILE_TAG, '');
                 if (!newest || !latest) return;
                 const newer =
                     build(newest) && code ? build(newest) > Number(code) : isNewer(latest, version);
                 if (!newer) return;
-                const apk = newest.assets.find((a) => a.name.endsWith('.apk'))!;
+                const apk = newest.assets.find((a) => isOurApk(a.name))!;
                 useHermesUpdateStore.setState({
                     update: { percent: 0, state: 'downloading', version: latest },
                 });

@@ -4,6 +4,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
+import { CITRUS } from '/@/shared/citrus';
+
 // Icon packs beyond the open window: the window icon only lasts while the app runs, so the chosen
 // icon is also put where the system looks for it - the Windows shortcuts (desktop, Start menu and
 // taskbar pins) and the Linux launcher icon. macOS only allows changing the Dock icon while running.
@@ -84,7 +86,10 @@ export const keepIcon = (image: NativeImage) => {
             fs.mkdirSync(dir, { recursive: true });
             // a new file name each time, so Explorer's icon cache shows the change straight away
             for (const old of fs.readdirSync(dir)) fs.rmSync(path.join(dir, old), { force: true });
-            const icoPath = path.join(dir, `sour-player-${Date.now()}.ico`);
+            const icoPath = path.join(
+                dir,
+                `${CITRUS ? 'citrus' : 'sour'}-player-${Date.now()}.ico`,
+            );
             fs.writeFileSync(icoPath, toIco(png));
             updateWindowsShortcuts(icoPath);
         } else if (process.platform === 'linux') {
@@ -94,7 +99,10 @@ export const keepIcon = (image: NativeImage) => {
             for (const size of ['256x256', '512x512']) {
                 const dir = path.join(hicolor, size, 'apps');
                 fs.mkdirSync(dir, { recursive: true });
-                fs.writeFileSync(path.join(dir, 'sour-player.png'), png);
+                fs.writeFileSync(
+                    path.join(dir, CITRUS ? 'citrus-player.png' : 'sour-player.png'),
+                    png,
+                );
             }
             // tells the desktop the icon theme changed
             const now = new Date();

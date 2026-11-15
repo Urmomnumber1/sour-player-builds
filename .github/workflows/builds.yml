@@ -1,4 +1,5 @@
-# Builds Sour Player for Windows, Linux and macOS (the Feishin fork's own builds are paused by GitHub)
+# Builds Sour Player for Windows, Linux and macOS (the Feishin fork's own builds are paused by GitHub), and
+# Citrus Player (the lighter build, SOUR_CITRUS=1) for Windows and Linux
 name: Sour Player builds
 
 on:
@@ -58,6 +59,13 @@ jobs:
             - name: Build for windows
               run: pnpm run package:win:pr
 
+            - name: Build Citrus Player for windows
+              env:
+                  SOUR_CITRUS: '1'
+              run: |
+                  pnpm run build
+                  pnpm exec electron-builder --win --publish never -c electron-builder-citrus.yml
+
             - name: Upload windows build
               uses: actions/upload-artifact@v7
               with:
@@ -66,6 +74,7 @@ jobs:
                       dist/*.exe
                       dist/*.exe.blockmap
                       dist/latest.yml
+                      dist/citrus.yml
 
     linux:
         runs-on: ubuntu-latest
@@ -87,6 +96,13 @@ jobs:
             - name: Build for linux
               run: pnpm run package:linux:pr
 
+            - name: Build Citrus Player for linux
+              env:
+                  SOUR_CITRUS: '1'
+              run: |
+                  pnpm run build
+                  pnpm exec electron-builder --linux --publish never -c electron-builder-citrus.yml
+
             - name: Web build (Hermes Music serves it as the iPhone app)
               run: |
                   pnpm run build:web && rm -f out/web/assets/*.map
@@ -101,4 +117,5 @@ jobs:
                       dist/*.deb
                       dist/*.tar.xz
                       dist/latest-linux.yml
+                      dist/citrus-linux.yml
                       dist/sour-web.tar.gz

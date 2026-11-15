@@ -107,6 +107,9 @@ const PhoneOfflineRoute = lazy(() =>
         default: m.PhoneOffline,
     })),
 );
+const PhonePeopleRoute = lazy(() =>
+    import('/@/renderer/features/sour/mobile/phone-tabs').then((m) => ({ default: m.PhonePeople })),
+);
 const PhoneTVRoute = lazy(() =>
     import('/@/renderer/features/sour/mobile/phone-tabs').then((m) => ({ default: m.PhoneTV })),
 );
@@ -306,6 +309,10 @@ export const AppRouter = () => {
                                         <Route
                                             element={<PhoneTVRoute />}
                                             path={AppRoute.PHONE_TV}
+                                        />
+                                        <Route
+                                            element={<PhonePeopleRoute />}
+                                            path={AppRoute.SOUR_PEOPLE}
                                         />
                                         <Route
                                             element={<NowPlayingRoute />}

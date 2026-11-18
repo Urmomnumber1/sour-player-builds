@@ -7,6 +7,7 @@ import { FavoritesHeader } from '/@/renderer/features/favorites/components/favor
 import { AnimatedPage } from '/@/renderer/features/shared/components/animated-page';
 import { PageErrorBoundary } from '/@/renderer/features/shared/components/page-error-boundary';
 import { FavoritesThemed } from '/@/renderer/features/sour/components/playlist-theme';
+import { HeartedVersions } from '/@/renderer/features/sour/versions/version-picker';
 import { LibraryItem } from '/@/shared/types/domain-types';
 import { ItemListKey } from '/@/shared/types/types';
 
@@ -58,6 +59,8 @@ const FavoritesRoute = () => {
             <ListContext.Provider value={providerValue}>
                 <FavoritesThemed>
                     <FavoritesHeader itemType={itemType} />
+                    {/* (0.15.1) the versions of songs you hearted */}
+                    {itemType === LibraryItem.SONG && <HeartedVersions />}
                     <FavoritesContent itemType={itemType} />
                 </FavoritesThemed>
             </ListContext.Provider>

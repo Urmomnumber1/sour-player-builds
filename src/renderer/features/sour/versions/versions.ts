@@ -14,6 +14,13 @@ import { type QueueSong, type Song } from '/@/shared/types/domain-types';
 
 export const ORIGINAL = 'original';
 
+// (0.15.1) a version I hearted (song: the music server's song id, to play it from the favourites)
+export interface HeartedVersion {
+    at: number;
+    id: string;
+    song: null | string;
+}
+
 export interface SongVersion {
     at?: string;
     by: null | string;
@@ -52,6 +59,8 @@ interface VersionsState {
     // when the list last changed (hooks re-read on it)
     at: number;
     byKey: Record<string, VersionedSong>;
+    // (0.15.1) my hearted versions: song key -> versions, oldest first
+    favs: Record<string, HeartedVersion[]>;
     // my plays: song key -> version id ("original" too) -> plays
     mine: Record<string, Record<string, number>>;
     url: string;
@@ -68,11 +77,17 @@ const readCache = (): VersionsState => {
     try {
         const raw = JSON.parse(localStorage.getItem(CACHE) || 'null');
         if (raw && Array.isArray(raw.songs))
-            return { at: 1, byKey: index(raw.songs), mine: raw.mine || {}, url: raw.url || '' };
+            return {
+                at: 1,
+                byKey: index(raw.songs),
+                favs: raw.favs || {},
+                mine: raw.mine || {},
+                url: raw.url || '',
+            };
     } catch {
         // nothing saved
     }
-    return { at: 0, byKey: {}, mine: {}, url: '' };
+    return { at: 0, byKey: {}, favs: {}, mine: {}, url: '' };
 };
 
 export const useVersions = create<VersionsState>(() => readCache());
@@ -81,10 +96,10 @@ const hermes = () => useHermesVideoStore.getState().url;
 const me = () => useSourStore.getState().me;
 
 const save = () => {
-    const { byKey, mine, url } = useVersions.getState();
+    const { byKey, favs, mine, url } = useVersions.getState();
     const songs = [...new Set(Object.values(byKey))];
     try {
-        localStorage.setItem(CACHE, JSON.stringify({ mine, songs, url }));
+        localStorage.setItem(CACHE, JSON.stringify({ favs, mine, songs, url }));
     } catch {
         // not kept then
     }
@@ -100,27 +115,58 @@ export const loadVersions = async () => {
     if (!res.ok) return; // an older Hermes Music: no versions
     const json = await res.json().catch(() => null);
     if (!json || !Array.isArray(json.songs)) return;
-    useVersions.setState({ at: Date.now(), byKey: index(json.songs), mine: json.mine || {}, url });
+    useVersions.setState({
+        at: Date.now(),
+        byKey: index(json.songs),
+        favs: json.favs || {},
+        mine: json.mine || {},
+        url,
+    });
     save();
 };
 
 type SongLike = Partial<Pick<Song, 'id'>> &
     Pick<Song, 'albumArtistName' | 'albumArtists' | 'artistName' | 'artists' | 'name'>;
 
-// the song's versions (null when it has none)
-export const versionsOf = (song?: null | SongLike): null | VersionedSong => {
+// the song's versions in a list (null when it has none)
+const entryIn = (
+    byKey: Record<string, VersionedSong>,
+    listUrl: string,
+    hermesUrl: string,
+    song?: null | SongLike,
+): null | VersionedSong => {
     if (!song?.name || isPodcast(song as QueueSong)) return null;
-    const { byKey, url } = useVersions.getState();
-    if (!url || url !== hermes()) return null;
+    if (!listUrl || listUrl !== hermesUrl) return null;
     for (const k of songKeysFor(song)) if (byKey[k]?.versions?.length) return byKey[k];
     return null;
 };
 
-// the same, re-read when the list changes
+// the song's versions (null when it has none)
+export const versionsOf = (song?: null | SongLike): null | VersionedSong => {
+    const { byKey, url } = useVersions.getState();
+    return entryIn(byKey, url, hermes(), song);
+};
+
+// The same in components, re-read when the list changes. (The React Compiler keeps what a component works out
+// for as long as its inputs stay the same, so everything here comes from the stores' hooks, not getState.)
 export const useSongVersions = (song?: null | SongLike) => {
-    useVersions((s) => s.at);
-    useHermesVideoStore((s) => s.url);
-    return versionsOf(song);
+    const byKey = useVersions((s) => s.byKey);
+    const listUrl = useVersions((s) => s.url);
+    const hermesUrl = useHermesVideoStore((s) => s.url);
+    return entryIn(byKey, listUrl, hermesUrl, song);
+};
+// my plays of each version, and the versions I hearted (in components)
+export const useMyPlays = (entry: null | VersionedSong) => {
+    const mine = useVersions((s) => s.mine);
+    return (entry && mine[entry.key]) || {};
+};
+export const useHeartedIds = (entry: null | VersionedSong) => {
+    const favs = useVersions((s) => s.favs);
+    return entry
+        ? (favs[entry.key] || [])
+              .map((f) => f.id)
+              .filter((id) => entry.versions.some((v) => v.id === id))
+        : [];
 };
 
 export const findVersion = (entry: null | VersionedSong, id: string) =>
@@ -141,19 +187,63 @@ export const versionGain = (entry: null | VersionedSong, id: string) => {
 
 export const myPlays = (entry: VersionedSong) => useVersions.getState().mine[entry.key] || {};
 
-// the version you've played most (the original until you've played another; ties stay with the original)
-export const favouriteVersion = (entry: VersionedSong) => {
+// (0.15.1) the versions of the song I hearted (oldest first)
+export const heartedVersions = (entry: null | VersionedSong) =>
+    entry
+        ? (useVersions.getState().favs[entry.key] || [])
+              .map((f) => f.id)
+              .filter((id) => !!findVersion(entry, id))
+        : [];
+export const isHearted = (entry: null | VersionedSong, id: string) =>
+    heartedVersions(entry).includes(id);
+
+// the version that plays when the song comes up (albums, playlists, shuffle, Auto DJ): a version you hearted
+// (with the original too if the song itself is a favourite), the one you play most when there are several;
+// without hearts, the version you've played most (the original until you've played another). Ties stay with
+// the first in line (your oldest heart, or the original)
+export const favouriteVersion = (entry: VersionedSong, songFavorite = false) => {
     const plays = myPlays(entry);
-    let best = ORIGINAL;
-    let most = plays[ORIGINAL] || 0;
-    for (const v of entry.versions) {
-        const n = plays[v.id] || 0;
+    const hearted = heartedVersions(entry);
+    const pool = hearted.length
+        ? [...hearted, ...(songFavorite ? [ORIGINAL] : [])]
+        : [ORIGINAL, ...entry.versions.map((v) => v.id)];
+    let best = pool[0];
+    let most = plays[best] || 0;
+    for (const id of pool.slice(1)) {
+        const n = plays[id] || 0;
         if (n > most) {
-            best = v.id;
+            best = id;
             most = n;
         }
     }
     return best;
+};
+
+// heart a version (or not): kept on Hermes Music for me; songId lets the favourites play it
+export const heartVersion = async (
+    entry: VersionedSong,
+    id: string,
+    on: boolean,
+    songId?: string,
+) => {
+    const before = useVersions.getState().favs;
+    const row = (before[entry.key] || []).filter((f) => f.id !== id);
+    const next = on ? [...row, { at: Date.now(), id, song: songId ?? null }] : row;
+    useVersions.setState({ at: Date.now(), favs: { ...before, [entry.key]: next } });
+    save();
+    try {
+        await post('/api/versions/favorite', {
+            ...auth(),
+            on,
+            song: entry.key,
+            songId,
+            version: id,
+        });
+    } catch (e) {
+        useVersions.setState({ at: Date.now(), favs: before });
+        save();
+        throw e;
+    }
 };
 
 // ---- which version each song in the queue plays ----
@@ -183,7 +273,7 @@ export const pickFor = (song: QueueSong): string => {
     }
     // not decided while the list isn't here yet (it may still come before the song starts)
     if (!entry) return ORIGINAL;
-    const version = favouriteVersion(entry);
+    const version = favouriteVersion(entry, !!song.userFavorite);
     if (uid) picks.set(uid, version);
     return version;
 };

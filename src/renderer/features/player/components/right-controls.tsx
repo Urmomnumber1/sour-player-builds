@@ -58,6 +58,7 @@ import {
     useStageOpen,
 } from '/@/renderer/features/sour/stage/sour-stage';
 import { useSourStore } from '/@/renderer/features/sour/store/sour.store';
+import { useHeardVersionHeart } from '/@/renderer/features/sour/versions/version-picker';
 import { PlayerBarVisualizer } from '/@/renderer/features/sour/visualizer/sour-visualizer';
 import { useHotkeys } from '/@/renderer/hooks/use-hotkeys';
 import {
@@ -544,31 +545,45 @@ export const FavoriteButton = () => {
         handleRemoveFromFavorites,
         handleToggleFavorite,
     });
+    // (0.15.1) hearing a version of the song: the heart is that version's
+    const versionHeart = useHeardVersionHeart();
     useHotkeys([
         [
             bindings.favoriteCurrentAdd.isGlobal ? '' : bindings.favoriteCurrentAdd.hotkey,
-            () => handleAddToFavorites(currentSong),
+            () =>
+                versionHeart
+                    ? !versionHeart.on && versionHeart.toggle()
+                    : handleAddToFavorites(currentSong),
         ],
         [
             bindings.favoriteCurrentRemove.isGlobal ? '' : bindings.favoriteCurrentRemove.hotkey,
-            () => handleRemoveFromFavorites(currentSong),
+            () =>
+                versionHeart
+                    ? versionHeart.on && versionHeart.toggle()
+                    : handleRemoveFromFavorites(currentSong),
         ],
         [
             bindings.favoriteCurrentToggle.isGlobal ? '' : bindings.favoriteCurrentToggle.hotkey,
-            () => handleToggleFavorite(currentSong),
+            () => (versionHeart ? versionHeart.toggle() : handleToggleFavorite(currentSong)),
         ],
     ]);
+    const on = versionHeart ? versionHeart.on : !!currentSong?.userFavorite;
     return (
         <ActionIcon
             icon="favorite"
-            iconProps={{ fill: currentSong?.userFavorite ? 'primary' : undefined, size: 'lg' }}
+            iconProps={{ fill: on ? 'primary' : undefined, size: 'lg' }}
             onClick={(e) => {
                 e.stopPropagation();
-                handleToggleFavorite(currentSong);
+                if (versionHeart) versionHeart.toggle();
+                else handleToggleFavorite(currentSong);
             }}
             size="sm"
             tooltip={{
-                label: currentSong?.userFavorite ? t('player.unfavorite') : t('player.favorite'),
+                label: versionHeart
+                    ? `${on ? 'Unfavorite' : 'Favorite'} the ${versionHeart.label} version`
+                    : on
+                      ? t('player.unfavorite')
+                      : t('player.favorite'),
                 openDelay: 0,
             }}
             variant="subtle"

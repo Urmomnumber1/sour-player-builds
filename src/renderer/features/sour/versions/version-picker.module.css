@@ -117,3 +117,81 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+/* (0.15.1) hearts on versions */
+.heart {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    color: var(--theme-colors-foreground-muted);
+    cursor: pointer;
+    background: none;
+    border: 0;
+    border-radius: 50%;
+    transition:
+        background 0.18s ease,
+        transform 0.18s ease;
+}
+
+.heart:hover {
+    background: color-mix(in srgb, var(--theme-colors-foreground) 8%, transparent);
+}
+
+.heart:active {
+    transform: scale(0.88);
+}
+
+.hearted {
+    color: var(--theme-colors-primary);
+}
+
+/* the Favorites page: hearted versions */
+.hearted-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 4px 16px 12px;
+}
+
+.hearted-title {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.hearted-row {
+    display: flex;
+    gap: 8px;
+    padding-bottom: 4px;
+    overflow-x: auto;
+}
+
+.hearted-item {
+    display: flex;
+    flex-shrink: 0;
+    gap: 8px;
+    align-items: center;
+    max-width: 240px;
+    padding: 8px 12px;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    background: color-mix(in srgb, var(--theme-colors-foreground) 6%, transparent);
+    border: 0;
+    border-radius: 12px;
+    transition: background 0.18s ease;
+}
+
+.hearted-item:hover {
+    background: color-mix(in srgb, var(--theme-colors-primary) 16%, transparent);
+}
+
+.hearted-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}

@@ -6,6 +6,8 @@ import styles from './version-picker.module.css';
 
 import { api } from '/@/renderer/api';
 import { type GroupSong } from '/@/renderer/features/group-play/store/group-play.store';
+import { getSongById } from '/@/renderer/features/player/utils';
+import { useSetFavorite } from '/@/renderer/features/shared/hooks/use-set-favorite';
 import { SongPicker } from '/@/renderer/features/sour/components/song-picker';
 import { useMyProfile, useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import {
@@ -16,22 +18,29 @@ import {
 } from '/@/renderer/features/sour/versions/version-deck';
 import {
     findVersion,
+    heartVersion,
     inStep,
     loadVersions,
-    myPlays,
     ORIGINAL,
     type SongVersion,
     startWithVersion,
+    useHeartedIds,
     useLoaded,
+    useMyPlays,
     useSongVersions,
+    useVersions,
     type VersionedSong,
     versionLabel,
     versionsApi,
     versionsOf,
 } from '/@/renderer/features/sour/versions/versions';
 import { queryClient } from '/@/renderer/lib/react-query';
-import { usePlayerSong } from '/@/renderer/store';
-import { setAskBeforePlaying, usePlayerStoreBase } from '/@/renderer/store/player.store';
+import { useCurrentServer, usePlayerSong } from '/@/renderer/store';
+import {
+    addToQueueByData,
+    setAskBeforePlaying,
+    usePlayerStoreBase,
+} from '/@/renderer/store/player.store';
 import { useSettingsStore } from '/@/renderer/store/settings.store';
 import { Button } from '/@/shared/components/button/button';
 import { DropdownMenu } from '/@/shared/components/dropdown-menu/dropdown-menu';
@@ -41,8 +50,8 @@ import { Stack } from '/@/shared/components/stack/stack';
 import { TextInput } from '/@/shared/components/text-input/text-input';
 import { Text } from '/@/shared/components/text/text';
 import { toast } from '/@/shared/components/toast/toast';
-import { type QueueSong, type Song } from '/@/shared/types/domain-types';
-import { PlayerType } from '/@/shared/types/types';
+import { LibraryItem, type QueueSong, type Song } from '/@/shared/types/domain-types';
+import { Play, PlayerType } from '/@/shared/types/types';
 
 // Sour Player 0.15: "Which version?" (starting a song that has versions), the versions of the song that's playing
 // (switch, split ears), and the admins' tools for them.
@@ -201,6 +210,26 @@ const VersionTools = ({ entry, v }: { entry: VersionedSong; v: SongVersion }) =>
     );
 };
 
+const HeartToggle = ({
+    label,
+    on,
+    onClick,
+}: {
+    label: string;
+    on: boolean;
+    onClick: () => void;
+}) => (
+    <button
+        aria-label={on ? `Unfavorite ${label}` : `Favorite ${label}`}
+        className={clsx(styles.heart, { [styles.hearted]: on })}
+        onClick={onClick}
+        title={on ? `Hearted: ${label}` : `Heart ${label}`}
+        type="button"
+    >
+        <Icon fill={on ? 'primary' : undefined} icon="favorite" />
+    </button>
+);
+
 // the list: "start" plays the song in the version clicked; "switch" changes what the song that's playing sounds like
 export const VersionList = ({
     mode,
@@ -216,8 +245,22 @@ export const VersionList = ({
     const current = mode === 'switch' && !!playing && playing.id === song.id;
     const heard = useHeard(current ? playing : null);
     const builtIn = useSettingsStore((s) => s.playback.type) === PlayerType.WEB;
+    // (0.15.1) hearts: a version's is yours on Hermes Music, the original's is the song's own favourite
+    const setFavorite = useSetFavorite();
+    const [songFav, setSongFav] = useState(!!song.userFavorite);
+    const plays = useMyPlays(entry);
+    const hearted = useHeartedIds(entry);
     if (!entry) return <Text isMuted>{`${song.name} has no other versions yet.`}</Text>;
-    const plays = myPlays(entry);
+    const heart = (id: string) => {
+        if (id === ORIGINAL) {
+            setFavorite(song._serverId, [song.id], LibraryItem.SONG, !songFav);
+            setSongFav(!songFav);
+            return;
+        }
+        heartVersion(entry, id, !hearted.includes(id), song.id).catch((e: Error) =>
+            toast.error({ message: e.message }),
+        );
+    };
     const rows: { id: string; label: string; lineUp: boolean; seconds: number; v?: SongVersion }[] =
         [
             { id: ORIGINAL, label: 'Original', lineUp: true, seconds: (song.duration || 0) / 1000 },
@@ -299,6 +342,11 @@ export const VersionList = ({
                                 {inSplit ? 'One at a time' : 'Both ears'}
                             </Button>
                         )}
+                        <HeartToggle
+                            label={r.id === ORIGINAL ? `the original ${song.name}` : `${r.label}`}
+                            on={r.id === ORIGINAL ? songFav : hearted.includes(r.id)}
+                            onClick={() => heart(r.id)}
+                        />
                         {r.v && <VersionTools entry={entry} v={r.v} />}
                     </div>
                 );
@@ -326,7 +374,7 @@ const PickerBody = ({
         <Group gap="xs" justify="space-between">
             <Text isMuted size="xs">
                 {mode === 'start'
-                    ? 'Albums, playlists and shuffle play the one you play most.'
+                    ? 'Albums, playlists and shuffle play your hearted version, or the one you play most.'
                     : 'Versions that line up switch in step, mid-song.'}
             </Text>
             <Button
@@ -402,6 +450,84 @@ export const VersionPrompt = () => {
         return () => setAskBeforePlaying(null);
     }, []);
     return null;
+};
+
+// (0.15.1) the playing song's heart acts on the version you hear (null: the original, the song's own heart)
+export const useHeardVersionHeart = () => {
+    const song = usePlayerSong();
+    const entry = useSongVersions(song);
+    const heard = useHeard(song);
+    const hearted = useHeartedIds(entry);
+    if (!song || !entry || heard.hear === ORIGINAL || !findVersion(entry, heard.hear)) return null;
+    const id = heard.hear;
+    const on = hearted.includes(id);
+    return {
+        label: versionLabel(entry, id),
+        on,
+        toggle: () =>
+            void heartVersion(entry, id, !on, song.id).catch((e: Error) =>
+                toast.error({ message: e.message }),
+            ),
+    };
+};
+
+// (0.15.1) the Favorites page: the versions you hearted, to play straight away
+export const HeartedVersions = () => {
+    const favs = useVersions((s) => s.favs);
+    const byKey = useVersions((s) => s.byKey);
+    const serverId = useCurrentServer()?.id;
+    const items = Object.entries(favs)
+        .flatMap(([key, list]) =>
+            list.map((f) => {
+                const entry = byKey[key];
+                const v = entry?.versions.find((x) => x.id === f.id);
+                return entry && v ? { at: f.at, entry, song: f.song, v } : null;
+            }),
+        )
+        .filter((x): x is NonNullable<typeof x> => !!x)
+        .sort((a, b) => b.at - a.at);
+    if (!items.length) return null;
+    const play = async (songId: null | string, versionId: string, title: string) => {
+        if (!songId || !serverId) {
+            toast.info({ message: `Open ${title} and pick the version from there` });
+            return;
+        }
+        try {
+            const res = await getSongById({ id: songId, queryClient, serverId });
+            const song = res.items[0];
+            if (!song) throw new Error(`${title} isn't on your music server`);
+            startWithVersion(song.id, versionId);
+            await addToQueueByData(Play.NOW, [song], { noVersionPrompt: true });
+        } catch (e) {
+            toast.error({ message: (e as Error).message });
+        }
+    };
+    return (
+        <div className={styles['hearted-list']}>
+            <span className={styles['hearted-title']}>
+                <Icon fill="primary" icon="favorite" size="sm" /> Hearted versions
+            </span>
+            <div className={styles['hearted-row']}>
+                {items.map((x) => (
+                    <button
+                        className={styles['hearted-item']}
+                        key={`${x.entry.key}|${x.v.id}`}
+                        onClick={() => void play(x.song, x.v.id, x.entry.title)}
+                        title={`Play the ${x.v.label} version of ${x.entry.title}`}
+                        type="button"
+                    >
+                        <Icon icon="mediaPlay" size="sm" />
+                        <span className={styles['hearted-text']}>
+                            <span className={styles.label}>{x.entry.title}</span>
+                            <span className={styles.sub}>
+                                {x.v.label} · {x.entry.artist}
+                            </span>
+                        </span>
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
 };
 
 // ---- the player bar: the tab in front of the song's name ----

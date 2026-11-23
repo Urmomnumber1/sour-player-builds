@@ -1,6 +1,8 @@
 # Hermes Music's Discord bot on Linux (the Umbrel's Node image): installs its Discord libraries the way
 # Hermes does, then asks the bot which encoders it found, pushes a test tone through ffmpeg, the mix and the
 # Opus encoder into a Discord audio resource, and logs in with a made-up token (it must say so).
+# (Hermes 3.17) Then the ears ("Hey Sour Box"): the speech recognizer installed the way Hermes does, sentences
+# spoken by a speech synthesizer sent through the same path Discord's voices take, and what came out of it.
 name: Discord bot check
 
 on:
@@ -19,9 +21,11 @@ jobs:
             - name: Get the bot and its libraries
               run: |
                   apt-get update > /dev/null
-                  apt-get install -y --no-install-recommends ca-certificates curl ffmpeg > /dev/null
+                  apt-get install -y --no-install-recommends ca-certificates curl ffmpeg espeak-ng > /dev/null
                   mkdir -p /bot /deps
-                  curl -fsSL -o /bot/discord-bot.js "https://raw.githubusercontent.com/Urmomnumber1/hermes-umbrel-store/${{ inputs.ref }}/anjalo-hermes/requests-app/discord-bot.js"
+                  for f in discord-bot.js sour-ears.py; do
+                    curl -fsSL -o /bot/$f "https://raw.githubusercontent.com/Urmomnumber1/hermes-umbrel-store/${{ inputs.ref }}/anjalo-hermes/requests-app/$f" || echo "no $f on this ref"
+                  done
                   cd /deps
                   echo '{"name":"hermes-discord-bot","private":true,"dependencies":{"discord.js":"14.28.1","@discordjs/voice":"0.19.2","opusscript":"0.1.1","libsodium-wrappers":"0.8.4"}}' > package.json
                   npm install --omit=dev --no-audit --no-fund --no-package-lock
@@ -56,3 +60,86 @@ jobs:
                   })();
                   EOF
                   node /bot/drive.js
+
+            - name: The ears - install them the way Hermes Music does
+              run: |
+                  test -f /bot/sour-ears.py || { echo "this ref has no ears: nothing to check"; exit 0; }
+                  mkdir -p /tools /data/home
+                  curl -fsSL "https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-unknown-linux-gnu.tar.gz" | tar -xz -C /tools --strip-components=1 --wildcards '*/uv'
+                  export HOME=/data/home UV_CACHE_DIR=/tools/uv-cache UV_PYTHON_INSTALL_DIR=/tools/uv-python
+                  /tools/uv venv --python 3.11 /tools/ears
+                  /tools/uv pip install --python /tools/ears/bin/python vosk==0.3.45
+                  curl -fsSL -o /tools/ears/model.zip https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip
+                  /tools/ears/bin/python -c "import sys, zipfile; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])" /tools/ears/model.zip /tools/ears
+                  ls /tools/ears/vosk-model-small-en-us-0.15
+                  du -sh /tools/ears
+
+            - name: The ears - what they hear
+              run: |
+                  test -f /bot/sour-ears.py || exit 0
+                  say() { espeak-ng -v en-us -s 140 -w "/tmp/$1.wav" "$2"; }
+                  say play   "hey sour box. play retry now"
+                  say artist "hey sour box, play dancing in the rain by lemon drop"
+                  say queue  "sour box queue golden hour"
+                  say pause  "hey sour box, pause"
+                  say wake   "hey sour box"
+                  say chat   "so what do you all want to do about the dragon in the cave"
+                  say chat2  "I think we should play a different game tonight"
+                  cat > /bot/ears.js <<'EOF'
+                  const { fork } = require('child_process');
+                  const fs = require('fs');
+                  // the receiving side of the voice library (the bot listens through it)
+                  const voice = require('/deps/node_modules/@discordjs/voice');
+                  console.log('voice library:', voice.version, '| EndBehaviorType:', typeof voice.EndBehaviorType, '| VoiceReceiver:', typeof voice.VoiceReceiver);
+                  const dist = fs.readFileSync(require.resolve('/deps/node_modules/@discordjs/voice'), 'utf8');
+                  console.log('receiving with end-to-end encryption (DAVE) in the library:', /decrypt/i.test(dist) && /dave/i.test(dist));
+                  const p = fork('/bot/discord-bot.js', [], { env: { ...process.env, BOT_DEPS: '/deps', BOT_DATA: '/tmp/botdata' } });
+                  let n = 0;
+                  const pending = new Map();
+                  p.on('message', (m) => {
+                    if (m.type === 'log') console.log('bot log:', m.text);
+                    if (m.type === 'heard') console.log('bot heard:', JSON.stringify(m));
+                    if (m.id && pending.has(m.id)) { pending.get(m.id)(m); pending.delete(m.id); }
+                  });
+                  const call = (cmd, args = {}) => new Promise((ok) => { const id = ++n; pending.set(id, ok); p.send({ id, cmd, args }); });
+                  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+                  // what Hermes Music would send: the commands, and the words of a small library
+                  const words = ['hey', 'sour', 'box', 'play', 'put', 'on', 'queue', 'add', 'pause', 'resume', 'continue', 'skip', 'next', 'previous', 'back', 'go', 'stop', 'by', 'the', 'a', 'song', 'some', 'music', 'please',
+                    'retry', 'now', 'nakiso', 'dancing', 'in', 'rain', 'lemon', 'drop', 'golden', 'hour', 'world', 'revolving', 'toby', 'fox', 'night', 'juice', 'late', 'drive', 'gym', 'hype', 'weezer', 'elton', 'john'];
+                  const helper = { python: '/tools/ears/bin/python', script: '/bot/sour-ears.py', model: '/tools/ears/vosk-model-small-en-us-0.15' };
+                  (async () => {
+                    let bad = 0;
+                    const check = (ok, what, extra) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${what}${extra ? '  (' + extra + ')' : ''}`); if (!ok) bad++; };
+                    const on = await call('ears', { on: true, ...helper, words });
+                    check(on.ok && on.result.on, 'the ears switch on', JSON.stringify(on.result || on.error));
+                    let ready = false;
+                    for (let i = 0; i < 120 && !ready; i++) { await sleep(500); ready = !!(await call('state')).result.ears.ready; }
+                    check(ready, 'the recognizer loads');
+                    const hear = async (name) => { const r = await call('eartest', { file: `/tmp/${name}.wav` }); console.log(`  ${name}:`, JSON.stringify(r.result || r.error)); return (r.result && r.result.heard) || {}; };
+                    let h = await hear('play');
+                    check(h.wake === true && /sour box/.test(h.text) && /play retry now/.test(h.text), '"hey sour box. play retry now"', h.text);
+                    h = await hear('artist');
+                    check(h.wake === true && /play dancing in the rain by lemon drop/.test(h.text), '"... play dancing in the rain by lemon drop"', h.text);
+                    h = await hear('queue');
+                    check(h.wake === true && /queue golden hour/.test(h.text), '"sour box queue golden hour"', h.text);
+                    h = await hear('pause');
+                    check(h.wake === true && /pause/.test(h.text), '"hey sour box, pause"', h.text);
+                    h = await hear('wake');
+                    check(h.wake === true && /sour box/.test(h.text), '"hey sour box" on its own', h.text);
+                    h = await hear('chat');
+                    check(h.wake === false, 'table talk is not for the bot', JSON.stringify(h));
+                    h = await hear('chat2');
+                    check(h.wake === false, '...even with the word "play" in it', JSON.stringify(h));
+                    // the words change (the library grew): the helper keeps running with the new list
+                    const more = await call('ears', { on: true, ...helper, words: [...words, 'thunder', 'road'] });
+                    check(more.ok, 'a new word list is taken');
+                    await sleep(1500);
+                    h = await hear('play');
+                    check(h.wake === true && /play retry now/.test(h.text), 'and it still hears', h.text);
+                    const off = await call('ears', { on: false });
+                    check(off.ok && off.result.on === false, 'the ears switch off');
+                    p.kill();
+                    process.exit(bad ? 1 : 0);
+                  })();
+                  EOF
+                  node /bot/ears.js

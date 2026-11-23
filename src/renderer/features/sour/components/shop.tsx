@@ -436,14 +436,18 @@ export const ShopWardrobe = () => {
     const [busy, setBusy] = useState<null | string>(null);
     if (!me || !mine || !shop) return null;
     const owned = new Set(mine.owned ?? []);
+    // (0.16) the party hat of accounts from before 0.10 is theirs without having been bought: it was
+    // missing here, so it could only be put on in the shop
+    if (mine.partyHat) owned.add('party-hat');
     const items = shop.items.filter((i) => owned.has(i.id));
     const equipped = (mine.looks ?? {}) as Record<string, string | undefined>;
     const worn = (it: ShopItem) =>
         it.slot === 'decoration' ? mine.decoration === it.id : equipped[it.slot] === it.id;
     const wear = (it: ShopItem) => {
+        const off = worn(it);
         setBusy(it.id);
         post(`${url}/api/shop/equip`, {
-            item: worn(it) ? null : it.id,
+            item: off ? null : it.id,
             key: me.key,
             profile: me.id,
             slot: it.slot,
@@ -451,6 +455,13 @@ export const ShopWardrobe = () => {
             .then(() => {
                 qc.invalidateQueries({ queryKey: ['sour-me'] });
                 qc.invalidateQueries({ queryKey: ['sour-profiles', url] });
+                toast.success({
+                    message: off
+                        ? `Took off ${it.name}`
+                        : it.slot === 'sidebar'
+                          ? `Wearing ${it.name}: look at the sidebar`
+                          : `Wearing ${it.name}`,
+                });
             })
             .catch((e: Error) => toast.error({ message: e.message }))
             .finally(() => setBusy(null));
@@ -473,6 +484,10 @@ export const ShopWardrobe = () => {
                 <Stack gap={4} key={g.value}>
                     <Text isMuted size="xs">
                         {g.label}
+                        {g.value === 'banner' && mine.banner
+                            ? ' (worn instead of your banner picture; take it off to show the picture)'
+                            : ''}
+                        {g.value === 'sidebar' ? ' (the sidebar of your own Sour Player)' : ''}
                     </Text>
                     <div className={styles.wardrobe}>
                         {g.items.map((it) => (

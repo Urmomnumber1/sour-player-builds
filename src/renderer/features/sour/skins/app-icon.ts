@@ -121,7 +121,8 @@ export const applyAppIcon = async (pack: string, emoji: null | string) => {
     if (isAndroidApp()) {
         if (pack === lastSent) return;
         lastSent = pack;
-        await sourMedia('setIcon', { pack }).catch(() => undefined);
+        // (0.16) citrus: Citrus mode's icons and name on the home screen (or Sour Player's, in Citrus Player)
+        await sourMedia('setIcon', { citrus: CITRUS, pack }).catch(() => undefined);
         return;
     }
     if (!isElectron()) return;

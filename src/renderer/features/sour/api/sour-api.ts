@@ -177,8 +177,11 @@ export interface SourProfile {
     // code and hosting: only on your own profile
     tv?: null | { code?: string; event: string; host: string; hosting?: boolean };
     // watching the music video in the Stage (listen along opens it too)
+    // (0.16) the version of the song they hear, and where their player's own version sits from the original
+    version?: null | string;
     video?: boolean;
     visits?: { at: number; from: string; fromName: string }[];
+    vshift?: number;
     wall: WallNote[];
 }
 

@@ -488,3 +488,26 @@
         font-size: 1.6rem;
     }
 }
+
+/* (0.16) "Hey Sour Box": the switch and what it heard */
+.ears {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
+    margin-top: 10px;
+    background: color-mix(in srgb, var(--theme-colors-foreground) 5%, transparent);
+    border-radius: 12px;
+}
+
+.ears-head {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ears-text {
+    flex: 1;
+    min-width: 0;
+}

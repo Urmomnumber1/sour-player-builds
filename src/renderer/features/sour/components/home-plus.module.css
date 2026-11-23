@@ -65,10 +65,12 @@
 }
 
 .banner-title {
+    padding-bottom: 0.1em;
     overflow: hidden;
     text-overflow: ellipsis;
     font-size: 1.5rem;
     font-weight: 800;
+    line-height: 1.3;
     white-space: nowrap;
 }
 

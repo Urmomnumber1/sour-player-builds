@@ -902,7 +902,10 @@ export const TasteMap = () => {
             id: p.id,
             image: avatarUrl(url, p),
             name: p.name,
-            r: 22 + 18 * Math.sqrt((p.stats?.hoursTotal ?? 0) / maxHours),
+            // (0.16) bigger faces on phones
+            r:
+                (narrow ? 30 : 22) +
+                (narrow ? 22 : 18) * Math.sqrt((p.stats?.hoursTotal ?? 0) / maxHours),
             vx: 0,
             vy: 0,
             x: W / 2 + Math.cos((i / profiles.length) * Math.PI * 2) * (narrow ? 110 : 150),

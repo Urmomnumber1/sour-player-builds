@@ -260,16 +260,16 @@ final class SourPhoneTests: XCTestCase {
         }
 
         signIn(server)
-        check(named("You").waitForExistence(timeout: 40), "signed in: the phone tabs show")
+        check(named("Sour").waitForExistence(timeout: 40), "signed in: the phone tabs show")
         sleep(4)
         prompts()
         shot("home")
-        inside("the You tab", named("You"))
+        inside("the Sour tab", named("Sour"))
         inside("the Home tab", named("Home"))
 
-        // Library > Albums > the first album > its first song (long names, like real soundtracks)
-        tap(named("Library"))
-        sleep(3)
+        // Home > Library > Albums > the first album > its first song (long names, like real soundtracks).
+        // (0.16: the Library is a part of Home; Favorites has the tab it had)
+        check(named("Favorites").exists, "the Favorites tab is there")
         shot("library")
         let albums = named("Albums")
         tap(albums.exists ? albums : any("Albums"))
@@ -280,7 +280,7 @@ final class SourPhoneTests: XCTestCase {
         check(appears("Song 1", 25), "the album opens")
         sleep(2)
         shot("album")
-        inside("the You tab on the album page", named("You"))
+        inside("the Sour tab on the album page", named("Sour"))
         let song = any("Song 1")
         reveal(song)
         shot("album-songs")
@@ -294,8 +294,8 @@ final class SourPhoneTests: XCTestCase {
         XCUIDevice.shared.orientation = .landscapeLeft
         sleep(4)
         shot("sideways-album")
-        check(named("You").exists, "sideways keeps the phone tabs")
-        inside("the You tab sideways", named("You"))
+        check(named("Sour").exists, "sideways keeps the phone tabs")
+        inside("the Sour tab sideways", named("Sour"))
         tap(named("Home"))
         sleep(3)
         shot("sideways-home")
@@ -313,8 +313,8 @@ final class SourPhoneTests: XCTestCase {
         sleep(2)
 
         guard variant == "new" else { return }
-        // You > Phone settings > Change address: back to the welcome screen, then the IP works too
-        tap(named("You"))
+        // Sour > Phone settings > Change address: back to the welcome screen, then the IP works too
+        tap(named("Sour"))
         sleep(2)
         tap(any("Phone settings"))
         sleep(2)
@@ -349,7 +349,7 @@ final class SourPhoneTests: XCTestCase {
         check(named("Try again").exists && named("Use a different address").exists, "Try again and Use a different address are there")
         FileManager.default.createFile(atPath: dir + "/offline-seen", contents: nil)
         // run.sh brings Hermes Music back: the app opens Sour Player by itself
-        let back = gone(any("reach Hermes Music"), 150) && (field("URL").waitForExistence(timeout: 40) || named("You").exists)
+        let back = gone(any("reach Hermes Music"), 150) && (field("URL").waitForExistence(timeout: 40) || named("Sour").exists)
         sleep(3)
         shot("back-online")
         check(back, "once Hermes Music is back, the app opens by itself")

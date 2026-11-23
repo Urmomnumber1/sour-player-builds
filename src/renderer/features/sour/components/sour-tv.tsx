@@ -1,11 +1,14 @@
 import { useEffect } from 'react';
 
-import { groupApi } from '/@/renderer/features/group-play/api/group-play-api';
+import { groupApi, toGroupSong } from '/@/renderer/features/group-play/api/group-play-api';
 import { useGroupPlayStore } from '/@/renderer/features/group-play/store/group-play.store';
 import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-video.store';
+import { isPodcast } from '/@/renderer/features/sour/podcasts/podcast-id';
 import { useMyProfile, useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import { ask, leaveGroupFirst } from '/@/renderer/features/sour/utils/switching';
+import { setQueueTaker, usePlayerStoreBase } from '/@/renderer/store/player.store';
 import { toast } from '/@/shared/components/toast/toast';
+import { PlayerStatus } from '/@/shared/types/types';
 
 // Sour Player TV is its own app (an admin's phone on the TV, at Hermes Music's /tv/). Sour Player only has
 // the guest side: friends see "on Sour Player TV" on profiles, can't listen along, and people the admin
@@ -45,5 +48,40 @@ export const TvInvite = () => {
             }
         })();
     }, [code, me, profile, tv, url]);
+
+    // (0.16) At a TV party from this phone (watching only): the songs you tap go to the party's queue.
+    // They used to start on the phone instead, next to the TV's music, and adding to the party was
+    // hidden in the long-press menu.
+    const atParty = useGroupPlayStore(
+        (s) => s.role === 'member' && s.spectate && !!s.state?.tv && !s.state.ended,
+    );
+    useEffect(() => {
+        if (!atParty || !url) return undefined;
+        // whatever this phone was playing stops: the music is on the TV
+        if (usePlayerStoreBase.getState().player.status === PlayerStatus.PLAYING)
+            usePlayerStoreBase.getState().mediaPause();
+        setQueueTaker((items, playSongId) => {
+            const { code: party, member, state, userName } = useGroupPlayStore.getState();
+            if (!party || !state?.tv || state.ended) return false;
+            const tapped = playSongId ? items.filter((s) => s.id === playSongId) : [];
+            const songs = (tapped.length ? tapped : items)
+                .filter((s) => !isPodcast(s))
+                .slice(0, 100);
+            if (!songs.length) return false;
+            groupApi
+                .add(url, party, userName.trim() || 'Guest', songs.map(toGroupSong), member)
+                .then((res) =>
+                    toast.success({
+                        message:
+                            songs.length === 1
+                                ? `${songs[0].name} is in the queue on the TV`
+                                : `${res.added} songs are in the queue on the TV`,
+                    }),
+                )
+                .catch((error: Error) => toast.error({ message: error.message }));
+            return true;
+        });
+        return () => setQueueTaker(null);
+    }, [atParty, url]);
     return null;
 };

@@ -225,6 +225,15 @@
     height: 420px;
 }
 
+/* (0.16) phones: the map is drawn tall there, but the box stayed 420px high, so it was shown small with
+   empty space on both sides. Now it takes the whole width. */
+@media (width <= 700px) {
+    .map {
+        height: auto;
+        aspect-ratio: 420 / 640;
+    }
+}
+
 .banner {
     display: flex;
     gap: 12px;

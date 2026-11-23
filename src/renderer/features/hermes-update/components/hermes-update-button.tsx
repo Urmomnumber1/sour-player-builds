@@ -5,7 +5,7 @@ import { create } from 'zustand';
 import { isAndroidApp, onSourMedia, sourMedia } from '/@/renderer/features/sour/mobile/android';
 import { useSourStore } from '/@/renderer/features/sour/store/sour.store';
 import { usePlayerStoreBase } from '/@/renderer/store/player.store';
-import { CITRUS } from '/@/shared/citrus';
+import { CITRUS_BUILD } from '/@/shared/citrus';
 import { Button } from '/@/shared/components/button/button';
 import { Dialog } from '/@/shared/components/dialog/dialog';
 import { Group } from '/@/shared/components/group/group';
@@ -14,6 +14,7 @@ import { Stack } from '/@/shared/components/stack/stack';
 import { Text } from '/@/shared/components/text/text';
 import { Tooltip } from '/@/shared/components/tooltip/tooltip';
 import { PlayerStatus } from '/@/shared/types/types';
+import { isOpenFor, opensForEveryone, type UpdateRing } from '/@/shared/update-rings';
 
 interface HermesUpdate {
     percent?: number;
@@ -24,11 +25,18 @@ interface HermesUpdate {
 // what the updater in the main process reports (downloads happen in the background)
 // phones: Sour Player's releases are "mobile-v...", Citrus Player's "citrus-mobile-v..." (each app only
 // takes its own APK)
-const MOBILE_TAG = CITRUS ? 'citrus-mobile-v' : 'mobile-v';
+const MOBILE_TAG = CITRUS_BUILD ? 'citrus-mobile-v' : 'mobile-v';
 const isOurApk = (name: string) =>
-    name.endsWith('.apk') && name.startsWith(CITRUS ? 'Citrus-Player-' : 'Sour-Player-');
+    name.endsWith('.apk') && name.startsWith(CITRUS_BUILD ? 'Citrus-Player-' : 'Sour-Player-');
 
 const useHermesUpdateStore = create<{ update: HermesUpdate | null }>(() => ({ update: null }));
+
+// (0.16) updates in rings (shared/update-rings): who this is (admins take updates at once), and a newer
+// release that hasn't opened for this person yet
+export const useUpdateRing = create<{
+    ring: UpdateRing;
+    waiting: null | { opensAt: number; version: string };
+}>(() => ({ ring: 'everyone', waiting: null }));
 
 const utils = isElectron() ? window.api?.utils : undefined;
 
@@ -70,6 +78,7 @@ const useAndroidUpdateListener = () => {
                 const { code, version } = await sourMedia('info');
                 const releases: {
                     assets: { browser_download_url: string; name: string }[];
+                    published_at: string;
                     tag_name: string;
                 }[] = await fetch(RELEASES).then((r) => r.json());
                 // the APK's name ends with its build number (Sour-Player-0.1.0-110.apk): that decides
@@ -79,7 +88,7 @@ const useAndroidUpdateListener = () => {
                         r.assets.find((a) => isOurApk(a.name))?.name.match(/-(\d+)\.apk$/)?.[1] ||
                             0,
                     );
-                const newest = releases
+                const ours = releases
                     .filter(
                         (r) =>
                             r.tag_name.startsWith(MOBILE_TAG) &&
@@ -87,12 +96,27 @@ const useAndroidUpdateListener = () => {
                     )
                     .sort(
                         (a, b) => build(b) - build(a) || (isNewer(a.tag_name, b.tag_name) ? -1 : 1),
-                    )[0];
+                    );
+                const isNewerThanThis = (r: (typeof releases)[number]) =>
+                    build(r) && code
+                        ? build(r) > Number(code)
+                        : isNewer(r.tag_name.replace(MOBILE_TAG, ''), version);
+                // (0.16) admins: the newest. Everyone else: the newest that has opened for everyone
+                const ring = useUpdateRing.getState().ring;
+                const newest = ours.find((r) => isOpenFor(ring, r.published_at));
+                const held =
+                    ours[0] && ours[0] !== newest && isNewerThanThis(ours[0]) ? ours[0] : null;
+                useUpdateRing.setState({
+                    waiting: held
+                        ? {
+                              opensAt: opensForEveryone(held.published_at),
+                              version: held.tag_name.replace(MOBILE_TAG, ''),
+                          }
+                        : null,
+                });
                 const latest = newest?.tag_name.replace(MOBILE_TAG, '');
                 if (!newest || !latest) return;
-                const newer =
-                    build(newest) && code ? build(newest) > Number(code) : isNewer(latest, version);
-                if (!newer) return;
+                if (!isNewerThanThis(newest)) return;
                 const apk = newest.assets.find((a) => isOurApk(a.name))!;
                 useHermesUpdateStore.setState({
                     update: { percent: 0, state: 'downloading', version: latest },
@@ -107,10 +131,17 @@ const useAndroidUpdateListener = () => {
                 busy = false;
             }
         };
-        check();
+        // a moment after the start, so the profile (admin or not) is known for the first look
+        const first = window.setTimeout(check, 12000);
         const timer = window.setInterval(check, 30 * 60 * 1000);
+        // an admin just signed in: look right away
+        const ringOff = useUpdateRing.subscribe((s, before) => {
+            if (s.ring !== before.ring) void check();
+        });
         return () => {
             off();
+            ringOff();
+            window.clearTimeout(first);
             window.clearInterval(timer);
         };
     }, []);
@@ -123,7 +154,21 @@ const useHermesUpdateListener = () => {
         utils.hermesUpdateState().then((update) => {
             if (update) useHermesUpdateStore.setState({ update });
         });
-        return utils.hermesUpdateListener((update) => useHermesUpdateStore.setState({ update }));
+        const waiting = () =>
+            utils
+                .hermesUpdateWaiting?.()
+                .then((w) => useUpdateRing.setState({ waiting: w ?? null }))
+                .catch(() => undefined);
+        const first = window.setTimeout(waiting, 20000);
+        const timer = window.setInterval(waiting, 30 * 60 * 1000);
+        const off = utils.hermesUpdateListener((update) =>
+            useHermesUpdateStore.setState({ update }),
+        );
+        return () => {
+            off();
+            window.clearTimeout(first);
+            window.clearInterval(timer);
+        };
     }, []);
 };
 

@@ -6,6 +6,7 @@ import { getItemImageUrl } from '/@/renderer/components/item-image/item-image';
 import { usePlayerEvents } from '/@/renderer/features/player/audio-player/hooks/use-player-events';
 import { isIphoneBrowser } from '/@/renderer/features/player/audio-player/ios-web-player';
 import { usePlayer } from '/@/renderer/features/player/context/player-context';
+import { remoteOnce } from '/@/renderer/features/player/utils/remote-once';
 import {
     useIsRadioActive,
     useRadioPlayer,
@@ -101,7 +102,7 @@ export const useMediaSession = () => {
                 return;
             }
 
-            playerRef.current.mediaNext(false);
+            remoteOnce('next', () => playerRef.current.mediaNext(false));
         });
 
         mediaSession.setActionHandler('pause', () => {
@@ -117,7 +118,7 @@ export const useMediaSession = () => {
                 return;
             }
 
-            playerRef.current.mediaPrevious(false);
+            remoteOnce('previous', () => playerRef.current.mediaPrevious(false));
         });
 
         mediaSession.setActionHandler('seekto', (e) => {
@@ -311,8 +312,9 @@ export const MediaSessionHook = () => {
     // Conditional rendering here causes unmount/remount cycles that destroy handlers mid-session.
     // Android's WebView has no media session at all (the Android app has its own, see
     // features/sour/mobile), so there is nothing to drive there.
-    // The iPhone app drives the lock screen itself (SourMedia, with iOS's own remote controls);
-    // answering the same buttons here too would skip two songs at a time
-    if (!mediaSession || (window as any).Capacitor?.getPlatform?.() === 'ios') return null;
+    // The iPhone app has iOS's own remote controls too (SourMedia). (0.16) Both are on there: the sound
+    // plays inside the page, so iOS shows this page's buttons on the lock screen - without them there was
+    // no previous / next. A press that arrives through both counts once (remoteOnce).
+    if (!mediaSession) return null;
     return React.createElement(MediaSessionHookInner);
 };

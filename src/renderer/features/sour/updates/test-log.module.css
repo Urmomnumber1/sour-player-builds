@@ -1,0 +1,30 @@
+/* Sour Player 0.16: the admins' test log (what to check in an early update) */
+.item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 9px 11px;
+    background: color-mix(in srgb, var(--theme-colors-foreground) 5%, transparent);
+    border: 1px solid transparent;
+    border-radius: 10px;
+}
+
+.what {
+    flex: 1;
+    min-width: 0;
+}
+
+.works {
+    border-color: color-mix(in srgb, var(--theme-colors-state-success, #3fb950) 55%, transparent);
+}
+
+.broken {
+    border-color: color-mix(in srgb, var(--theme-colors-state-error, #f85149) 60%, transparent);
+}
+
+@media (width <= 600px) {
+    .item {
+        flex-direction: column;
+    }
+}

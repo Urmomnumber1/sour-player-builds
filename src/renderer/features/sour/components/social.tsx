@@ -29,6 +29,13 @@ import { openRequestQuestion } from '/@/renderer/features/sour/components/reques
 import { isPodcast } from '/@/renderer/features/sour/podcasts/podcast-id';
 import { toggleStage, useStage } from '/@/renderer/features/sour/stage/sour-stage';
 import { useSourProfiles, useSourStore } from '/@/renderer/features/sour/store/sour.store';
+import { followVersion } from '/@/renderer/features/sour/versions/version-deck';
+import {
+    loadedVersion,
+    ORIGINAL,
+    versionOffset,
+    versionsOf,
+} from '/@/renderer/features/sour/versions/versions';
 import { useCurrentServer, usePlayerSong } from '/@/renderer/store';
 import { addToQueueByData, usePlayerStoreBase } from '/@/renderer/store/player.store';
 import { useTimestampStoreBase } from '/@/renderer/store/timestamp.store';
@@ -459,8 +466,25 @@ export const ListenAlong = () => {
             // Hermes Music's clock, not this computer's (a clock a few seconds off used to mean drifting)
             const offset = p.serverNow ? p.serverNow - Date.now() : 0;
             const elapsed = p.playing ? ((Date.now() + offset - p.positionAt) / 1000) * speed : 0;
-            const target = p.position + elapsed;
-            const mine = player.getCurrentSong()?.id;
+            // (0.16) the version of the song they hear. Positions are in each player's own version's
+            // timeline: theirs sits p.vshift from the original, this player's `shift` from it
+            const version = p.version || ORIGINAL;
+            const current = player.getCurrentSong();
+            const mine = current?.id;
+            const shift =
+                mine === p.listening.id
+                    ? versionOffset(versionsOf(current), loadedVersion(current?._uniqueId))
+                    : versionOffset(
+                          versionsOf({
+                              albumArtistName: '',
+                              albumArtists: [],
+                              artistName: p.listening.artist,
+                              artists: [],
+                              name: p.listening.title,
+                          }),
+                          version,
+                      );
+            const target = p.position + elapsed - (p.vshift || 0) + shift;
             if (mine !== p.listening.id) {
                 if (lastSong.current === p.listening.id) {
                     // you picked something else yourself (a radio, an album...): stop following
@@ -468,10 +492,12 @@ export const ListenAlong = () => {
                     return;
                 }
                 lastSong.current = p.listening.id;
-                await playSong(p.listening, target);
+                // their version, without asking which one (the question used to end the listening along)
+                await playSong(p.listening, target, version);
                 return;
             }
             lastSong.current = p.listening.id;
+            followVersion(version);
             const playing = player.player.status === PlayerStatus.PLAYING;
             if (p.playing && !playing) player.mediaPlay();
             if (!p.playing && playing) player.mediaPause();

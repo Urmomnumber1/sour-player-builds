@@ -5,6 +5,7 @@ import { getItemImageUrl } from '/@/renderer/components/item-image/item-image';
 import { AndroidUpdatePrompt } from '/@/renderer/features/hermes-update/components/hermes-update-button';
 import { lyricsQueries } from '/@/renderer/features/lyrics/api/lyrics-api';
 import { usePlayer } from '/@/renderer/features/player/context/player-context';
+import { remoteOnce } from '/@/renderer/features/player/utils/remote-once';
 import {
     isIosApp,
     isNativeApp,
@@ -84,7 +85,7 @@ const AndroidMediaInner = () => {
                 const p = playerRef.current;
                 switch (e.action) {
                     case 'next':
-                        p.mediaNext(false);
+                        remoteOnce('next', () => p.mediaNext(false));
                         break;
                     case 'pause':
                         p.mediaPause();
@@ -96,7 +97,7 @@ const AndroidMediaInner = () => {
                         if (typeof e.index === 'number') p.mediaPlayByIndex(e.index);
                         break;
                     case 'previous':
-                        p.mediaPrevious(false);
+                        remoteOnce('previous', () => p.mediaPrevious(false));
                         break;
                     case 'seek':
                         if (typeof e.position === 'number') p.mediaSeekToTimestamp(e.position);

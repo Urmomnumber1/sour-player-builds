@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-import { CITRUS } from '/@/shared/citrus';
+import { CITRUS_BUILD } from '/@/shared/citrus';
 
 // Icon packs beyond the open window: the window icon only lasts while the app runs, so the chosen
 // icon is also put where the system looks for it - the Windows shortcuts (desktop, Start menu and
@@ -88,7 +88,7 @@ export const keepIcon = (image: NativeImage) => {
             for (const old of fs.readdirSync(dir)) fs.rmSync(path.join(dir, old), { force: true });
             const icoPath = path.join(
                 dir,
-                `${CITRUS ? 'citrus' : 'sour'}-player-${Date.now()}.ico`,
+                `${CITRUS_BUILD ? 'citrus' : 'sour'}-player-${Date.now()}.ico`,
             );
             fs.writeFileSync(icoPath, toIco(png));
             updateWindowsShortcuts(icoPath);
@@ -100,7 +100,7 @@ export const keepIcon = (image: NativeImage) => {
                 const dir = path.join(hicolor, size, 'apps');
                 fs.mkdirSync(dir, { recursive: true });
                 fs.writeFileSync(
-                    path.join(dir, CITRUS ? 'citrus-player.png' : 'sour-player.png'),
+                    path.join(dir, CITRUS_BUILD ? 'citrus-player.png' : 'sour-player.png'),
                     png,
                 );
             }

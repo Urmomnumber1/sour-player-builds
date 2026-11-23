@@ -612,7 +612,15 @@ export const FriendSpotlight = () => {
     const p = people[day % people.length];
     const song = p.stats?.topSongs[0];
     return (
-        <button className={styles.hourCard} onClick={() => openProfile(p)} type="button">
+        <div
+            className={styles.hourCard}
+            onClick={() => openProfile(p)}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' && e.target === e.currentTarget) openProfile(p);
+            }}
+            role="button"
+            tabIndex={0}
+        >
             <ProfileAvatar profile={p} size={56} />
             <div style={{ minWidth: 0, textAlign: 'left' }}>
                 <Text className={styles.label}>Friend spotlight</Text>
@@ -638,7 +646,7 @@ export const FriendSpotlight = () => {
                     Play it
                 </Button>
             )}
-        </button>
+        </div>
     );
 };
 

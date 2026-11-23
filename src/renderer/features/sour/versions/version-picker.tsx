@@ -20,6 +20,7 @@ import {
     findVersion,
     heartVersion,
     inStep,
+    isOldHermes,
     loadVersions,
     ORIGINAL,
     type SongVersion,
@@ -117,6 +118,9 @@ const askText = (
 };
 
 const refresh = () => void loadVersions().catch(() => undefined);
+// (0.15.2) a heart Hermes Music couldn't keep: a too-old Hermes Music asks to be updated
+const heartFailed = (e: Error) =>
+    isOldHermes(e) ? toast.warn({ message: e.message }) : toast.error({ message: e.message });
 
 const VersionTools = ({ entry, v }: { entry: VersionedSong; v: SongVersion }) => {
     const me = useSourStore((s) => s.me);
@@ -257,9 +261,7 @@ export const VersionList = ({
             setSongFav(!songFav);
             return;
         }
-        heartVersion(entry, id, !hearted.includes(id), song.id).catch((e: Error) =>
-            toast.error({ message: e.message }),
-        );
+        heartVersion(entry, id, !hearted.includes(id), song.id).catch(heartFailed);
     };
     const rows: { id: string; label: string; lineUp: boolean; seconds: number; v?: SongVersion }[] =
         [
@@ -404,8 +406,10 @@ export const openVersionPicker = (
             <PickerBody
                 mode={mode}
                 onPicked={(v) => {
-                    if (mode === 'start') closeModal(VERSION_PICKER);
+                    // (0.16) the pick first, then the window: closing it calls onClose, which used to count
+                    // as "cancelled" before the pick had landed (the song then never started)
                     onPicked?.(v);
+                    if (mode === 'start') closeModal(VERSION_PICKER);
                 }}
                 song={song}
             />
@@ -464,10 +468,7 @@ export const useHeardVersionHeart = () => {
     return {
         label: versionLabel(entry, id),
         on,
-        toggle: () =>
-            void heartVersion(entry, id, !on, song.id).catch((e: Error) =>
-                toast.error({ message: e.message }),
-            ),
+        toggle: () => void heartVersion(entry, id, !on, song.id).catch(heartFailed),
     };
 };
 

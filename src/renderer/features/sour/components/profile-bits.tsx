@@ -12,6 +12,7 @@ import { frameClass, nameClass } from '/@/renderer/features/sour/components/shop
 import { AvatarDecoration } from '/@/renderer/features/sour/components/v10';
 import { fontFamily } from '/@/renderer/features/sour/fonts';
 import { isPodcast } from '/@/renderer/features/sour/podcasts/podcast-id';
+import { startWithVersion } from '/@/renderer/features/sour/versions/versions';
 import { useCurrentServer } from '/@/renderer/store';
 import { addToQueueByData, usePlayerStoreBase } from '/@/renderer/store/player.store';
 import { toast } from '/@/shared/components/toast/toast';
@@ -107,7 +108,8 @@ export const ItemCover = ({ entry, round }: { entry: GroupSong; round?: boolean 
 export const usePlaySong = () => {
     const queryClient = useQueryClient();
     const serverId = useCurrentServer()?.id;
-    return (song: GroupSong, position?: number) => {
+    // version (0.16): play that version of the song without asking which (listen along)
+    return (song: GroupSong, position?: number, version?: string) => {
         if (!serverId) return Promise.resolve();
         // a friend's podcast episode isn't on the music server
         if (isPodcast(song)) {
@@ -117,7 +119,14 @@ export const usePlaySong = () => {
             return Promise.resolve();
         }
         return getSongById({ id: song.id, queryClient, serverId })
-            .then((res) => addToQueueByData(Play.NOW, res.items))
+            .then((res) => {
+                if (version) startWithVersion(song.id, version);
+                return addToQueueByData(
+                    Play.NOW,
+                    res.items,
+                    version ? { noVersionPrompt: true } : undefined,
+                );
+            })
             .then(() => {
                 if (position) {
                     window.setTimeout(

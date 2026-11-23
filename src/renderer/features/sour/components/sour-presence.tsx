@@ -13,6 +13,13 @@ import { isNativeApp } from '/@/renderer/features/sour/mobile/android';
 import { isPodcast } from '/@/renderer/features/sour/podcasts/podcast-id';
 import { useStage } from '/@/renderer/features/sour/stage/sour-stage';
 import { useMyProfile, useSourStore } from '/@/renderer/features/sour/store/sour.store';
+import { heardVersion } from '/@/renderer/features/sour/versions/version-deck';
+import {
+    loadedVersion,
+    ORIGINAL,
+    versionOffset,
+    versionsOf,
+} from '/@/renderer/features/sour/versions/versions';
 import { useCurrentServer } from '/@/renderer/store';
 import { useAuthStore } from '/@/renderer/store/auth.store';
 import { usePlayerStoreBase } from '/@/renderer/store/player.store';
@@ -154,6 +161,8 @@ export const SourPresence = () => {
             const group = useGroupPlayStore.getState().state;
             // songs heard past halfway since the last report (Sour Shop points), kept until Hermes has them
             const heard = pendingHeard();
+            // (0.16) the version of the song you hear: friends listening along get the same one
+            const hearing = shown ? heardVersion() : ORIGINAL;
             sourApi
                 .presence(url, me, {
                     // who you're listening along with (they see you riding along)
@@ -175,8 +184,13 @@ export const SourPresence = () => {
                     speed: player.player.speed || 1,
                     // for the listening clock (the hour here, not the Umbrel's)
                     tz: new Date().getTimezoneOffset(),
+                    version: hearing !== ORIGINAL ? hearing : null,
                     // watching the video in the Stage (friends listening along see it too)
                     video: useStage.getState().open && useVideoView.getState().view === 'video',
+                    // positions are in your player's own version's timeline: how far that is from the original's
+                    vshift: shown
+                        ? versionOffset(versionsOf(shown), loadedVersion(shown._uniqueId))
+                        : 0,
                 })
                 .then(() => {
                     if (heard.length) dropHeard(heard);

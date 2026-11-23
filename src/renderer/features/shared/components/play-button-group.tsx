@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import styles from './play-button-group.module.css';
 
@@ -359,7 +359,33 @@ export const PlayButtonGroupPopover = ({
         };
     }, [triggerRef]);
 
-    const positionStyles = getPositionStyles(position, triggerRect);
+    // (Sour Player 0.16) kept on the screen: under a play button at the left edge of a phone (Favorites),
+    // "Play next" sat off the screen
+    const [nudge, setNudge] = useState(0);
+    useLayoutEffect(() => {
+        const el = popoverRef.current;
+        const first = el?.firstElementChild as HTMLElement | null;
+        const last = el?.lastElementChild as HTMLElement | null;
+        if (!el || !first || !last || !triggerRect || isVertical) return;
+        // where the buttons themselves sit (the strip around them can be wider than the screen)
+        const left = triggerRect.left + triggerRect.width / 2 - el.offsetWidth / 2;
+        const from = left + first.offsetLeft;
+        const to = left + last.offsetLeft + last.offsetWidth;
+        const edge = 10;
+        setNudge(
+            Math.round(
+                from < edge
+                    ? edge - from
+                    : to > window.innerWidth - edge
+                      ? window.innerWidth - edge - to
+                      : 0,
+            ),
+        );
+    }, [triggerRect, isVertical]);
+
+    const base = getPositionStyles(position, triggerRect);
+    const positionStyles =
+        nudge && typeof base.left === 'number' ? { ...base, left: base.left + nudge } : base;
 
     const content = (
         <motion.div

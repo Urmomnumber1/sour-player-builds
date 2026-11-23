@@ -4,6 +4,7 @@ import { type ComponentProps, useEffect, useState } from 'react';
 import styles from './discord-bot.module.css';
 
 import { NativeScrollArea } from '/@/renderer/components/native-scroll-area/native-scroll-area';
+import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-video.store';
 import {
     type BotMember,
     type BotState,
@@ -16,6 +17,7 @@ import { Button } from '/@/shared/components/button/button';
 import { Icon } from '/@/shared/components/icon/icon';
 import { Slider } from '/@/shared/components/slider/slider';
 import { Text } from '/@/shared/components/text/text';
+import { toast } from '/@/shared/components/toast/toast';
 
 // The Discord Bot tab: music, ambience and sound effects in a Discord voice channel, for D&D nights.
 // Hermes Music runs the bot; this page picks the voice channel, plays, and keeps the bot's own library.
@@ -302,6 +304,107 @@ const Voice = ({ bot, s }: Props) => {
                     </div>
                 ))}
             <VolumeRow bot={bot} label="Everything" layer="master" value={s.volumes.master} />
+            <Ears bot={bot} s={s} />
+            <Watch s={s} />
+        </div>
+    );
+};
+
+// ---------- (0.16) the watch page: the music video of what the bot plays, for the call ----------
+const Watch = ({ s }: { s: BotState }) => {
+    const url = useHermesUrl();
+    // comes with the ears (Hermes Music 3.17)
+    if (!s.ears || !url) return null;
+    const page = `${url}/watch/`;
+    return (
+        <div className={styles.ears}>
+            <div className={styles.earsHead}>
+                <div className={styles.earsText}>
+                    <Text fw={700} size="sm">
+                        Music videos in the call
+                    </Text>
+                    <Text isMuted size="xs">
+                        The watch page shows the video of the song the bot is playing, in step with
+                        it. Open it and share that window in the call (Discord&apos;s own screen
+                        share), or put it on a TV. Discord doesn&apos;t let bots send video
+                        themselves.
+                    </Text>
+                </div>
+                <Button
+                    onClick={() => window.open(page, '_blank', 'noopener')}
+                    size="compact-sm"
+                    variant="default"
+                >
+                    Open
+                </Button>
+            </div>
+            <Button
+                onClick={() =>
+                    navigator.clipboard
+                        .writeText(page)
+                        .then(() => toast.success({ message: 'Watch page link copied' }))
+                        .catch(() => toast.info({ message: page }))
+                }
+                size="compact-xs"
+                variant="subtle"
+                w="fit-content"
+            >
+                Copy its link
+            </Button>
+        </div>
+    );
+};
+
+// ---------- (0.16) "Hey Sour Box": spoken commands in the voice channel ----------
+const Ears = ({ bot, s }: Props) => {
+    const [busy, setBusy] = useState(false);
+    const e = s.ears;
+    // a Hermes Music from before 3.17 has no ears
+    if (!e) return null;
+    const status = !e.on
+        ? 'Off: the bot is deafened and hears nothing.'
+        : e.state === 'installing'
+          ? e.note || 'Getting the listening tools (once)...'
+          : e.state === 'failed'
+            ? `Couldn't set up: ${e.note}`
+            : e.listening
+              ? 'Listening: everyone in the call can say "Hey Sour Box, play ...". Nothing is recorded; it all stays on the Umbrel.'
+              : s.voice
+                ? 'Starting to listen...'
+                : 'Ready: it listens once the bot is in a voice channel.';
+    return (
+        <div className={styles.ears}>
+            <div className={styles.earsHead}>
+                <div className={styles.earsText}>
+                    <Text fw={700} size="sm">
+                        Hey Sour Box
+                    </Text>
+                    <Text isMuted size="xs">
+                        {status}
+                    </Text>
+                </div>
+                <Button
+                    disabled={busy}
+                    onClick={() => {
+                        setBusy(true);
+                        void bot.ears(!e.on).finally(() => setBusy(false));
+                    }}
+                    size="compact-sm"
+                    variant={e.on ? 'filled' : 'default'}
+                >
+                    {e.on ? 'On' : 'Off'}
+                </Button>
+            </div>
+            <Text isMuted size="xs">
+                Say (or type with /sourbox, or by mentioning the bot): play &lt;song&gt;, play
+                &lt;song&gt; by &lt;artist&gt;, queue &lt;song&gt;, pause, resume, skip, back, stop.
+                Tell everyone in the call when it is listening.
+            </Text>
+            {e.last.slice(0, 4).map((h) => (
+                <Text isMuted key={h.at} size="xs">
+                    {`${h.by} ${h.typed ? 'typed' : 'said'} “${h.text.replace(/^(hey )?sour box ?/i, '') || 'Hey Sour Box'}”: ${h.did}`}
+                </Text>
+            ))}
         </div>
     );
 };

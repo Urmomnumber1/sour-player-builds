@@ -47,7 +47,7 @@ import {
     DEFAULT_WINDOW_BOUNDS,
     resolveWindowBounds,
 } from '/@/main/utils/window-bounds';
-import { CITRUS } from '/@/shared/citrus';
+import { CITRUS_BUILD } from '/@/shared/citrus';
 import { PlayerRepeat, PlayerStatus, PlayerType, TitleTheme } from '/@/shared/types/types';
 
 const ALPHA_UPDATER_CONFIG: {
@@ -268,7 +268,7 @@ function configureAndGetUpdater(): UpdaterInstance {
         autoUpdater.allowPrerelease = true;
         autoUpdater.disableDifferentialDownload = true;
     } else {
-        autoUpdater.channel = CITRUS ? 'citrus' : 'latest';
+        autoUpdater.channel = CITRUS_BUILD ? 'citrus' : 'latest';
         autoUpdater.allowDowngrade = false;
         autoUpdater.allowPrerelease = false;
     }
@@ -290,7 +290,7 @@ function configureAutoUpdaterForChannel(channel: 'beta' | 'latest'): void {
         autoUpdater.allowPrerelease = true;
         autoUpdater.disableDifferentialDownload = true;
     } else {
-        autoUpdater.channel = CITRUS ? 'citrus' : 'latest';
+        autoUpdater.channel = CITRUS_BUILD ? 'citrus' : 'latest';
         autoUpdater.allowDowngrade = false;
         autoUpdater.allowPrerelease = false;
     }
@@ -541,6 +541,19 @@ const createWinThumbarButtons = () => {
     }
 };
 
+// (Sour Player 0.16) Citrus mode (the lighter set-up, with Citrus Player's name and icon): the page decides
+// and tells the main process, which keeps it for the next start (the tray, the window's first icon)
+const citrusMode = (): boolean => store.get('sour_citrus_mode', CITRUS_BUILD) as boolean;
+const trayIconPath = () =>
+    isLinux()
+        ? getAssetPath(citrusMode() ? 'citrus/256x256.png' : 'icons/icon.png')
+        : getAssetPath(citrusMode() ? 'citrus/64x64.png' : 'icons/icon.ico');
+ipcMain.on('sour-citrus-mode', (_event, on: boolean) => {
+    store.set('sour_citrus_mode', !!on);
+    if (tray && !isMacOS()) tray.setImage(trayIconPath());
+    tray?.setToolTip(on ? 'Citrus Player' : 'Sour Player');
+});
+
 const createTray = () => {
     let trayIcon: Electron.NativeImage | string;
 
@@ -549,10 +562,8 @@ const createTray = () => {
         const icon = nativeImage.createFromPath(iconPath);
         icon.setTemplateImage(true);
         trayIcon = icon;
-    } else if (isLinux()) {
-        trayIcon = getAssetPath(CITRUS ? 'citrus/256x256.png' : 'icons/icon.png');
     } else {
-        trayIcon = getAssetPath(CITRUS ? 'citrus/64x64.png' : 'icons/icon.ico');
+        trayIcon = trayIconPath();
     }
 
     tray = new Tray(trayIcon);
@@ -613,7 +624,7 @@ const createTray = () => {
         });
     }
 
-    tray.setToolTip('Sour Player');
+    tray.setToolTip(citrusMode() ? 'Citrus Player' : 'Sour Player');
     tray.setContextMenu(contextMenu);
 };
 
@@ -696,7 +707,7 @@ async function createWindow(first = true): Promise<void> {
         // the app's own dark background while it starts (a web page flashes white)
         backgroundColor: '#0b0b0f',
         frame: false,
-        icon: CITRUS
+        icon: citrusMode()
             ? getAssetPath('citrus/256x256.png')
             : isWindows()
               ? getAssetPath('icons/icon.ico')

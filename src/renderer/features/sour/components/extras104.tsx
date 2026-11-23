@@ -15,6 +15,7 @@ import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-vid
 import { useCustom } from '/@/renderer/features/sour/components/customize';
 import { Card } from '/@/renderer/features/sour/components/hub-panels';
 import { useMyProfile, useSourStore } from '/@/renderer/features/sour/store/sour.store';
+import { openTestLog } from '/@/renderer/features/sour/updates/test-log';
 import { usePlayerSong, usePlayerStatus } from '/@/renderer/store';
 import { usePlayerStoreBase } from '/@/renderer/store/player.store';
 import { useTimestampStoreBase } from '/@/renderer/store/timestamp.store';
@@ -200,6 +201,9 @@ export const AdminCard = () => {
                     </>
                 )}
                 <Group gap="xs">
+                    <Button onClick={openTestLog} size="xs" variant="default">
+                        Test log (this update)
+                    </Button>
                     <Button onClick={backup} size="xs" variant="default">
                         Download a backup
                     </Button>

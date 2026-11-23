@@ -10,8 +10,9 @@ import { useSourProfiles, useSourStore } from '/@/renderer/features/sour/store/s
 import { AppRoute } from '/@/renderer/router/routes';
 import { Icon } from '/@/shared/components/icon/icon';
 
-// the places on a phone, and which pages belong to each (so the right tab lights up). Request and Group open
-// their windows instead of a page.
+// the places on a phone, and which pages belong to each (so the right tab lights up). Request opens its
+// window instead of a page. (0.16) Favorites has the tab the Library had (the Library is a part of Home now),
+// Group Play lives in Friends, and "You" is called Sour.
 export const PHONE_TABS: {
     action?: () => void;
     icon: Parameters<typeof Icon>[0]['icon'];
@@ -24,33 +25,29 @@ export const PHONE_TABS: {
         icon: 'house',
         label: 'Home',
         match: (p) =>
-            p === '/' || p === '' || p.startsWith(AppRoute.PHONE_SEARCH) || p.startsWith('/search'),
-        to: AppRoute.HOME,
-    },
-    {
-        icon: 'library',
-        label: 'Library',
-        match: (p) =>
+            p === '/' ||
+            p === '' ||
+            p.startsWith(AppRoute.PHONE_SEARCH) ||
+            p.startsWith('/search') ||
             p.startsWith(AppRoute.PHONE_LIBRARY) ||
             p.startsWith('/library') ||
             p.startsWith('/playlists') ||
-            p.startsWith('/favorites') ||
             p.startsWith('/radio') ||
             p.startsWith(AppRoute.SOUR_PODCASTS) ||
             p.startsWith(AppRoute.PHONE_OFFLINE) ||
             p.startsWith(AppRoute.SOUR_LIBRARY),
-        to: AppRoute.PHONE_LIBRARY,
+        to: AppRoute.HOME,
+    },
+    {
+        icon: 'favorite',
+        label: 'Favorites',
+        match: (p) => p.startsWith(AppRoute.FAVORITES),
+        to: AppRoute.FAVORITES,
     },
     {
         action: openRequestWindow,
         icon: 'plus',
         label: 'Request',
-        match: () => false,
-    },
-    {
-        action: () => useGroupPlayStore.setState((s) => ({ panelOpen: !s.panelOpen })),
-        icon: 'groupPlay',
-        label: 'Group',
         match: () => false,
     },
     {
@@ -60,8 +57,8 @@ export const PHONE_TABS: {
         to: AppRoute.SOUR_PEOPLE,
     },
     {
-        icon: 'user',
-        label: 'You',
+        icon: 'citrus',
+        label: 'Sour',
         match: (p) => p.startsWith(AppRoute.PHONE_ME) || p.startsWith(AppRoute.SETTINGS),
         to: AppRoute.PHONE_ME,
     },
@@ -79,13 +76,18 @@ export const MobileNav = () => {
     const unread = (useInbox().data ?? []).filter((m) => !m.read).length;
     const me = useSourStore((s) => s.me);
     const online = (useSourProfiles().data ?? []).filter((p) => p.online && p.id !== me?.id).length;
-    // in a group (or its window is open): the Group tab lights up
-    const grouped = useGroupPlayStore((s) => !!s.code || s.panelOpen);
+    // in a group: Friends (where Group Play lives) shows its dot
+    const grouped = useGroupPlayStore((s) => !!s.code);
     return (
         <nav className={styles.nav}>
             {PHONE_TABS.map((tab) => {
-                const active = tab.label === 'Group' ? grouped : tab.match(pathname);
-                const badge = tab.label === 'You' ? unread : tab.label === 'Friends' ? online : 0;
+                const active = tab.match(pathname);
+                const badge =
+                    tab.label === 'Sour'
+                        ? unread
+                        : tab.label === 'Friends'
+                          ? online || (grouped ? 1 : 0)
+                          : 0;
                 return (
                     <button
                         aria-current={active ? 'page' : undefined}
@@ -114,8 +116,8 @@ export const MobileNav = () => {
                         <span className={styles.iconWrap}>
                             <Icon icon={tab.icon} size="lg" />
                             {!!badge && (
-                                <span className={tab.label === 'You' ? styles.badge : styles.dot}>
-                                    {tab.label === 'You' ? (badge > 9 ? '9+' : badge) : ''}
+                                <span className={tab.label === 'Sour' ? styles.badge : styles.dot}>
+                                    {tab.label === 'Sour' ? (badge > 9 ? '9+' : badge) : ''}
                                 </span>
                             )}
                         </span>

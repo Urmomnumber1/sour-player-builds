@@ -9,7 +9,6 @@ import styles from './phone-pages.module.css';
 import { ItemImage } from '/@/renderer/components/item-image/item-image';
 import { albumQueries } from '/@/renderer/features/albums/api/album-api';
 import { genresQueries } from '/@/renderer/features/genres/api/genres-api';
-import { useGroupPlayStore } from '/@/renderer/features/group-play/store/group-play.store';
 import { openRequestWindow } from '/@/renderer/features/hermes-request/components/request-button';
 import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-video.store';
 import { playlistsQueries } from '/@/renderer/features/playlists/api/playlists-api';
@@ -31,6 +30,12 @@ import {
     whatsPlaying,
 } from '/@/renderer/features/sour/mobile/phone-panels';
 import { useMyProfile, useSourStore } from '/@/renderer/features/sour/store/sour.store';
+import {
+    openTestLog,
+    useIsAdmin,
+    useTestLogLeft,
+    useWaitingUpdate,
+} from '/@/renderer/features/sour/updates/test-log';
 import { AppRoute } from '/@/renderer/router/routes';
 import { useCurrentServer } from '/@/renderer/store';
 import { Icon } from '/@/shared/components/icon/icon';
@@ -362,7 +367,7 @@ export const PhoneSearch = () => {
     );
 };
 
-// ---------- You ----------
+// ---------- Sour (called You before 0.16): your profile, the inbox, the shop, settings ----------
 export const PhoneMe = () => {
     const navigate = useNavigate();
     const mine = useMyProfile().data;
@@ -371,8 +376,12 @@ export const PhoneMe = () => {
     const unread = (useInbox().data ?? []).filter((m) => !m.read).length;
     const native = isNativeApp();
     const bot = useBotAccess();
+    // (0.16) admins: what to check in this update (they get updates before everyone else)
+    const admin = useIsAdmin();
+    const toTest = useTestLogLeft();
+    const coming = useWaitingUpdate();
     return (
-        <PhonePage title="You">
+        <PhonePage title="Sour">
             {mine ? (
                 <button className={styles.profile} onClick={() => openProfile(mine)} type="button">
                     <ProfileAvatar profile={mine} size={64} />
@@ -412,11 +421,6 @@ export const PhoneMe = () => {
                     note="Spend your points"
                     onClick={() => navigate(`${AppRoute.SOUR_HUB}?tab=shop`)}
                 />
-                <Row
-                    icon="groupPlay"
-                    label="Group Play"
-                    onClick={() => useGroupPlayStore.setState({ panelOpen: true })}
-                />
                 <Row icon="user" label="People" onClick={openPeople} />
                 <Row icon="download" label="Request music" onClick={openRequestWindow} />
             </div>
@@ -453,7 +457,21 @@ export const PhoneMe = () => {
                 />
                 <Row icon="settings" label="Settings" onClick={() => navigate(AppRoute.SETTINGS)} />
                 <Row icon="messageCircle" label="Report a bug or an idea" onClick={openFeedback} />
+                {admin && (
+                    <Row
+                        badge={toTest}
+                        icon="list"
+                        label="Test log"
+                        note="What to check in this update (admins get updates first)"
+                        onClick={openTestLog}
+                    />
+                )}
             </div>
+            {coming && (
+                <p className={styles.footer}>
+                    Sour Player {coming.version} is out. It reaches you on {coming.on}.
+                </p>
+            )}
             <p className={styles.footer}>
                 Sour Player {packageJson.version}
                 {server?.name ? ` - ${server.name}` : ''}

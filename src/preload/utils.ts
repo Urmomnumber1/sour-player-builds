@@ -173,7 +173,7 @@ export interface HermesUpdate {
     version: string;
 }
 
-const hermesUpdateListener = (cb: (update: HermesUpdate) => void) => {
+const hermesUpdateListener = (cb: (update: HermesUpdate | null) => void) => {
     const listener = (_: unknown, update: HermesUpdate) => cb(update);
     ipcRenderer.on('hermes-update', listener);
     return () => {
@@ -183,6 +183,10 @@ const hermesUpdateListener = (cb: (update: HermesUpdate) => void) => {
 
 const hermesUpdateState = (): Promise<HermesUpdate | null> =>
     ipcRenderer.invoke('hermes-update-state');
+
+// (Sour Player 0.16) a newer release that hasn't opened for this person yet
+const hermesUpdateWaiting = (): Promise<null | { opensAt: number; version: string }> =>
+    ipcRenderer.invoke('hermes-update-waiting');
 
 const hermesUpdateInstall = () => ipcRenderer.send('hermes-update-install');
 
@@ -202,6 +206,7 @@ export const utils = {
     hermesUpdateInstall,
     hermesUpdateListener,
     hermesUpdateState,
+    hermesUpdateWaiting,
     isLinux,
     isMacOS,
     isWindows,

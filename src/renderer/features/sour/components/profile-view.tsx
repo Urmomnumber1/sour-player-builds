@@ -127,7 +127,9 @@ export const ProfileView = ({
     const refresh = () => queryClient.invalidateQueries({ queryKey: ['sour-profiles', url] });
     useProfileVisit(profile, !preview);
 
-    const banner = bannerUrl(url, profile);
+    // (0.16) a banner worn from the shop shows instead of the banner picture: with a picture uploaded,
+    // wearing one used to change nothing (take it off again and the picture is back)
+    const banner = profile.looks?.banner ? null : bannerUrl(url, profile);
     const pos = c.bannerPos || { x: 50, y: 50, zoom: 100 };
     const bannerStyle: CSSProperties = banner
         ? {

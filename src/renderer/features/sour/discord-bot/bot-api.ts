@@ -68,6 +68,18 @@ export interface BotSourceSong {
 export interface BotState {
     ambience: (BotTrack & { volume: number })[];
     configured: boolean;
+    // (0.16, Hermes Music 3.17) "Hey Sour Box": the bot listens in its voice channel for spoken commands
+    ears?: {
+        // what it heard lately, and what it did about it
+        last: { at: number; by: string; did: string; text: string; typed: boolean }[];
+        // undeafened in the channel, with the recognizer running
+        listening: boolean;
+        note: string;
+        on: boolean;
+        // off | installing (the tools download the first time) | ready | failed
+        state: string;
+        words: number;
+    };
     error: string;
     fake: boolean;
     guilds: BotGuild[];
@@ -225,8 +237,25 @@ export const useBot = (live = true) => {
         [base, me?.id, me?.key, ready],
     );
 
+    // (0.16) "Hey Sour Box" on or off
+    const ears = useCallback(
+        async (on: boolean) => {
+            if (!ready) return;
+            try {
+                const s = await call<BotState>(base as string, 'ears', { ...auth, on });
+                qc.setQueryData(stateKey, s);
+                return s;
+            } catch (e) {
+                return fail(e);
+            }
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [base, me?.id, me?.key, ready],
+    );
+
     return {
         act,
+        ears,
         error: state.error as Error | null,
         lib,
         library: library.data,

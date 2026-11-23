@@ -116,8 +116,10 @@
         animation: none;
     }
 
-    .sour-parallax [class*='library-header-module'] {
-        opacity: 1;
+    /* (0.16) the cover and the titles still fade as the page scrolls (fading isn't movement); they only stop
+       drifting. On computers that ask for less motion (many Linux desktops do) nothing faded at all. */
+    .sour-parallax [class*='library-header-module-image-section'],
+    .sour-parallax [class*='library-header-module-metadata-section'] {
         transform: none;
     }
 }
@@ -210,28 +212,53 @@ html[data-icons='colour'] svg[stroke-width] {
     align-items: center;
 }
 
-/* sidebar skins from the shop */
-html[data-sidebar-skin='sidebar-glass'] #sidebar {
-    background: rgb(255 255 255 / 6%) !important;
+/* sidebar skins from the shop. (0.16) The newer looks (Bubble, Liquid) draw the sidebar as a panel of
+   their own with its border and shadow, and that drew over the skins: only a slightly different dark was
+   left of them. These now win in every look, and are plain to see. */
+html[data-sidebar-skin='sidebar-glass']:not(.sour-phone, .sour-ios) #sidebar {
+    background: linear-gradient(160deg, rgb(255 255 255 / 16%), rgb(255 255 255 / 5%)) !important;
+    border: 1px solid rgb(255 255 255 / 30%) !important;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 38%),
+        0 14px 34px rgb(0 0 0 / 38%) !important;
     backdrop-filter: blur(30px) saturate(1.8);
 }
 
-html[data-sidebar-skin='sidebar-wood'] #sidebar {
+html[data-sidebar-skin='sidebar-wood']:not(.sour-phone, .sour-ios) #sidebar {
     background:
-        repeating-linear-gradient(90deg, rgb(0 0 0 / 8%) 0 2px, transparent 2px 9px),
-        linear-gradient(180deg, #5a3a22, #3b2414) !important;
-}
-
-html[data-sidebar-skin='sidebar-neon'] #sidebar {
-    background: #0d0420 !important;
+        repeating-linear-gradient(90deg, rgb(0 0 0 / 10%) 0 2px, transparent 2px 9px),
+        repeating-linear-gradient(0deg, rgb(255 255 255 / 3%) 0 1px, transparent 1px 46px),
+        linear-gradient(180deg, #6b4526, #3b2414) !important;
+    border: 1px solid #8a5e36 !important;
     box-shadow:
-        inset 0 0 0 1px #ff5c8a,
-        0 0 18px rgb(255 92 138 / 35%);
+        inset 0 0 0 2px rgb(0 0 0 / 28%),
+        inset 0 0 46px rgb(0 0 0 / 38%),
+        0 12px 28px rgb(0 0 0 / 40%) !important;
 }
 
-html[data-sidebar-skin='sidebar-pixel'] #sidebar {
+html[data-sidebar-skin='sidebar-neon']:not(.sour-phone, .sour-ios) #sidebar {
+    background: linear-gradient(180deg, #1a0738, #0d0420 55%, #06021a) !important;
+    border: 1px solid #ff5c8a !important;
+    box-shadow:
+        inset 0 0 26px rgb(255 92 138 / 24%),
+        0 0 24px rgb(255 92 138 / 50%),
+        0 0 3px #36e0ff !important;
+}
+
+html[data-sidebar-skin='sidebar-neon']:not(.sour-phone, .sour-ios) #sidebar a[aria-current='page'],
+html[data-sidebar-skin='sidebar-neon']:not(.sour-phone, .sour-ios) #sidebar a[class*='active'] {
+    text-shadow: 0 0 10px rgb(54 224 255 / 80%);
+}
+
+html[data-sidebar-skin='sidebar-pixel']:not(.sour-phone, .sour-ios) #sidebar {
     font-family: ui-monospace, Consolas, monospace;
-    background: #1d1d2b !important;
+    background:
+        repeating-linear-gradient(0deg, rgb(255 255 255 / 4%) 0 2px, transparent 2px 4px), #1d1d2b !important;
     border: 3px solid #eee !important;
+    border-radius: 0 !important;
+    box-shadow: 6px 6px 0 rgb(0 0 0 / 55%) !important;
+}
+
+html[data-sidebar-skin='sidebar-pixel']:not(.sour-phone, .sour-ios) #sidebar * {
     border-radius: 0 !important;
 }

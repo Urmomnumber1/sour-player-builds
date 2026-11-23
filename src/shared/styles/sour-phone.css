@@ -177,7 +177,18 @@
 }
 
 /* ---------- notifications: drop down from the top ---------- */
+
+/* (0.16) ...but under the top bar: over it, a notification covered the back button and the X of whatever
+   window was open (Group Play's, most of all: people joining and songs being added pop up all the time
+   there, so its X often couldn't be tapped). Only the notification itself takes taps, not the strip
+   around it. */
+.sour-phone .mantine-Notifications-root {
+    top: calc(env(safe-area-inset-top, 0px) + 62px) !important;
+    pointer-events: none;
+}
+
 .sour-phone .mantine-Notification-root {
+    pointer-events: auto;
     background: color-mix(in srgb, var(--theme-colors-background) 85%, transparent) !important;
     border: 1px solid var(--phone-line);
     border-radius: 16px;
@@ -261,6 +272,16 @@
     .sour-phone [role='button']:active {
         transform: none;
     }
+}
+
+/* ---------- (0.16) scrolling: while a page moves, the see-through bars stop blurring what is behind them.
+   The blur was worked out again for every frame of a scroll, over the covers and the page's picture: the
+   main reason long lists stuttered on iPhones. They're almost solid for that moment instead. ---------- */
+.sour-phone.sour-scrolling nav[class*='mobile-nav-module-nav'],
+.sour-phone.sour-scrolling [class*='mobile-playerbar-module-container'],
+.sour-phone.sour-scrolling [class*='phone-shell-module-top-bar'] {
+    background: color-mix(in srgb, var(--theme-colors-background) 97%, var(--theme-colors-foreground)) !important;
+    backdrop-filter: none !important;
 }
 
 /* ---------- the mini player's spot: the card draws itself, so its holder is see-through ---------- */

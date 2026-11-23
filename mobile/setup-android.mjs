@@ -40,26 +40,41 @@ if (CITRUS) {
     }
 }
 
-// icon packs (Sour Studio): one launcher entry per pack, only the chosen one switched on
+// (0.16) the other mode's icon packs too, as ic_xpack_*: Citrus Player's in Sour Player (Citrus mode), Sour
+// Player's in Citrus Player (switched to Sour Player's look)
+{
+    const other = path.join(here, 'native', CITRUS ? 'res' : 'res-citrus', 'mipmap-xxxhdpi');
+    for (const f of fs.readdirSync(other)) {
+        if (!f.startsWith('ic_pack_')) continue;
+        fs.copyFileSync(path.join(other, f), path.join(main, 'res', 'mipmap-xxxhdpi', f.replace('ic_pack_', 'ic_xpack_')));
+    }
+}
+
+// icon packs (Sour Studio): one launcher entry per pack, only the chosen one switched on. Two families: this
+// app's own (.Icon*, as before 0.16, so the entry people already have stays) and the other mode's
+// (.OtherIcon*, with the other app's name under it)
 const PACKS = ['classic', 'lime', 'grapefruit', 'blueberry', 'grape', 'gold', 'mono', 'negative', 'pixel'];
-const aliasName = (pack) => `.Icon${pack[0].toUpperCase()}${pack.slice(1)}`;
-const aliases = PACKS.map((pack) =>
+const aliasName = (family, pack) => `.${family}${pack[0].toUpperCase()}${pack.slice(1)}`;
+const alias = (family, pack, enabled, image, label) =>
     [
         '    <activity-alias',
-        `            android:name="${aliasName(pack)}"`,
+        `            android:name="${aliasName(family, pack)}"`,
         '            android:targetActivity=".MainActivity"',
-        `            android:enabled="${pack === 'classic'}"`,
+        `            android:enabled="${enabled}"`,
         '            android:exported="true"',
-        `            android:icon="@mipmap/ic_pack_${pack}"`,
-        `            android:roundIcon="@mipmap/ic_pack_${pack}"`,
-        '            android:label="@string/app_name">',
+        `            android:icon="@mipmap/${image}"`,
+        `            android:roundIcon="@mipmap/${image}"`,
+        `            android:label="${label}">`,
         '            <intent-filter>',
         '                <action android:name="android.intent.action.MAIN" />',
         '                <category android:name="android.intent.category.LAUNCHER" />',
         '            </intent-filter>',
         '        </activity-alias>',
-    ].join('\n        '),
-);
+    ].join('\n        ');
+const aliases = [
+    ...PACKS.map((pack) => alias('Icon', pack, pack === 'classic', `ic_pack_${pack}`, '@string/app_name')),
+    ...PACKS.map((pack) => alias('OtherIcon', pack, false, `ic_xpack_${pack}`, CITRUS ? 'Sour Player' : 'Citrus Player')),
+];
 
 // the app icon (the same one as the desktop app)
 const icon = path.join(here, '..', 'assets', CITRUS ? 'citrus' : 'icons', '512x512.png');

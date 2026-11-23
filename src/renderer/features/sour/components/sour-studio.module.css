@@ -115,3 +115,32 @@
     font-size: 1.3rem;
     white-space: nowrap;
 }
+
+/* (0.16) Citrus mode: the switch at the top of the Studio */
+.citrus {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    background: color-mix(in srgb, var(--theme-colors-foreground) 6%, transparent);
+    border: 1px solid color-mix(in srgb, var(--theme-colors-foreground) 10%, transparent);
+    border-radius: 12px;
+}
+
+.citrus-emoji {
+    flex: none;
+    font-size: 26px;
+    line-height: 1;
+}
+
+.citrus-text {
+    flex: 1;
+    min-width: 0;
+}
+
+@media (width <= 600px) {
+    .citrus {
+        flex-wrap: wrap;
+    }
+}

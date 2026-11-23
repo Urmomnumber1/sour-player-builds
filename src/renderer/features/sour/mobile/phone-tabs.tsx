@@ -1,16 +1,18 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { ReactNode, useEffect, useState } from 'react';
-import { generatePath, useNavigate } from 'react-router';
+import { ReactNode, useEffect, useRef, useState } from 'react';
+import { generatePath, useNavigate, useSearchParams } from 'react-router';
 
 import styles from './phone-tabs.module.css';
 
 import { api } from '/@/renderer/api';
 import { ItemImage } from '/@/renderer/components/item-image/item-image';
+import { useGroupPlayStore } from '/@/renderer/features/group-play/store/group-play.store';
 import { useHermesUrl } from '/@/renderer/features/hermes-video/store/hermes-video.store';
 import { usePlayer } from '/@/renderer/features/player/context/player-context';
 import { playlistsQueries } from '/@/renderer/features/playlists/api/playlists-api';
 import { PeoplePanel } from '/@/renderer/features/sour/components/people';
 import { isNativeApp, onSourMedia, sourMedia } from '/@/renderer/features/sour/mobile/android';
+import { isIphone } from '/@/renderer/features/sour/mobile/ios-look';
 import {
     clearOffline,
     offlineAvailable,
@@ -24,9 +26,10 @@ import {
     syncOffline,
 } from '/@/renderer/features/sour/mobile/offline';
 import { usePhoneSettings, usePhoneStore } from '/@/renderer/features/sour/mobile/phone-store';
+import { useIsMobile } from '/@/renderer/hooks/use-is-mobile';
 import { AppRoute } from '/@/renderer/router/routes';
 import { useCurrentServer } from '/@/renderer/store';
-import { usePlayerVolume } from '/@/renderer/store/player.store';
+import { usePlayerStoreBase, usePlayerVolume } from '/@/renderer/store/player.store';
 import { Icon } from '/@/shared/components/icon/icon';
 import { Switch } from '/@/shared/components/switch/switch';
 import { toast } from '/@/shared/components/toast/toast';
@@ -37,7 +40,7 @@ import {
     PlaylistListSort,
     SortOrder,
 } from '/@/shared/types/domain-types';
-import { Play } from '/@/shared/types/types';
+import { Play, PlayerStatus } from '/@/shared/types/types';
 
 // The phone app's tabs in the 0.11 look (after Substreamer's layout): Home, Library, Offline, Friends, You.
 
@@ -89,20 +92,53 @@ export const PhoneVolume = () => {
     const player = usePlayer();
     const appVolume = usePlayerVolume();
     const [phone, setPhone] = useState<null | number>(null);
+    // when the slider was last moved here (the phone's answer a moment later mustn't pull it back)
+    const moved = useRef(0);
+    // the phone has answered (or can't): only then is "no volume here" known
+    const [asked, setAsked] = useState(!native);
     useEffect(() => {
         if (!native) return undefined;
-        sourMedia('volume')
-            .then((r: { value?: number }) => setPhone(Number(r?.value ?? 1)))
-            .catch(() => setPhone(null));
-        return onSourMedia('volume', (d: { value?: number }) => setPhone(Number(d?.value ?? 0)));
+        // (0.16) asked again every second or so while the slider shows, and when the app comes back to the
+        // front: on iPhone the side buttons' news didn't always arrive, so the slider sat where it was
+        const read = () =>
+            sourMedia('volume')
+                .then((r: { value?: number }) => {
+                    if (Date.now() - moved.current > 900) setPhone(Number(r?.value ?? 1));
+                })
+                .catch(() => setPhone(null))
+                .finally(() => setAsked(true));
+        read();
+        const timer = window.setInterval(() => {
+            if (document.visibilityState === 'visible') read();
+        }, 1200);
+        document.addEventListener('visibilitychange', read);
+        const off = onSourMedia('volume', (d: { value?: number }) =>
+            setPhone(Number(d?.value ?? 0)),
+        );
+        return () => {
+            window.clearInterval(timer);
+            document.removeEventListener('visibilitychange', read);
+            off();
+        };
     }, [native]);
     const value = native && phone != null ? Math.round(phone * 100) : appVolume;
     const change = (v: number) => {
         if (native && phone != null) {
             setPhone(v / 100);
+            moved.current = Date.now();
             sourMedia('setVolume', { value: v / 100 }).catch(() => {});
         } else player.setVolume(v);
     };
+    // (0.16) an iPhone without the app's volume (the Home Screen web app, or an old copy of the app): iOS
+    // gives a page no way to set or read the volume, so a slider there did nothing
+    if (isIphone() && asked && phone == null) {
+        return (
+            <div className={styles.volume}>
+                <Icon icon="volumeNormal" size="md" />
+                <small>Volume: the buttons on the side of your iPhone</small>
+            </div>
+        );
+    }
     return (
         <div className={styles.volume}>
             <button
@@ -424,7 +460,6 @@ export const PhoneOffline = () => {
 // ---------- Library: albums, artists and playlists right in the tab (grid or list), the rest as chips ----------
 const MORE: { icon: Parameters<typeof Icon>[0]['icon']; label: string; to: string }[] = [
     { icon: 'download', label: 'Downloads', to: AppRoute.PHONE_OFFLINE },
-    { icon: 'favorite', label: 'Favorites', to: AppRoute.FAVORITES },
     { icon: 'itemSong', label: 'Songs', to: AppRoute.LIBRARY_SONGS },
     { icon: 'genre', label: 'Genres', to: AppRoute.LIBRARY_GENRES },
     { icon: 'folder', label: 'Folders', to: AppRoute.LIBRARY_FOLDERS },
@@ -514,7 +549,14 @@ const useLibraryItems = (kind: Kind, serverId?: string) =>
 export const PhoneLibraryTab = () => {
     const navigate = useNavigate();
     const server = useCurrentServer();
-    const [kind, setKind] = useState<Kind>(() => saved(KIND_KEY, 'albums') as Kind);
+    // (0.16) Home's Library tiles open this page on Albums, Artists or Playlists
+    const [params] = useSearchParams();
+    const asked = params.get('kind') as Kind | null;
+    const [kind, setKind] = useState<Kind>(() =>
+        asked && ['albums', 'artists', 'playlists'].includes(asked)
+            ? asked
+            : (saved(KIND_KEY, 'albums') as Kind),
+    );
     const [grid, setGrid] = useState(() => saved(GRID_KEY, 'grid') === 'grid');
     const list = useLibraryItems(kind, server?.id);
     const items = list.data?.pages.flatMap((p) => p.items) ?? [];
@@ -618,33 +660,61 @@ export const PhoneLibraryTab = () => {
     );
 };
 
-// ---------- the top of Home on phones: search, and the places people go most ----------
+// ---------- the top of Home on phones: search, and (0.16) the Library as a part of Home (it used to be a
+// tab of its own; Favorites has that tab now) ----------
+const LIBRARY_TILES: { icon: Parameters<typeof Icon>[0]['icon']; label: string; to: string }[] = [
+    { icon: 'album', label: 'Albums', to: `${AppRoute.PHONE_LIBRARY}?kind=albums` },
+    { icon: 'artist', label: 'Artists', to: `${AppRoute.PHONE_LIBRARY}?kind=artists` },
+    { icon: 'playlist', label: 'Playlists', to: `${AppRoute.PHONE_LIBRARY}?kind=playlists` },
+    { icon: 'itemSong', label: 'Songs', to: AppRoute.LIBRARY_SONGS },
+    { icon: 'genre', label: 'Genres', to: AppRoute.LIBRARY_GENRES },
+    { icon: 'radio', label: 'Radio', to: AppRoute.RADIO },
+    { icon: 'podcast', label: 'Podcasts', to: AppRoute.SOUR_PODCASTS },
+    { icon: 'download', label: 'Downloads', to: AppRoute.PHONE_OFFLINE },
+];
+
 export const PhoneHomeTop = () => {
     const navigate = useNavigate();
     return (
         <div className={styles.homeTop}>
             <PhoneSearchBar />
+            <section aria-label="Library" className={styles.librarySection}>
+                <h2>Library</h2>
+                <div className={styles.tiles}>
+                    {LIBRARY_TILES.map((t) => (
+                        <button
+                            className={styles.tile}
+                            key={t.label}
+                            onClick={() => navigate(t.to)}
+                            type="button"
+                        >
+                            <Icon icon={t.icon} size="lg" />
+                            <span>{t.label}</span>
+                        </button>
+                    ))}
+                </div>
+            </section>
             <div className={styles.chips}>
-                <button
-                    className={styles.chip}
-                    onClick={() => navigate(AppRoute.PHONE_OFFLINE)}
-                    type="button"
-                >
-                    <Icon icon="download" size="sm" /> Downloads
-                </button>
-                <button
-                    className={styles.chip}
-                    onClick={() => navigate(AppRoute.FAVORITES)}
-                    type="button"
-                >
-                    <Icon icon="favorite" size="sm" /> Favorites
-                </button>
                 <button
                     className={styles.chip}
                     onClick={() => navigate(AppRoute.PHONE_TV)}
                     type="button"
                 >
                     <Icon icon="tv" size="sm" /> TV party
+                </button>
+                <button
+                    className={styles.chip}
+                    onClick={() => navigate(AppRoute.LIBRARY_FOLDERS)}
+                    type="button"
+                >
+                    <Icon icon="folder" size="sm" /> Folders
+                </button>
+                <button
+                    className={styles.chip}
+                    onClick={() => navigate(AppRoute.SOUR_LIBRARY)}
+                    type="button"
+                >
+                    <Icon icon="grid" size="sm" /> Cover wall and tools
                 </button>
             </div>
         </div>
@@ -676,7 +746,18 @@ export const PhoneTV = () => {
         };
         window.addEventListener('message', onMessage);
         const off = onSourMedia('tv', (d: { screens?: number }) => setScreens(d?.screens ?? 0));
+        // (0.16) while the party is open here, its music is the only one: the lock screen's play button (or
+        // the little player) used to start the app's own song next to it, like two apps at once
+        const quiet = usePlayerStoreBase.subscribe(
+            (s) => s.player.status,
+            (status) => {
+                if (status !== PlayerStatus.PLAYING) return;
+                usePlayerStoreBase.getState().mediaPause();
+                toast.info({ message: 'The TV party is playing: leave it to play here' });
+            },
+        );
         return () => {
+            quiet();
             window.removeEventListener('message', onMessage);
             off();
             sourMedia('tvShow', { url: null }).catch(() => {});
@@ -716,9 +797,38 @@ export const PhoneTV = () => {
     );
 };
 
-// ---------- Friends: the people list (profiles, who's online and what they're playing) ----------
+// ---------- Friends: the people list (profiles, who's online and what they're playing), and (0.16) Group
+// Play, which had a tab of its own ----------
+const GroupPlayCard = () => {
+    const code = useGroupPlayStore((s) => s.code);
+    const group = useGroupPlayStore((s) => (s.state && !s.state.ended ? s.state : null));
+    const inGroup = !!code && !!group;
+    return (
+        <button
+            className={inGroup ? styles.groupCardOn : styles.groupCard}
+            onClick={() => useGroupPlayStore.setState({ panelOpen: true })}
+            type="button"
+        >
+            <span className={styles.groupIcon}>
+                <Icon icon="groupPlay" size="lg" />
+            </span>
+            <span className={styles.rowText}>
+                {inGroup ? `Group Play: ${group.name}` : 'Group Play'}
+                <small>
+                    {inGroup
+                        ? `${group.members.length} listening together - open it`
+                        : 'Listen together: start a group or join one'}
+                </small>
+            </span>
+            <Icon icon="arrowRightS" size="md" />
+        </button>
+    );
+};
+
 export const PhonePeople = () => {
     const navigate = useNavigate();
+    // (this page is the Friends page on computers too: only phones lost their Group tab)
+    const phone = useIsMobile();
     return (
         <TabPage
             right={
@@ -732,6 +842,7 @@ export const PhonePeople = () => {
             }
             title="Friends"
         >
+            {phone && <GroupPlayCard />}
             <PeoplePanel />
         </TabPage>
     );

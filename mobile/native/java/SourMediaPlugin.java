@@ -511,14 +511,30 @@ public class SourMediaPlugin extends Plugin {
         boolean known = false;
         for (String p : packs) known |= p.equals(pack);
         if (!known) pack = "classic";
+        // (0.16) Citrus mode: the launcher entry with the other app's icon and name (Citrus Player's in Sour
+        // Player, Sour Player's in Citrus Player). "citrus" says which look is wanted; without it, this app's own.
+        boolean citrusBuild = getContext().getPackageName().contains("citrus");
+        boolean wantCitrus = Boolean.TRUE.equals(call.getBoolean("citrus", citrusBuild));
+        String wantedFamily = wantCitrus == citrusBuild ? "Icon" : "OtherIcon";
         PackageManager pm = getContext().getPackageManager();
-        for (String p : packs) {
-            ComponentName alias = new ComponentName(
-                getContext().getPackageName(),
-                "com.anjalo.sourplayer.Icon" + Character.toUpperCase(p.charAt(0)) + p.substring(1)
-            );
-            int state = p.equals(pack) ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED : PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
-            if (pm.getComponentEnabledSetting(alias) != state) pm.setComponentEnabledSetting(alias, state, PackageManager.DONT_KILL_APP);
+        // the wanted entry on first, then the others off (never a moment without any entry)
+        for (int pass = 0; pass < 2; pass++) {
+            for (String family : new String[] { "Icon", "OtherIcon" }) {
+                for (String p : packs) {
+                    boolean wanted = family.equals(wantedFamily) && p.equals(pack);
+                    if (wanted != (pass == 0)) continue;
+                    ComponentName alias = new ComponentName(
+                        getContext().getPackageName(),
+                        "com.anjalo.sourplayer." + family + Character.toUpperCase(p.charAt(0)) + p.substring(1)
+                    );
+                    int state = wanted ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED : PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
+                    try {
+                        if (pm.getComponentEnabledSetting(alias) != state) pm.setComponentEnabledSetting(alias, state, PackageManager.DONT_KILL_APP);
+                    } catch (IllegalArgumentException e) {
+                        // no such entry in this copy of the app
+                    }
+                }
+            }
         }
         call.resolve();
     }

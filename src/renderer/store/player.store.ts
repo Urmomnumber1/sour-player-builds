@@ -364,6 +364,7 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
         subscribeWithSelector(
             immer((set, get) => ({
                 addToQueueByType: (items, playType, playSongId) => {
+                    if (queueTaker?.(items, playSongId)) return;
                     const newItems = items.map(toQueueSong);
                     const newUniqueIds = newItems.map((item) => item._uniqueId);
 
@@ -598,6 +599,7 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                     }
                 },
                 addToQueueByUniqueId: (items, uniqueId, edge, playSongId) => {
+                    if (queueTaker?.(items, playSongId)) return;
                     const newItems = items.map(toQueueSong);
                     const newUniqueIds = newItems.map((item) => item._uniqueId);
 
@@ -1852,6 +1854,15 @@ export type AddToQueueOptions = {
 };
 
 export type AddToQueueType = AddToQueueByPlayType | AddToQueueByUniqueId;
+
+// Sour Player 0.16: at a Sour Player TV party from this phone (watching only), the songs you start or queue go
+// to the party's queue on the TV instead of playing here (features/sour/components/sour-tv sets this; it
+// answers false when it didn't take them)
+type QueueTaker = (items: Song[], playSongId?: string) => boolean;
+let queueTaker: null | QueueTaker = null;
+export const setQueueTaker = (fn: null | QueueTaker) => {
+    queueTaker = fn;
+};
 
 // Sour Player 0.15: starting one song that has versions asks which one first (features/sour/versions sets this;
 // it answers false for songs without versions)

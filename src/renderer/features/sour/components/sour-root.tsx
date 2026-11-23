@@ -37,6 +37,7 @@ import { AmbiencePlayer } from '/@/renderer/features/sour/stage/ambience';
 import { LoopWatcher } from '/@/renderer/features/sour/stage/loop';
 import { SourStage } from '/@/renderer/features/sour/stage/sour-stage';
 import { useSourStore } from '/@/renderer/features/sour/store/sour.store';
+import { UpdateRings } from '/@/renderer/features/sour/updates/test-log';
 import { VersionDeck } from '/@/renderer/features/sour/versions/version-deck';
 import { VersionPrompt } from '/@/renderer/features/sour/versions/version-picker';
 import { useSettingsStore } from '/@/renderer/store/settings.store';
@@ -201,6 +202,7 @@ export const SourRoot = () => (
             <AmbiencePlayer />
             <VersionDeck />
             <VersionPrompt />
+            <UpdateRings />
             <SongMenuAnywhere />
             <PodcastProgress />
         </SourSafe>

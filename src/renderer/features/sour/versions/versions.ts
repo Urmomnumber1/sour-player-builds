@@ -105,16 +105,18 @@ const save = () => {
     }
 };
 
-export const loadVersions = async () => {
+// (0.15.2) answers whether this Hermes Music keeps hearts (3.16.1 and newer send them with the list), null
+// when it couldn't tell
+export const loadVersions = async (): Promise<boolean | null> => {
     const url = hermes();
-    if (!url) return;
+    if (!url) return null;
     const who = me();
     const res = await fetch(
         `${url}/api/versions${who ? `?profile=${encodeURIComponent(who.id)}` : ''}`,
     );
-    if (!res.ok) return; // an older Hermes Music: no versions
+    if (!res.ok) return null; // an older Hermes Music: no versions
     const json = await res.json().catch(() => null);
-    if (!json || !Array.isArray(json.songs)) return;
+    if (!json || !Array.isArray(json.songs)) return null;
     useVersions.setState({
         at: Date.now(),
         byKey: index(json.songs),
@@ -123,6 +125,7 @@ export const loadVersions = async () => {
         url,
     });
     save();
+    return 'favs' in json;
 };
 
 type SongLike = Partial<Pick<Song, 'id'>> &
@@ -219,6 +222,12 @@ export const favouriteVersion = (entry: VersionedSong, songFavorite = false) => 
     return best;
 };
 
+// (0.15.2) a Hermes Music too old for something: say so, instead of the error it gives
+const OLD_HERMES_HEARTS =
+    'Update Hermes Music to heart versions: it needs 3.16.1 or newer (in Umbrel: App Store → Hermes Music → Update)';
+const oldHermes = (message: string) => Object.assign(new Error(message), { oldHermes: true });
+export const isOldHermes = (e: unknown) => !!(e as null | { oldHermes?: boolean })?.oldHermes;
+
 // heart a version (or not): kept on Hermes Music for me; songId lets the favourites play it
 export const heartVersion = async (
     entry: VersionedSong,
@@ -242,6 +251,12 @@ export const heartVersion = async (
     } catch (e) {
         useVersions.setState({ at: Date.now(), favs: before });
         save();
+        // (0.15.2) Hermes Music before 3.16.1 doesn't know hearts (3.16.0 answers "no such version"): its list
+        // comes without them. Asked again each time, so it works as soon as Hermes Music is updated
+        if ((e as { status?: number }).status === 404) {
+            const hearts = await loadVersions().catch(() => null);
+            if (hearts === false) throw oldHermes(OLD_HERMES_HEARTS);
+        }
         throw e;
     }
 };
@@ -337,7 +352,12 @@ const post = async <T = any>(path: string, body: Record<string, unknown>): Promi
         method: 'POST',
     });
     const json = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(json.error || `Hermes Music returned ${res.status}`);
+    // (Hermes Music 3.16.2 and newer mark a request it doesn't know yet: update it)
+    if (!res.ok)
+        throw Object.assign(new Error(json.error || `Hermes Music returned ${res.status}`), {
+            oldHermes: !!json.update,
+            status: res.status,
+        });
     return json as T;
 };
 const auth = () => {

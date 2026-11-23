@@ -92,6 +92,11 @@ import { useMergedRef } from '/@/shared/hooks/use-merged-ref';
 import { LibraryItem } from '/@/shared/types/domain-types';
 import { TableColumn } from '/@/shared/types/types';
 
+// (Sour Player 0.16) touch screens: more rows kept ready above and below what shows, so a fast flick through a
+// long list (Favorites on a phone) doesn't run into rows that aren't drawn yet
+const TOUCH_OVERSCAN =
+    typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches ? 10 : 3;
+
 /**
  * Type guard to check if an item has the required properties (id and serverId)
  * Similar to the type guard used in ItemCard
@@ -582,6 +587,7 @@ const VirtualizedTableGrid = ({
                             className={clsx(styles.noScrollbar, styles.height100)}
                             columnCount={pinnedLeftColumnCount}
                             columnWidth={columnWidth}
+                            overscanCount={TOUCH_OVERSCAN}
                             rowCount={totalRowCount}
                             rowHeight={(index, cellProps) => {
                                 return getRowHeight(index + pinnedRowCount, cellProps);
@@ -633,6 +639,7 @@ const VirtualizedTableGrid = ({
                         columnCount={totalColumnCount}
                         columnWidth={columnWidthMemoized}
                         onCellsRendered={handleOnCellsRendered}
+                        overscanCount={TOUCH_OVERSCAN}
                         rowCount={totalRowCount}
                         rowHeight={rowHeightMemoized}
                     />
@@ -693,6 +700,7 @@ const VirtualizedTableGrid = ({
                             className={clsx(styles.noScrollbar, styles.height100)}
                             columnCount={pinnedRightColumnCount}
                             columnWidth={pinnedRightColumnWidthMemoized}
+                            overscanCount={TOUCH_OVERSCAN}
                             rowCount={totalRowCount}
                             rowHeight={rowHeightMemoized}
                         />

@@ -327,18 +327,33 @@ export const PlaylistThemed = ({
     const url = useHermesUrl();
     const theme = usePlaylistTheme(playlistId).data;
     const root = useRef<HTMLDivElement>(null);
-    const [scrolled, setScrolled] = useState(0);
+    const picture = useRef<HTMLDivElement>(null);
 
-    // the song list scrolls inside the page, so listen for any scrolling below this element
+    // the song list scrolls inside the page, so listen for any scrolling below this element.
+    // (0.16) The picture's fade is set on the picture itself, in steps, once per frame. It used to go
+    // through the page's state: every bit of scrolling redrew the whole page (the header, the list...),
+    // which is what made Favorites with a picture stutter, on phones most of all.
     useEffect(() => {
         const el = root.current;
         if (!el || !theme?.image) return undefined;
+        let frame = 0;
+        let last = -1;
         const onScroll = (event: Event) => {
-            const target = event.target as HTMLElement;
-            if (typeof target.scrollTop === 'number') setScrolled(target.scrollTop);
+            const top = (event.target as HTMLElement).scrollTop;
+            if (typeof top !== 'number') return;
+            cancelAnimationFrame(frame);
+            frame = requestAnimationFrame(() => {
+                const step = Math.round(Math.max(0.12, 1 - top / 500) * 20) / 20;
+                if (step === last || !picture.current) return;
+                last = step;
+                picture.current.style.opacity = String(step);
+            });
         };
-        el.addEventListener('scroll', onScroll, true);
-        return () => el.removeEventListener('scroll', onScroll, true);
+        el.addEventListener('scroll', onScroll, { capture: true, passive: true });
+        return () => {
+            cancelAnimationFrame(frame);
+            el.removeEventListener('scroll', onScroll, true);
+        };
     }, [theme?.image]);
 
     if (!theme) return <>{children}</>;
@@ -363,10 +378,7 @@ export const PlaylistThemed = ({
             }
         >
             {image && (
-                <div
-                    className={styles.picture}
-                    style={{ opacity: Math.max(0.12, 1 - scrolled / 500) }}
-                >
+                <div className={styles.picture} ref={picture}>
                     <div className={styles['picture-inner']} style={frameStyle(theme, image)} />
                 </div>
             )}

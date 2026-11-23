@@ -24,7 +24,11 @@ const getTitle = (type: NotificationProps['type']) => {
     return 'Info';
 };
 
+// (Sour Player 0.16) on phones a tap anywhere on a notification puts it away (its X is small for a thumb)
+let toastId = 0;
+
 const showToast = ({ message, onClose, type, ...props }: NotificationProps) => {
+    const id = props.id ?? `sour-toast-${++toastId}`;
     return notifications.show({
         ...props,
         classNames: {
@@ -40,7 +44,11 @@ const showToast = ({ message, onClose, type, ...props }: NotificationProps) => {
             }),
             title: styles.title,
         },
+        id,
         message: message ?? '',
+        onClick: () => {
+            if (document.documentElement.classList.contains('sour-phone')) hideNotification(id);
+        },
         onClose,
         title: getTitle(type),
         withBorder: true,

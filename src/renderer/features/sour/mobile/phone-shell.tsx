@@ -82,6 +82,30 @@ export const PhoneShell = () => {
         };
     }, []);
 
+    // (0.16) "a page is scrolling" for the styles (sour-phone.css: no blur behind the bars meanwhile)
+    useEffect(() => {
+        const root = document.documentElement;
+        let timer = 0;
+        let on = false;
+        const onScroll = () => {
+            if (!on) {
+                on = true;
+                root.classList.add('sour-scrolling');
+            }
+            window.clearTimeout(timer);
+            timer = window.setTimeout(() => {
+                on = false;
+                root.classList.remove('sour-scrolling');
+            }, 220);
+        };
+        document.addEventListener('scroll', onScroll, { capture: true, passive: true });
+        return () => {
+            window.clearTimeout(timer);
+            document.removeEventListener('scroll', onScroll, true);
+            root.classList.remove('sour-scrolling');
+        };
+    }, []);
+
     // iPhone: long-pressing opens the same menus a right-click does (Safari has no long-press menu
     // event), and swiping in from the left edge goes back
     useEffect(() => {

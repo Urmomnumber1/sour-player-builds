@@ -7,6 +7,7 @@ import styles from './sour-studio.module.css';
 import { Customize } from '/@/renderer/features/sour/components/customize';
 import { fontFamily, SOUR_FONTS } from '/@/renderer/features/sour/fonts';
 import { drawAppIcon, ICON_PACKS } from '/@/renderer/features/sour/skins/app-icon';
+import { setCitrusMode } from '/@/renderer/features/sour/skins/citrus-mode';
 import { currentHoliday, HOLIDAY_LIST } from '/@/renderer/features/sour/skins/holidays';
 import {
     type BarVisualizerStyle,
@@ -24,6 +25,7 @@ import { useCustomThemes } from '/@/renderer/store/custom-themes.store';
 import { useSettingsStore } from '/@/renderer/store/settings.store';
 import { THEME_DATA } from '/@/renderer/themes/use-app-theme';
 import { fontOptions } from '/@/renderer/types/fonts';
+import { CITRUS } from '/@/shared/citrus';
 import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
 import { Button } from '/@/shared/components/button/button';
 import { Group } from '/@/shared/components/group/group';
@@ -315,6 +317,41 @@ const Layout = () => {
     );
 };
 
+// (0.16) Citrus Player is a mode of this app now: the lighter set-up, with its name and icon. Switching
+// restarts the app's page (each mode keeps the look it had).
+const CitrusSwitch = () => {
+    const [busy, setBusy] = useState(false);
+    return (
+        <div className={styles.citrus}>
+            <span aria-hidden className={styles.citrusEmoji}>
+                {CITRUS ? '\u{1F34B}' : '\u{1F34A}'}
+            </span>
+            <div className={styles.citrusText}>
+                <Text fw={700} size="sm">
+                    {CITRUS ? 'Citrus mode is on' : 'Citrus mode'}
+                </Text>
+                <Text isMuted size="xs">
+                    {CITRUS
+                        ? 'The lighter set-up. Switch back for the full look: animations, visualizers and bigger pictures.'
+                        : 'Lighter and faster, for slower computers and phones: the plain look, no animations, smaller pictures, and Citrus Player\u2019s name and icon.'}{' '}
+                    The app restarts.
+                </Text>
+            </div>
+            <Button
+                disabled={busy}
+                onClick={() => {
+                    setBusy(true);
+                    setCitrusMode(!CITRUS);
+                }}
+                size="compact-sm"
+                variant={CITRUS ? 'default' : 'filled'}
+            >
+                {CITRUS ? 'Switch to Sour Player' : 'Switch to Citrus'}
+            </Button>
+        </div>
+    );
+};
+
 const Fonts = () => {
     const font = useSettingsStore((s) => s.font);
     const setSettings = useSettingsStore((s) => s.actions.setSettings);
@@ -533,6 +570,7 @@ const Studio = () => {
                     )}
                 </Group>
             )}
+            <CitrusSwitch />
             <Tabs keepMounted={false} onChange={setTab} value={tab}>
                 <Tabs.List>
                     <Tabs.Tab value="skins">Skins</Tabs.Tab>

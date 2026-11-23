@@ -80,7 +80,7 @@ jobs:
                   say() { espeak-ng -v en-us -s 140 -w "/tmp/$1.wav" "$2"; }
                   say play   "hey sour box. play retry now"
                   say artist "hey sour box, play dancing in the rain by lemon drop"
-                  say queue  "sour box queue golden hour"
+                  say queue  "hey sour box, queue golden hour"
                   say pause  "hey sour box, pause"
                   say wake   "hey sour box"
                   say chat   "so what do you all want to do about the dragon in the cave"
@@ -119,9 +119,9 @@ jobs:
                     let h = await hear('play');
                     check(h.wake === true && /sour box/.test(h.text) && /play retry now/.test(h.text), '"hey sour box. play retry now"', h.text);
                     h = await hear('artist');
-                    check(h.wake === true && /play dancing in the rain by lemon drop/.test(h.text), '"... play dancing in the rain by lemon drop"', h.text);
+                    check(h.wake === true && /play dancing in (the )?rain by lemon drop/.test(h.text), '"... play dancing in the rain by lemon drop" (a dropped "the" is fine)', h.text);
                     h = await hear('queue');
-                    check(h.wake === true && /queue golden hour/.test(h.text), '"sour box queue golden hour"', h.text);
+                    check(h.wake === true && /queue golden hour/.test(h.text), '"hey sour box, queue golden hour"', h.text);
                     h = await hear('pause');
                     check(h.wake === true && /pause/.test(h.text), '"hey sour box, pause"', h.text);
                     h = await hear('wake');

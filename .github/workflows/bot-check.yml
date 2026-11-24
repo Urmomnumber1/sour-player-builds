@@ -173,6 +173,36 @@ jobs:
                     await sleep(4000);
                     h = await hear('play');
                     check(h.wake === true && /play retry now/.test(h.text), 'and it still hears', h.text);
+                    // a big library: 4,000 songs, about 12,000 sentences. How long the recognizer takes to learn them (it answers
+                    // the next thing it hears only then), and how quickly it answers afterwards.
+                    const pool = ['love', 'night', 'world', 'fire', 'rain', 'heart', 'time', 'dream', 'light', 'dark', 'blue', 'red', 'gold', 'summer', 'winter', 'dance',
+                      'home', 'road', 'river', 'city', 'star', 'moon', 'sun', 'sky', 'ocean', 'storm', 'ghost', 'angel', 'devil', 'king', 'queen', 'boy', 'girl', 'baby',
+                      'forever', 'tonight', 'yesterday', 'tomorrow', 'never', 'always', 'again', 'alone', 'together', 'crazy', 'happy', 'lonely', 'broken', 'wild', 'young',
+                      'sweet', 'little', 'big', 'last', 'first', 'one', 'two', 'good', 'bad', 'high', 'low', 'deep', 'slow', 'fast', 'hot', 'cold', 'black', 'white', 'green',
+                      'silver', 'paper', 'glass', 'stone', 'water', 'wind', 'thunder', 'lightning', 'shadow', 'mirror', 'window', 'door', 'garden', 'flower', 'rose', 'money',
+                      'paradise', 'heaven', 'hell', 'memory', 'story', 'song', 'music', 'radio', 'party', 'the', 'a', 'my', 'your', 'in', 'on', 'of', 'to', 'and', 'for', 'with',
+                      'without', 'me', 'you', 'we', 'it', 'is', 'are', 'was', 'be', 'go', 'come', 'run', 'walk', 'fall', 'fly', 'cry', 'smile', 'kiss', 'hold', 'stay', 'leave',
+                      'want', 'need', 'feel', 'know', 'say', 'tell', 'mad', 'through', 'whirl', 'evolving', 'revolver', 'around'];
+                    let seed = 12345;
+                    const rnd = (n) => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed % n; };
+                    const big = new Set(words);
+                    for (let i = 0; i < 4000; i++) {
+                      const t = Array.from({ length: 2 + rnd(3) }, () => pool[rnd(pool.length)]).join(' ');
+                      const a = `${pool[rnd(pool.length)]} ${pool[rnd(pool.length)]}`;
+                      big.add(`hey sour box play ${t}`); big.add(`play ${t} by ${a}`); big.add(`queue ${t}`);
+                    }
+                    const t0 = Date.now();
+                    const huge = await call('ears', { on: true, ...helper, words: [...big] });
+                    check(huge.ok, `a big library is taken (${big.size} sentences)`);
+                    h = await hear('world');
+                    const learned = Math.round((Date.now() - t0) / 100) / 10;
+                    check(h.wake === true && readings(h).some((t) => /world revolving$/.test(t)), `...and it hears with it, ${learned} s after the sentences were sent`, JSON.stringify(h));
+                    let t1 = Date.now();
+                    h = await hear('stand');
+                    check(h.wake === true && readings(h).some((t) => /stand by me$/.test(t)), `...and answers a sentence in ${Math.round((Date.now() - t1) / 100) / 10} s`, JSON.stringify(h));
+                    t1 = Date.now();
+                    h = await hear('chat');
+                    check(h.wake === false, `...and table talk is dismissed in ${Math.round((Date.now() - t1) / 100) / 10} s`, JSON.stringify(h));
                     const off = await call('ears', { on: false });
                     check(off.ok && off.result.on === false, 'the ears switch off');
                     p.kill();

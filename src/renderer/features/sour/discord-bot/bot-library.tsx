@@ -1,5 +1,6 @@
+import { useDebouncedValue } from '@mantine/hooks';
 import { closeAllModals, openModal } from '@mantine/modals';
-import { useQueryClient } from '@tanstack/react-query';
+import { type QueryClient, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 
 import styles from './discord-bot.module.css';
@@ -41,16 +42,38 @@ const KINDS: { label: string; value: BotKind }[] = [
     { label: 'Sound effects', value: 'sfx' },
 ];
 
-// ---------- the bot's library: Music, Playlists, Ambience, Sound effects ----------
+// (0.16.1) which of the two the tab shows is remembered on this device
+const WHICH = 'sour-bot-library';
+type Which = 'dnd' | 'sour';
+const startWhich = (): Which => {
+    try {
+        return localStorage.getItem(WHICH) === 'sour' ? 'sour' : 'dnd';
+    } catch {
+        return 'dnd';
+    }
+};
+
+// ---------- what the bot can play: its own D&D library (Music, Playlists, Ambience, Sound effects), and
+// (0.16.1) the Sour Player library ----------
 export const BotLibraryPanel = ({ bot }: { bot: Bot }) => {
     const [tab, setTab] = useState<null | string>('music');
+    const [which, setWhich] = useState<Which>(startWhich);
     const items = bot.library?.items ?? [];
     const of = (k: BotKind) => items.filter((i) => i.kind === k);
+    const pick = (value: string) => {
+        const next: Which = value === 'sour' ? 'sour' : 'dnd';
+        setWhich(next);
+        try {
+            localStorage.setItem(WHICH, next);
+        } catch {
+            // remembered until the tab closes then
+        }
+    };
     return (
         <div className={styles.card}>
             <div className={styles.libHead}>
                 <div className={styles.cardTitle}>
-                    <Icon icon="library" /> The bot&apos;s library
+                    <Icon icon="library" /> What the bot can play
                 </div>
                 <Button
                     leftSection={<Icon icon="add" />}
@@ -58,39 +81,197 @@ export const BotLibraryPanel = ({ bot }: { bot: Bot }) => {
                         openAddSounds(tab && tab !== 'playlists' ? (tab as BotKind) : 'music')
                     }
                     size="compact-sm"
-                    variant="filled"
+                    variant={which === 'dnd' ? 'filled' : 'default'}
                 >
                     Add sounds
                 </Button>
             </div>
-            <Text isMuted size="xs">
-                Only the bot plays these: they don&apos;t show up anywhere else in Sour Player.
-                Songs from your library: right-click songs, albums or playlists &gt; Copy to Discord
-                bot.
-            </Text>
-            <Tabs keepMounted={false} onChange={setTab} value={tab}>
-                <Tabs.List>
-                    <Tabs.Tab value="music">Music ({of('music').length})</Tabs.Tab>
-                    <Tabs.Tab value="playlists">
-                        Playlists ({bot.library?.playlists.length ?? 0})
-                    </Tabs.Tab>
-                    <Tabs.Tab value="ambience">Ambience ({of('ambience').length})</Tabs.Tab>
-                    <Tabs.Tab value="sfx">Sound effects ({of('sfx').length})</Tabs.Tab>
-                </Tabs.List>
-                <Tabs.Panel pt="sm" value="music">
-                    <ItemList bot={bot} items={of('music')} kind="music" />
-                </Tabs.Panel>
-                <Tabs.Panel pt="sm" value="playlists">
-                    <Playlists bot={bot} />
-                </Tabs.Panel>
-                <Tabs.Panel pt="sm" value="ambience">
-                    <ItemList bot={bot} items={of('ambience')} kind="ambience" />
-                </Tabs.Panel>
-                <Tabs.Panel pt="sm" value="sfx">
-                    <ItemList bot={bot} items={of('sfx')} kind="sfx" />
-                </Tabs.Panel>
-            </Tabs>
+            <SegmentedControl
+                data={[
+                    { label: 'D&D library', value: 'dnd' },
+                    { label: 'Sour Player library', value: 'sour' },
+                ]}
+                fullWidth
+                onChange={pick}
+                size="sm"
+                value={which}
+            />
+            {which === 'sour' ? (
+                <SourLibrary bot={bot} />
+            ) : (
+                <>
+                    <Text isMuted size="xs">
+                        The bot&apos;s own sounds, kept apart for D&amp;D: only the bot plays these,
+                        and they don&apos;t show up anywhere else in Sour Player. A song from Sour
+                        Player gets its own copy in here from its menu: Copy to Discord bot.
+                    </Text>
+                    <Tabs keepMounted={false} onChange={setTab} value={tab}>
+                        <Tabs.List>
+                            <Tabs.Tab value="music">Music ({of('music').length})</Tabs.Tab>
+                            <Tabs.Tab value="playlists">
+                                Playlists ({bot.library?.playlists.length ?? 0})
+                            </Tabs.Tab>
+                            <Tabs.Tab value="ambience">Ambience ({of('ambience').length})</Tabs.Tab>
+                            <Tabs.Tab value="sfx">Sound effects ({of('sfx').length})</Tabs.Tab>
+                        </Tabs.List>
+                        <Tabs.Panel pt="sm" value="music">
+                            <ItemList bot={bot} items={of('music')} kind="music" />
+                        </Tabs.Panel>
+                        <Tabs.Panel pt="sm" value="playlists">
+                            <Playlists bot={bot} />
+                        </Tabs.Panel>
+                        <Tabs.Panel pt="sm" value="ambience">
+                            <ItemList bot={bot} items={of('ambience')} kind="ambience" />
+                        </Tabs.Panel>
+                        <Tabs.Panel pt="sm" value="sfx">
+                            <ItemList bot={bot} items={of('sfx')} kind="sfx" />
+                        </Tabs.Panel>
+                    </Tabs>
+                </>
+            )}
         </div>
+    );
+};
+
+// ---------- (0.16.1) the Sour Player library: every song, played from where it is (nothing is copied) ----------
+const SourLibrary = ({ bot }: { bot: Bot }) => {
+    const [q, setQ] = useState('');
+    const [asked] = useDebouncedValue(q.trim(), 300);
+    const voice = !!bot.state?.voice;
+    // a Hermes Music from before 3.17.1 can't do this (its bot doesn't say "links" either)
+    const old = !!bot.state && !bot.state.links;
+    const search = bot.search;
+    const found = useQuery({
+        enabled: !old && asked.length > 1,
+        queryFn: () => search(asked),
+        queryKey: ['discord-bot', 'songs', asked],
+        retry: false,
+        staleTime: 60000,
+    });
+    const songs = asked.length > 1 ? (found.data ?? []) : [];
+    if (old) {
+        return (
+            <Text isMuted size="sm">
+                Playing Sour Player&apos;s songs with the bot needs Hermes Music 3.17.1: update it
+                in Umbrel (App Store → Hermes Music → Update).
+            </Text>
+        );
+    }
+    return (
+        <Stack gap="xs">
+            <Text isMuted size="xs">
+                Every song in Sour Player, played from where it is: nothing is copied. The menu of
+                any song, album or playlist has Play on Discord bot too, and &quot;Hey Sour Box,
+                play ...&quot; finds these songs as well.
+            </Text>
+            <Group gap="xs" wrap="nowrap">
+                <TextInput
+                    leftSection={<Icon icon="search" />}
+                    onChange={(e) => setQ(e.currentTarget.value)}
+                    placeholder="Find a song, an artist or an album"
+                    size="xs"
+                    style={{ flex: 1 }}
+                    value={q}
+                />
+                {songs.length > 1 && (
+                    <Button
+                        disabled={!voice}
+                        leftSection={<Icon icon="mediaPlay" />}
+                        onClick={() => bot.act('play', { ids: songs.map((s) => s.id), start: 0 })}
+                        size="compact-sm"
+                        variant="default"
+                    >
+                        Play all
+                    </Button>
+                )}
+            </Group>
+            {found.isError && (
+                <Text className={styles.failed} size="sm">
+                    {(found.error as Error).message}
+                </Text>
+            )}
+            {asked.length > 1 && found.isSuccess && !songs.length && (
+                <Text isMuted size="sm">
+                    Nothing in the library fits “{asked}”.
+                </Text>
+            )}
+            <div className={styles.list}>
+                {songs.map((s) => (
+                    <div className={styles.item} key={s.id}>
+                        <div className={styles.itemText}>
+                            <span className={styles.ellipsis}>{s.title}</span>
+                            <span className={`${styles.muted} ${styles.ellipsis}`}>
+                                {[s.artist, s.album].filter(Boolean).join(' - ')}
+                            </span>
+                        </div>
+                        <Button
+                            disabled={!voice}
+                            onClick={() => bot.act('play', { ids: [s.id], start: 0 })}
+                            size="compact-sm"
+                            variant="default"
+                        >
+                            Play
+                        </Button>
+                        <Button
+                            disabled={!voice}
+                            onClick={() => bot.act('enqueue', { ids: [s.id] })}
+                            size="compact-sm"
+                            variant="subtle"
+                        >
+                            Queue
+                        </Button>
+                        <DropdownMenu position="bottom-end">
+                            <DropdownMenu.Target>
+                                <Button
+                                    aria-label="More"
+                                    p="0"
+                                    size="compact-sm"
+                                    variant="subtle"
+                                    w={30}
+                                >
+                                    <Icon icon="ellipsisHorizontal" />
+                                </Button>
+                            </DropdownMenu.Target>
+                            <DropdownMenu.Dropdown>
+                                <DropdownMenu.Item
+                                    disabled={!voice}
+                                    leftSection={<Icon icon="mediaPlayNext" />}
+                                    onClick={() => bot.act('enqueue', { ids: [s.id], next: true })}
+                                >
+                                    Play next
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Item
+                                    leftSection={<Icon icon="library" />}
+                                    onClick={() =>
+                                        void bot
+                                            .lib('copy', {
+                                                kind: 'music',
+                                                songs: [
+                                                    {
+                                                        album: s.album,
+                                                        artist: s.artist,
+                                                        duration: 0,
+                                                        path: '',
+                                                        title: s.title,
+                                                    },
+                                                ],
+                                            })
+                                            .then(() =>
+                                                toast.success({
+                                                    message: `${s.title} has a copy in the D&D library now`,
+                                                }),
+                                            )
+                                            .catch(() => undefined)
+                                    }
+                                >
+                                    Copy to the D&amp;D library
+                                </DropdownMenu.Item>
+                            </DropdownMenu.Dropdown>
+                        </DropdownMenu>
+                    </div>
+                ))}
+            </div>
+        </Stack>
     );
 };
 
@@ -729,6 +910,22 @@ const asSource = (s: Song): BotSourceSong => ({
     title: s.name,
 });
 
+const songsOf = async (
+    from: { albumIds?: string[]; playlistIds?: string[]; songs?: Song[] },
+    queryClient: QueryClient,
+    serverId: string,
+) => {
+    let list: Song[] = from.songs ?? [];
+    if (from.albumIds?.length)
+        list = (await getAlbumSongsById({ id: from.albumIds, queryClient, serverId })).items;
+    if (from.playlistIds?.length) {
+        list = [];
+        for (const id of from.playlistIds)
+            list.push(...(await getPlaylistSongsById({ id, queryClient, serverId })).items);
+    }
+    return list;
+};
+
 const CopyToBot = ({
     albumIds,
     count,
@@ -751,16 +948,7 @@ const CopyToBot = ({
     const copy = async () => {
         setBusy(true);
         try {
-            let list: Song[] = songs ?? [];
-            if (albumIds?.length)
-                list = (await getAlbumSongsById({ id: albumIds, queryClient: qc, serverId })).items;
-            if (playlistIds?.length) {
-                list = [];
-                for (const id of playlistIds)
-                    list.push(
-                        ...(await getPlaylistSongsById({ id, queryClient: qc, serverId })).items,
-                    );
-            }
+            const list = await songsOf({ albumIds, playlistIds, songs }, qc, serverId);
             let playlist: string | undefined;
             if (kind === 'music' && pick === 'new') {
                 playlist = (await bot.lib('playlist', { name: name.trim() || 'New playlist' }))
@@ -816,6 +1004,50 @@ const CopyToBot = ({
                 </Button>
             </Group>
         </Stack>
+    );
+};
+
+// ---------- (0.16.1) "Play on Discord bot" / "Queue on Discord bot": from where the songs are, no copy ----------
+export const PlayOnBotAction = ({
+    albumIds,
+    playlistIds,
+    songs,
+}: {
+    albumIds?: string[];
+    playlistIds?: string[];
+    songs?: Song[];
+}) => {
+    const allowed = useBotAccess();
+    const bot = useBot(false);
+    const qc = useQueryClient();
+    const serverId = useCurrentServer()?.id || '';
+    const count = songs?.length ?? albumIds?.length ?? playlistIds?.length ?? 0;
+    if (!allowed || !count) return null;
+    const send = async (action: 'enqueueSongs' | 'playSongs') => {
+        try {
+            const list = await songsOf({ albumIds, playlistIds, songs }, qc, serverId);
+            if (!list.length) return;
+            await bot.act(action, { songs: list.map(asSource) });
+            const what = list.length === 1 ? list[0].name : `${list.length} songs`;
+            toast.success({
+                message:
+                    action === 'playSongs'
+                        ? `The Discord bot plays ${what}`
+                        : `In the Discord bot's queue: ${what}`,
+            });
+        } catch {
+            // the error is shown
+        }
+    };
+    return (
+        <>
+            <ContextMenu.Item leftIcon="bot" onSelect={() => void send('playSongs')}>
+                Play on Discord bot
+            </ContextMenu.Item>
+            <ContextMenu.Item leftIcon="bot" onSelect={() => void send('enqueueSongs')}>
+                Queue on Discord bot
+            </ContextMenu.Item>
+        </>
     );
 };
 

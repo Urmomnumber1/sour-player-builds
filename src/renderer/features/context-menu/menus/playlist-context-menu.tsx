@@ -22,7 +22,10 @@ import {
     PinAction,
     PinPlaylistToProfileAction,
 } from '/@/renderer/features/sour/components/song-actions';
-import { CopyToBotAction } from '/@/renderer/features/sour/discord-bot/bot-library';
+import {
+    CopyToBotAction,
+    PlayOnBotAction,
+} from '/@/renderer/features/sour/discord-bot/bot-library';
 import { usePermissions } from '/@/renderer/store';
 import { ContextMenu } from '/@/shared/components/context-menu/context-menu';
 import { LibraryItem, Playlist } from '/@/shared/types/domain-types';
@@ -61,6 +64,7 @@ export const PlaylistContextMenu = ({ items, type }: PlaylistContextMenuProps) =
             <FindVideosAction ids={ids} itemType={LibraryItem.PLAYLIST} />
             <KeepOfflineAction ids={ids} />
             <DownloadAction ids={ids} kind="playlist" />
+            <PlayOnBotAction playlistIds={ids} />
             <CopyToBotAction playlistIds={ids} />
             <PinAction item={items[0]} kind="playlist" />
             <PinPlaylistToProfileAction playlist={items[0]} />

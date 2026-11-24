@@ -14,7 +14,7 @@ import { Stack } from '/@/shared/components/stack/stack';
 import { Text } from '/@/shared/components/text/text';
 import { Tooltip } from '/@/shared/components/tooltip/tooltip';
 import { PlayerStatus } from '/@/shared/types/types';
-import { isOpenFor, opensForEveryone, type UpdateRing } from '/@/shared/update-rings';
+import { releaseOpensAt, type UpdateRing } from '/@/shared/update-rings';
 
 interface HermesUpdate {
     percent?: number;
@@ -78,6 +78,7 @@ const useAndroidUpdateListener = () => {
                 const { code, version } = await sourMedia('info');
                 const releases: {
                     assets: { browser_download_url: string; name: string }[];
+                    body?: null | string;
                     published_at: string;
                     tag_name: string;
                 }[] = await fetch(RELEASES).then((r) => r.json());
@@ -102,14 +103,16 @@ const useAndroidUpdateListener = () => {
                         ? build(r) > Number(code)
                         : isNewer(r.tag_name.replace(MOBILE_TAG, ''), version);
                 // (0.16) admins: the newest. Everyone else: the newest that has opened for everyone
+                // (0.16.1: by its line; a small update of the version this app is opens at once)
                 const ring = useUpdateRing.getState().ring;
-                const newest = ours.find((r) => isOpenFor(ring, r.published_at));
+                const opensAt = (r: (typeof releases)[number]) => releaseOpensAt(r, ours, version);
+                const newest = ours.find((r) => ring === 'admin' || Date.now() >= opensAt(r));
                 const held =
                     ours[0] && ours[0] !== newest && isNewerThanThis(ours[0]) ? ours[0] : null;
                 useUpdateRing.setState({
                     waiting: held
                         ? {
-                              opensAt: opensForEveryone(held.published_at),
+                              opensAt: opensAt(held),
                               version: held.tag_name.replace(MOBILE_TAG, ''),
                           }
                         : null,

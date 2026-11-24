@@ -10,7 +10,9 @@ import {
     isOpenFor,
     opensForEveryone,
     pickRelease,
+    releaseOpensAt,
     type RingRelease,
+    sameLine,
     type UpdateRing,
 } from '/@/shared/update-rings';
 
@@ -109,7 +111,8 @@ export function startHermesUpdater(options: {
         const result = await autoUpdater.checkForUpdates();
         const info = result?.updateInfo;
         if (!result?.isUpdateAvailable || !info) return;
-        if (isOpenFor(ring(), info.releaseDate)) {
+        // (0.16.1) a small update of the version this already is needs no test week
+        if (isOpenFor(ring(), info.releaseDate) || sameLine(info.version, app.getVersion())) {
             waiting = null;
             await autoUpdater.downloadUpdate();
         } else {
@@ -130,12 +133,12 @@ export function startHermesUpdater(options: {
                 /^v\d/.test(r.tag_name) && !r.prerelease && r.assets?.some((a) => a.name === file),
         );
         const current = app.getVersion();
-        const target = pickRelease(mine, ring());
+        const target = pickRelease(mine, ring(), Date.now(), current);
         const newest = pickRelease(mine, 'admin');
         waiting =
             newest && newest !== target && isNewerVersion(newest.tag_name, current)
                 ? {
-                      opensAt: opensForEveryone(newest.published_at),
+                      opensAt: releaseOpensAt(newest, mine, current),
                       version: newest.tag_name.replace(/^v/, ''),
                   }
                 : null;

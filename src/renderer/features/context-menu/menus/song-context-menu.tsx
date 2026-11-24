@@ -25,7 +25,10 @@ import {
     WhoElseLikesAction,
 } from '/@/renderer/features/sour/components/song-actions';
 import { RemoveSongAction, WrongSongAction } from '/@/renderer/features/sour/components/song-fix';
-import { CopyToBotAction } from '/@/renderer/features/sour/discord-bot/bot-library';
+import {
+    CopyToBotAction,
+    PlayOnBotAction,
+} from '/@/renderer/features/sour/discord-bot/bot-library';
 import { useSimpleMode } from '/@/renderer/features/sour/store/sour.store';
 import {
     NoKaraokeAction,
@@ -60,6 +63,7 @@ export const SongContextMenu = ({ items, type }: SongContextMenuProps) => {
             {!simple && (
                 <>
                     <AddToGroupAction songs={items} />
+                    <PlayOnBotAction songs={items} />
                     <SocialSongMenu songs={items} />
                 </>
             )}

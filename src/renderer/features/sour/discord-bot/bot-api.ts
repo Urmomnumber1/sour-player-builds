@@ -42,6 +42,14 @@ export interface BotLibrary {
     playlists: BotPlaylist[];
 }
 
+// (0.16.1, Hermes Music 3.17.1) a song of the music library, the way the bot's search of it names it
+export interface BotLibSong {
+    album: string;
+    artist: string;
+    id: string;
+    title: string;
+}
+
 export interface BotMember {
     avatar: string;
     bot?: boolean;
@@ -85,6 +93,8 @@ export interface BotState {
     guilds: BotGuild[];
     installing: boolean;
     invite: string;
+    // (0.16.1, Hermes Music 3.17.1) a song starts: its music video's link goes into the chat of the voice channel
+    links?: { note: string; on: boolean };
     music: {
         current: BotTrack | null;
         index: number;
@@ -137,6 +147,8 @@ export const useBotAccess = () => {
     return !!base && !!mine?.discordBot;
 };
 
+const OLD_HERMES = 'Update Hermes Music for this (in Umbrel: App Store → Hermes Music → Update)';
+
 const call = async <T>(base: string, path: string, body: Record<string, unknown>): Promise<T> => {
     const res = await fetch(`${base}/api/discord-bot/${path}`, {
         body: JSON.stringify(body),
@@ -144,7 +156,12 @@ const call = async <T>(base: string, path: string, body: Record<string, unknown>
         method: 'POST',
     });
     const json = await res.json().catch(() => null);
-    if (!res.ok) throw new Error(json?.error || `Hermes Music returned ${res.status}`);
+    if (!res.ok) {
+        // a Hermes Music from before the thing that was asked for
+        const old =
+            json?.error === 'unknown action' || (res.status === 404 && json?.error === 'not found');
+        throw new Error(old ? OLD_HERMES : json?.error || `Hermes Music returned ${res.status}`);
+    }
     return json as T;
 };
 
@@ -253,12 +270,44 @@ export const useBot = (live = true) => {
         [base, me?.id, me?.key, ready],
     );
 
+    // (0.16.1) the music video's link in the chat of the voice channel: on or off
+    const links = useCallback(
+        async (on: boolean) => {
+            if (!ready) return;
+            try {
+                const s = await call<BotState>(base as string, 'links', { ...auth, on });
+                qc.setQueryData(stateKey, s);
+                return s;
+            } catch (e) {
+                return fail(e);
+            }
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [base, me?.id, me?.key, ready],
+    );
+
+    // (0.16.1) the music library, for the bot to play from where the songs are
+    const search = useCallback(
+        async (q: string) => {
+            if (!ready) return [];
+            const found = await call<{ songs: BotLibSong[] }>(base as string, 'songs', {
+                ...auth,
+                q,
+            });
+            return found.songs ?? [];
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [base, me?.id, me?.key, ready],
+    );
+
     return {
         act,
         ears,
         error: state.error as Error | null,
         lib,
         library: library.data,
+        links,
+        search,
         state: state.data,
         upload,
     };

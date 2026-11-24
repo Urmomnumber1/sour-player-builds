@@ -306,6 +306,7 @@ const Voice = ({ bot, s }: Props) => {
             <VolumeRow bot={bot} label="Everything" layer="master" value={s.volumes.master} />
             <Ears bot={bot} s={s} />
             <Watch s={s} />
+            <Links bot={bot} s={s} />
         </div>
     );
 };
@@ -405,6 +406,49 @@ const Ears = ({ bot, s }: Props) => {
                     {`${h.by} ${h.typed ? 'typed' : 'said'} “${h.text.replace(/^(hey )?sour box ?/i, '') || 'Hey Sour Box'}”: ${h.did}`}
                 </Text>
             ))}
+        </div>
+    );
+};
+
+// ---------- (0.16.1) the music video's link in the chat of the voice channel ----------
+const Links = ({ bot, s }: Props) => {
+    const [busy, setBusy] = useState(false);
+    const l = s.links;
+    // a Hermes Music from before 3.17.1 posts none
+    if (!l) return null;
+    return (
+        <div className={styles.ears}>
+            <div className={styles.earsHead}>
+                <div className={styles.earsText}>
+                    <Text fw={700} size="sm">
+                        Music video links
+                    </Text>
+                    <Text isMuted size="xs">
+                        {l.on
+                            ? 'When a song starts, the bot writes the link of its music video into the chat of its voice channel (songs that have one).'
+                            : 'Off: the bot writes nothing into the chat when a song starts.'}
+                    </Text>
+                </div>
+                <Button
+                    disabled={busy}
+                    onClick={() => {
+                        setBusy(true);
+                        void bot
+                            .links(!l.on)
+                            .catch(() => undefined)
+                            .finally(() => setBusy(false));
+                    }}
+                    size="compact-sm"
+                    variant={l.on ? 'filled' : 'default'}
+                >
+                    {l.on ? 'On' : 'Off'}
+                </Button>
+            </div>
+            {l.on && !!l.note && (
+                <Text className={styles.failed} size="xs">
+                    The last one didn&apos;t get through: {l.note}
+                </Text>
+            )}
         </div>
     );
 };

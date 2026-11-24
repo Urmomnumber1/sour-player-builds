@@ -85,6 +85,10 @@ jobs:
                   say wake   "hey sour box"
                   say chat   "so what do you all want to do about the dragon in the cave"
                   say chat2  "I think we should play a different game tonight"
+                  say world  "hey sour box, play the world revolving"
+                  espeak-ng -v en-gb -s 165 -w /tmp/world2.wav "hey sour box play the world revolving"
+                  say through "hey sour box, play through the night"
+                  say stand  "hey sour box, play stand by me"
                   cat > /bot/ears.js <<'EOF'
                   const { fork } = require('child_process');
                   const fs = require('fs');
@@ -104,18 +108,40 @@ jobs:
                   const call = (cmd, args = {}) => new Promise((ok) => { const id = ++n; pending.set(id, ok); p.send({ id, cmd, args }); });
                   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
                   // what Hermes Music would send: the commands, and the words of a small library
-                  const words = ['hey', 'sour', 'box', 'play', 'put', 'on', 'queue', 'add', 'pause', 'resume', 'continue', 'skip', 'next', 'previous', 'back', 'go', 'stop', 'by', 'the', 'a', 'song', 'some', 'music', 'please',
-                    'retry', 'now', 'nakiso', 'dancing', 'in', 'rain', 'lemon', 'drop', 'golden', 'hour', 'world', 'revolving', 'toby', 'fox', 'night', 'juice', 'late', 'drive', 'gym', 'hype', 'weezer', 'elton', 'john'];
+                  // What Hermes Music sends (3.17.1): whole sentences - the commands, and every song of the library with
+                  // "play" in front - so the recognizer learns which word follows which. `loose` is what 3.17.0 sent: the
+                  // same words, in no order. The library has titles that sound like commands or like each other.
+                  const songs = [['retry now', 'nakiso'], ['dancing in the rain', 'lemon drop'], ['golden hour', 'lemon drop'], ['the world revolving', 'toby fox'],
+                    ['through the night', 'night juice'], ['paws', 'cat band'], ['rain', 'night juice'], ['late drive', 'night juice'], ['gym hype', 'weezer'],
+                    ['rocket man', 'elton john'], ['through the fire and flames', 'dragonforce'], ['the world is yours', 'nas'], ['world on fire', 'sarah mclachlan'],
+                    ['play with fire', 'sam tinnesz'], ['evolving', 'the band'], ['revolver', 'madonna'], ['threw it on the ground', 'the lonely island'],
+                    ['true', 'spandau ballet'], ['the whirl', 'someone'], ['pause', 'pitbull'], ['pours', 'somebody'], ['thunder road', 'bruce springsteen'],
+                    ['in the end', 'linkin park'], ['the end of the world', 'skeeter davis'], ['around the world', 'daft punk'], ['mad world', 'gary jules'],
+                    ['stand by me', 'ben e king'], ['stand', 'rem'], ['by your side', 'sade'], ['me and my broken heart', 'rixton']];
+                  const WAKE = ['hey sour box', 'sour box'];
+                  const SIMPLE = ['pause', 'resume', 'continue', 'keep going', 'skip', 'next', 'previous', 'back', 'go back', 'stop', 'play', 'please'];
+                  const VERBS = ['play', 'play the song', 'play some', 'put on', 'queue', 'add'];
+                  const sentences = new Set();
+                  for (const w of WAKE) { sentences.add(w); for (const c of [...SIMPLE, ...VERBS]) sentences.add(`${w} ${c}`); }
+                  for (const c of [...SIMPLE, ...VERBS]) sentences.add(c);
+                  for (const [t, a] of songs) { sentences.add(`hey sour box play ${t}`); sentences.add(`play ${t} by ${a}`); sentences.add(`queue ${t}`); }
+                  const words = [...sentences];
+                  const loose = [...new Set(words.join(' ').split(' '))];
                   const helper = { python: '/tools/ears/bin/python', script: '/bot/sour-ears.py', model: '/tools/ears/vosk-model-small-en-us-0.15' };
                   (async () => {
                     let bad = 0;
                     const check = (ok, what, extra) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${what}${extra ? '  (' + extra + ')' : ''}`); if (!ok) bad++; };
-                    const on = await call('ears', { on: true, ...helper, words });
+                    const on = await call('ears', { on: true, ...helper, words: loose });
                     check(on.ok && on.result.on, 'the ears switch on', JSON.stringify(on.result || on.error));
                     let ready = false;
                     for (let i = 0; i < 120 && !ready; i++) { await sleep(500); ready = !!(await call('state')).result.ears.ready; }
                     check(ready, 'the recognizer loads');
                     const hear = async (name) => { const r = await call('eartest', { file: `/tmp/${name}.wav` }); console.log(`  ${name}:`, JSON.stringify(r.result || r.error)); return (r.result && r.result.heard) || {}; };
+                    // first the way 3.17.0 listened (loose words), to see what the sentences change - nothing is checked here
+                    for (const n of ['world', 'world2', 'through', 'stand', 'pause', 'artist']) console.log('  with loose words,', n, '->', JSON.stringify(await hear(n)));
+                    const sent = await call('ears', { on: true, ...helper, words });
+                    check(sent.ok, `the sentences are taken (${words.length} of them)`);
+                    await sleep(4000);
                     let h = await hear('play');
                     check(h.wake === true && /sour box/.test(h.text) && /play retry now/.test(h.text), '"hey sour box. play retry now"', h.text);
                     h = await hear('artist');
@@ -123,7 +149,16 @@ jobs:
                     h = await hear('queue');
                     check(h.wake === true && /queue golden hour/.test(h.text), '"hey sour box, queue golden hour"', h.text);
                     h = await hear('pause');
-                    check(h.wake === true && /pause/.test(h.text), '"hey sour box, pause"', h.text);
+                    check(h.wake === true && /sour box pause$/.test(h.text), '"hey sour box, pause" (with songs called Paws, Pours and Pause around)', JSON.stringify(h));
+                    h = await hear('world');
+                    check(h.wake === true && /play the world revolving$/.test(h.text), '"hey sour box, play the world revolving"', JSON.stringify(h));
+                    check(Array.isArray(h.alts), 'its other readings come along', JSON.stringify(h.alts));
+                    h = await hear('world2');
+                    check(h.wake === true && /play the world revolving$/.test(h.text), '...in another voice, faster', JSON.stringify(h));
+                    h = await hear('through');
+                    check(h.wake === true && /play through the night$/.test(h.text), '"... play through the night" (a title that starts like the mishearing)', JSON.stringify(h));
+                    h = await hear('stand');
+                    check(h.wake === true && /play stand by me$/.test(h.text), '"... play stand by me"', JSON.stringify(h));
                     h = await hear('wake');
                     check(h.wake === true && /sour box/.test(h.text), '"hey sour box" on its own', h.text);
                     h = await hear('chat');
@@ -131,9 +166,9 @@ jobs:
                     h = await hear('chat2');
                     check(h.wake === false, '...even with the word "play" in it', JSON.stringify(h));
                     // the words change (the library grew): the helper keeps running with the new list
-                    const more = await call('ears', { on: true, ...helper, words: [...words, 'thunder', 'road'] });
-                    check(more.ok, 'a new word list is taken');
-                    await sleep(1500);
+                    const more = await call('ears', { on: true, ...helper, words: [...words, 'hey sour box play born to run', 'play born to run by bruce springsteen'] });
+                    check(more.ok, 'new sentences are taken');
+                    await sleep(4000);
                     h = await hear('play');
                     check(h.wake === true && /play retry now/.test(h.text), 'and it still hears', h.text);
                     const off = await call('ears', { on: false });
